@@ -1,0 +1,46 @@
+export const theme = {
+  brand: {
+    name: 'SCENTORIA',
+    tagline: 'The Art of Scent',
+    footerDesc: 'Curating the world\'s finest fragrances for the discerning nose.',
+  },
+  colors: {
+    accent:       '#4A6838',
+    accentHover:  '#3A5530',
+    accentLight:  '#5C7A52',
+    bgBase:       '#FDFBF7',
+    bgCard:       '#FFFFFF',
+    bgMuted:      '#F5F0E8',
+    textPrimary:  '#2C3527',
+    textBody:     '#4A5545',
+    textMuted:    '#6B7565',
+    textSubtle:   '#8A9585',
+    borderDefault: '#D5CDBD',
+    borderSubtle:  '#E8E0D5',
+    sand:  '#E8E0D5',
+    blue:  '#016BA7',
+    sage: '#5C7A52',
+    olive: '#4A6838',
+    tan:   '#8B6B4A',
+    success: '#4A6838',
+    warning: '#8B6B4A',
+    error:   '#B85555',
+    info:    '#009996',
+    // Vibrant chart palette from user's reference images
+    chartBars: ['#1CACD8', '#016BA7', '#F5CE1E', '#A8D435', '#F86C1A', '#009996', '#F894BA'],
+  },
+  fonts: {
+    serif: '"Noto Serif", Georgia, serif',
+    sans:  '"Noto Sans", system-ui, sans-serif',
+  },
+  layout: {
+    navbarHeight: '64px',
+    sidebarWidth: '240px',
+    maxContentWidth: '1280px',
+  },
+  navLinks: [
+    { label: 'Fragrances', path: '/products' },
+    { label: 'Scent Profiles', path: '/scents' },
+    { label: 'About', path: '/about' },
+  ],
+};

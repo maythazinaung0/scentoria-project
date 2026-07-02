@@ -231,19 +231,19 @@ export default function Navbar({ searchQuery, onSearchChange }) {
           }`}
         >
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nature-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nature" />
             <input
               type="text"
               placeholder="Search by brand or scent..."
               value={searchQuery}
               onChange={e => onSearchChange(e.target.value)}
-              className="w-full bg-nature-card/80 border border-nature-border rounded px-10 py-2.5 text-nature-dark placeholder-nature-muted focus:outline-none focus:border-nature-olive/50 text-sm transition-all duration-300 focus:shadow-sm"
+              className="w-full bg-nature-card/80 border border-nature-border rounded px-10 py-2.5 text-nature-dark placeholder-nature focus:outline-none focus:border-nature-olive/50 text-sm transition-all duration-300 focus:shadow-sm"
               autoFocus={searchOpen}
             />
             {searchQuery && (
               <button
                 onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-nature-muted hover:text-nature-olive transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-nature hover:text-nature-olive transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

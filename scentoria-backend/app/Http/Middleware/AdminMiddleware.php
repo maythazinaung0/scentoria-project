@@ -13,11 +13,11 @@ class AdminMiddleware
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle($request, Closure $next)
-{
-    if (!$request->user() || !$request->user()->is_admin) {
-        return response()->json(['message' => 'Forbidden'], 403);
+    public function handle(Request $request, Closure $next)
+    {
+        if (! $request->user()?->isAdmin()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        return $next($request);
     }
-    return $next($request);
-}
 }

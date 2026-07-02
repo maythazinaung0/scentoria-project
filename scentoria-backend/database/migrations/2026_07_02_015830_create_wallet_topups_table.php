@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('wallet_topups', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->integer('deposit_amount');
             $table->enum('topup_channel', ['kbzpay','cbpay']);
             $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');

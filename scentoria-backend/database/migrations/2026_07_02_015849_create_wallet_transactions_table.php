@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained();
+            $table->foreignId('user_id')->constrained();
             $table->enum('type', ['topup', 'purchase', 'refund']);
             $table->foreignId('topup_id')->nullable()->constrained('wallet_topups')->nullOnDelete();
             $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();

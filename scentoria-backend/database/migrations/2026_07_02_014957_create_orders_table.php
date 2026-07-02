@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers')->restrictOnDelete();
+            $table->foreignId('user_id')->constrained('customers')->restrictOnDelete();
             $table->integer('total_amount');
             $table->string('address');
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');

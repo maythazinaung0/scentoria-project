@@ -13,4 +13,9 @@
 
   --color-nature-border: #D5CDBD;
   --color-nature-subtle: #8A9585;
+
+  --color-accent: #4A6838;
+  /* ဒါက nature-olive နဲ့ တူတူပဲ */
+  --color-accent-hover: #3A5530;
+  /* ဒါက hover လုပ်ရင်ဖြစ်မယ့်အရောင် */
 }

@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost/api',
+  headers: { 'Accept': 'application/json' },
   withCredentials: true,
+  withXSRFToken: true,
 });
 
 export default api;

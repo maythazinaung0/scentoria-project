@@ -1,16 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-nature-bg: #FDFBF7;
-  --color-nature-card: #FFFFFF;
-  --color-nature-muted: #F5F0E8;
+  /* Canvas Background: Rich, velvety warm alabaster cream */
+  --color-nature-bg: #F7F5F0; 
+  /* Cards: Soft, luminescent ivory bone */
+  --color-nature-card: #FFFFFF; 
+  
+  /* The Signature Color: Velvet Sage */
+  --color-nature-sage: #B4C4A8;
+  --color-nature-sage-light: #EBEFE7;
+  --color-nature-sage-dark: #8CA07E;
 
-  --color-nature-dark: #2C3527;
-  --color-nature-charcoal: #4A5545;
+  /* Typography: Rich aromatic pine-charcoal instead of pure black */
+  --color-nature-dark: #222B1D;
+  --color-nature-charcoal: #3D4A37;
+  --color-nature-muted: #7A8573;
+  --color-nature-subtle: #A3AFA0;
 
-  --color-nature-olive: #4A6838;
-  --color-nature-olive-dark: #3A5530;
-
-  --color-nature-border: #D5CDBD;
-  --color-nature-subtle: #8A9585;
+  /* Accent Olive */
+  --color-nature-olive: #556B43;
+  
+  /* Borders: Soft earthen silt lines */
+  --color-nature-border: #E0DACD;
 }

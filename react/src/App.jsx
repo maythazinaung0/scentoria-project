@@ -1,32 +1,48 @@
 import { Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import CustomerLayout from './components/CustomerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
 import ProtectedAdminRoute from './pages/ProtectedAdminRoute';
 import LoginPage from './pages/LoginPage';
+
+// Admin Imports
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
+
+// Customer Imports
+import HomePage from './pages/customer/HomePage';
+import AboutPage from './pages/customer/About';
+import ScentDetailPage from './pages/customer/ScentDetailPage';
+import ScentProfilesPage from './pages/customer/ScentProfilesPage';
 import './App.css';
 
 function App() {
+  // Required state for the customer branch's live search filter feature
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <Routes>
-      {/* Customer-facing storefront — Navbar + Footer */}
-      <Route element={<CustomerLayout />}>
+      {/* Customer-facing storefront — Protected by CustomerLayout (Navbar & Footer pass state) */}
+      <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
+        <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
         <Route path="/login" element={<LoginPage />} />
-        {/* add /, /fragrances, /cart, etc. here as you build them */}
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/products/:id" element={<ScentDetailPage />} />
+        <Route path="/scents" element={<ScentProfilesPage />} />
+        <Route path="/scents/:id" element={<ScentDetailPage />} />
       </Route>
 
-      {/* Admin panel — separate layout, gated behind auth + role check */}
+      {/* Admin panel — separate structured layout gated behind role security validation */}
       <Route path="/admin" element={<ProtectedAdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/wallet" element={<AdminWallet />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="wallet" element={<AdminWallet />} />
+          <Route path="reports" element={<AdminReports />} />
         </Route>
       </Route>
     </Routes>

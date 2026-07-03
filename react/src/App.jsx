@@ -1,4 +1,3 @@
-import { Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 import CustomerLayout from './components/CustomerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
@@ -46,7 +45,10 @@ function App() {
         </Route>
       </Route>
     </Routes>
+
+
   );
 }
+
 
 export default App;

@@ -131,15 +131,15 @@ export default function AdminDashboard() {
           </div>
 
           {/* Stats Cards Grid */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
             {statCards.map(({ label, value, sub, icon: Icon }, i) => (
               <div
                 key={label}
-                className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] hover:-translate-y-1.5 hover:bg-white/90 transition-all duration-500 group"
+                className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] hover:-translate-y-1.5 hover:bg-white/50 transition-all duration-500 group"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <p className="text-nature-muted text-xs font-semibold tracking-wider uppercase opacity-70 group-hover:text-nature-olive transition-colors duration-300">{label}</p>
+                  <p className="text-nature-muted text-xs font-semibold tracking-wide uppercase opacity-70 group-hover:text-nature-olive transition-colors duration-300">{label}</p>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-nature-olive/5 border border-nature-olive/10 group-hover:bg-nature-olive group-hover:scale-110 transition-all duration-500 ease-out">
                     <Icon className="w-4 h-4 text-nature-olive group-hover:text-white transition-colors duration-500" />
                   </div>
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
           {/* Charts Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Main Area Chart Container */}
-            <div className="fade-up xl:col-span-2 bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '200ms' }}>
+            <div className="fade-up xl:col-span-2 bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '200ms' }}>
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Pie Chart Card */}
-            <div className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '300ms' }}>
+            <div className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '300ms' }}>
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-2 h-2 rounded-full bg-nature-olive" />
                 <h2 className="text-xs font-bold tracking-widest uppercase text-nature-olive">Allocation Stream</h2>
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Table Container */}
-          <div className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between px-8 py-5 border-b border-neutral-200/60 bg-white/30">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-nature-olive" />

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Search, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Pencil, Trash2, X, Search, Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 import api from '../../api';
 
 function ScentModal({ scent, onClose, onSaved }) {
@@ -7,8 +7,45 @@ function ScentModal({ scent, onClose, onSaved }) {
   const [name, setName] = useState(scent?.name || '');
   const [description, setDescription] = useState(scent?.description || '');
   const [imageUrl, setImageUrl] = useState(scent?.image_url || '');
+  const [mode, setMode] = useState('upload'); // 'upload' | 'url'
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  async function uploadFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
+      return;
+    }
+    setUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/admin/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImageUrl(data.url);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadFile(file);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -63,17 +100,69 @@ function ScentModal({ scent, onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="block text-nature-muted text-xs font-semibold tracking-wider uppercase mb-1.5">Image URL <span className="normal-case font-normal opacity-60">(optional)</span></label>
-            <input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
-            />
-            {imageUrl && (
-              <div className="mt-3 w-full h-32 rounded-xl overflow-hidden border border-nature-border/60 bg-neutral-100">
-                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-nature-muted text-xs font-semibold tracking-wider uppercase">Image</label>
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'upload' ? 'url' : 'upload')}
+                className="flex items-center gap-1 text-[11px] text-nature-olive hover:text-nature-olive/80 font-medium"
+              >
+                {mode === 'upload' ? (
+                  <>
+                    <LinkIcon className="w-3 h-3" /> Paste URL instead
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-3 h-3" /> Upload instead
+                  </>
+                )}
+              </button>
+            </div>
+
+            {mode === 'upload' ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${
+                  isDragging ? 'border-nature-olive bg-nature-olive/5' : 'border-nature-border/80 hover:border-nature-olive/50'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                {imageUrl && !uploading ? (
+                  <div className="w-full h-32 rounded-xl overflow-hidden border border-nature-border/60 bg-neutral-100">
+                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  </div>
+                ) : uploading ? (
+                  <Loader2 className="w-5 h-5 text-nature-olive animate-spin" />
+                ) : (
+                  <UploadCloud className="w-5 h-5 text-nature-muted" />
+                )}
+                <p className="text-xs text-nature-muted text-center">
+                  {uploading ? 'Uploading...' : imageUrl ? 'Click or drop to replace' : 'Click or drag an image here'}
+                </p>
               </div>
+            ) : (
+              <>
+                <input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
+                />
+                {imageUrl && (
+                  <div className="mt-3 w-full h-32 rounded-xl overflow-hidden border border-nature-border/60 bg-neutral-100">
+                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -89,7 +178,7 @@ function ScentModal({ scent, onClose, onSaved }) {
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploading}
               className="flex-1 flex items-center justify-center gap-2 bg-nature-olive hover:bg-nature-olive/90 disabled:opacity-60 text-white text-sm font-medium tracking-wide rounded-xl py-2.5 transition-colors shadow-[0_4px_16px_-4px_rgba(74,104,56,0.5)]"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -163,18 +252,18 @@ export default function ScentManagement() {
   const [deletingId, setDeletingId] = useState(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-function fetchScents(signal) {
-  if (!hasLoadedOnce) setLoading(true);
-  api.get('/admin/scents', { signal })
-    .then(({ data }) => {
-      setScents(data);
-      setHasLoadedOnce(true);
-    })
-    .catch((err) => {
-      if (err.name !== 'CanceledError') console.error('Failed to load scents:', err);
-    })
-    .finally(() => setLoading(false));
-}
+  function fetchScents(signal) {
+    if (!hasLoadedOnce) setLoading(true);
+    api.get('/admin/scents', { signal })
+      .then(({ data }) => {
+        setScents(data);
+        setHasLoadedOnce(true);
+      })
+      .catch((err) => {
+        if (err.name !== 'CanceledError') console.error('Failed to load scents:', err);
+      })
+      .finally(() => setLoading(false));
+  }
 
   useEffect(() => {
     const controller = new AbortController();

@@ -14,10 +14,11 @@ import AdminReports from './pages/admin/Report';
 import AdminScents from './pages/admin/Scents';
 import AdminNotes from './pages/admin/Notes';
 // Customer Imports
-import HomePage from './pages/customer/HomePage';
+import HomePage from "./pages/customer/Homepage";
 import AboutPage from './pages/customer/About';
 import ScentDetailPage from './pages/customer/ScentDetailPage';
 import ScentProfilesPage from './pages/customer/ScentProfilesPage';
+import ProfilePage from './pages/customer/ProfilePage';
 import './App.css';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
         <Route path="/products/:id" element={<ScentDetailPage />} />
         <Route path="/scents" element={<ScentProfilesPage />} />
         <Route path="/scents/:id" element={<ScentDetailPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
       {/* Admin panel — separate structured layout gated behind role security validation */}

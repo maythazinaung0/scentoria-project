@@ -5,7 +5,7 @@ import api from '../../api';
 const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'text-amber-600 bg-amber-50 border-amber-200/60', icon: Clock },
   completed: { label: 'Completed', color: 'text-emerald-700 bg-emerald-50 border-emerald-200/60', icon: CheckCircle2 },
-  failed: { label: 'Failed', color: 'text-rose-600 bg-rose-50 border-rose-200/60', icon: XCircle },
+  cancelled: { label: 'Cancelled', color: 'text-rose-600 bg-rose-50 border-rose-200/60', icon: XCircle },
 };
 
 const CHANNEL_LABELS = {
@@ -104,11 +104,11 @@ function TopupRow({ topup, onDecide, deciding }) {
                   Approve
                 </button>
                 <button
-                  onClick={() => onDecide(topup.id, 'failed')}
+                  onClick={() => onDecide(topup.id, 'cancelled')}
                   disabled={deciding}
                   className="flex items-center gap-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-60 text-xs font-medium tracking-wide rounded-xl px-3.5 py-2 border border-rose-200/60 transition-colors"
                 >
-                  {deciding === 'failed' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                  {deciding === 'cancelled' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                   Reject
                 </button>
               </div>
@@ -171,7 +171,7 @@ export default function WalletTopups() {
   const tabs = [
     { key: 'pending', label: 'Pending', count: pendingCount },
     { key: 'completed', label: 'Completed' },
-    { key: 'failed', label: 'Failed' },
+    { key: 'cancelled', label: 'Cancelled' },
     { key: 'all', label: 'All' },
   ];
 

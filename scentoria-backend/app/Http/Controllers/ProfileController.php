@@ -59,11 +59,11 @@ class ProfileController extends Controller
 
         $imageUrl = null;
 
-        if ($request->hasFile('transaction_image')) {
-            $file = $request->file('transaction_image');
-            $path = $file->store('topups', 'public'); 
-            $imageUrl = Storage::url($path); 
-        }
+       if ($request->hasFile('transaction_image')) {
+    $file = $request->file('transaction_image');
+    $path = $file->store('topups', 'public');
+    $imageUrl = asset(Storage::url($path));
+}
 
         $topup = WalletTopup::create([
             'user_id' => $request->user()->id,

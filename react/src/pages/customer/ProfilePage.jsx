@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     UserCircle, ShoppingBag, ChevronDown, ChevronUp,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
-    Wallet, Plus, Send, Star, MessageSquare  
+    Wallet, Plus, Send, Star, MessageSquare
 } from 'lucide-react';
 import { useAuth } from "../../contexts/AuthContext";
+import api from '../../api';
 
   
 const formatMMK = (amount) => {
@@ -45,7 +46,7 @@ export default function ProfilePage() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState([]);
-    const [reviews, setReviews] = useState([]);   
+    const [reviews, setReviews] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
     const [topupRequests, setTopupRequests] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
@@ -59,25 +60,6 @@ export default function ProfilePage() {
     const [showTopupForm, setShowTopupForm] = useState(false);
     const [topupImage, setTopupImage] = useState(null);
 
-    const authenticatedFetch = async (endpoint, options = {}) => {
-        const token = localStorage.getItem('token');
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            ...options.headers,
-        };
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-
-        if (response.status === 401) {
-            navigate('/login');
-            throw new Error('Unauthorized');
-        }
-
-        return response;
-    };
-
     useEffect(() => {
         if (authLoading) return;
         if (!user) { navigate('/login'); return; }
@@ -86,25 +68,24 @@ export default function ProfilePage() {
     }, [user, isAdmin, authLoading]);
 
     async function loadData() {
+        setLoading(true);
         try {
             const [profileRes, ordersRes, topupsRes, reviewsRes] = await Promise.all([
-                authenticatedFetch('/user/profile'),
-                authenticatedFetch('/orders'),
-                authenticatedFetch('/wallet-topups'),
-                authenticatedFetch('/reviews')  
+                api.get('/user/profile'),
+                api.get('/orders'),
+                api.get('/wallet-topups'),
+                api.get('/reviews'),
             ]);
 
-            const profile = await profileRes.json();
-            const orderData = await ordersRes.json();
-            const topupData = await topupsRes.json();
-            const reviewData = await reviewsRes.json();
-
-            setWalletBalance(profile?.wallet_balance ?? 0);
-            setOrders(orderData ?? []);
-            setTopupRequests(topupData ?? []);
-            setReviews(reviewData ?? []);  
-
+            setWalletBalance(profileRes.data?.wallet_balance ?? 0);
+            setOrders(ordersRes.data ?? []);
+            setTopupRequests(topupsRes.data ?? []);
+            setReviews(reviewsRes.data ?? []);
         } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
             console.error("Error connecting with Laravel backend APIs:", error);
         } finally {
             setLoading(false);
@@ -128,22 +109,9 @@ export default function ProfilePage() {
                 formData.append('transaction_image', topupImage);
             }
 
-            const token = localStorage.getItem('token');
-
-            const response = await fetch('http://localhost/api/wallet-topups', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: formData
+            await api.post('/wallet-topups', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
-
-            const resData = await response.json();
-
-            if (!response.ok) {
-                throw new Error(resData.message || 'Failed to submit request.');
-            }
 
             setTopupAmount('');
             setTopupMethod('kbzpay');
@@ -153,15 +121,17 @@ export default function ProfilePage() {
             setTimeout(() => setTopupSuccess(false), 4000);
             loadData();
         } catch (err) {
-            setTopupError(err.message || 'Failed to submit request. Please try again.');
+            setTopupError(err.response?.data?.message || 'Failed to submit request. Please try again.');
         } finally {
             setTopupLoading(false);
         }
     }
 
     const displayName = user?.name || user?.email?.split('@')[0] || 'Customer';
-    const pendingTopup = topupRequests.filter(r => r.status === 'pending').reduce((s, r) => s + r.deposit_amount, 0);
-
+    const pendingTopup = topupRequests
+        .filter(r => r.status === 'pending')
+        .reduce((s, r) => s + r.deposit_amount, 0);
+        
     return (
         <div className="min-h-screen bg-nature-bg text-nature-dark pt-24 pb-20">
             <div className="max-w-3xl mx-auto px-4 space-y-10">

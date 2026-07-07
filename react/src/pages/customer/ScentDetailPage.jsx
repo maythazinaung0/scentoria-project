@@ -1,66 +1,48 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingBag } from 'lucide-react';
+import ProductCard from '../../components/ProductCard';
 
 export default function ScentDetailPage() {
     const { id } = useParams();
+    const location = useLocation();
     const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
 
-    // URL ထဲမှာ 'scents' ပါရင် Scent Family, မပါရင် Product အဖြစ် သတ်မှတ်မယ်
-    const isScentPage = window.location.pathname.includes('/scents/');
+    // useEffect အပြင်ဘက်မှာ သတ်မှတ်ပါ
+    const isScentPage = location.pathname.includes('/scents/');
 
     useEffect(() => {
-        setLoading(true);
+        if (!id) return;
+
         const url = isScentPage
             ? `http://localhost/api/products?scent_id=${id}`
             : `http://localhost/api/products/${id}`;
 
-        // ၁။ URL မှန်မမှန် စစ်ဆေးရန်
-        console.log("Fetching URL:", url);
-
-        fetch(url)
+        fetch(url, { headers: { 'Accept': 'application/json' } })
             .then((res) => {
-                // ၃။ Response အဆင့်မှာ Error ရှိမရှိ စစ်ဆေးရန်
-                console.log("Response status:", res.status);
+                if (!res.ok) throw new Error('Network error');
                 return res.json();
             })
             .then((json) => {
-                // ၂။ Data အမှန်တကယ် ရမရ စစ်ဆေးရန်
-                console.log("Received Data from API:", json);
                 setData(json);
-                setLoading(false);
             })
-            .catch((err) => {
-                // ၄။ Fetch လုပ်တဲ့နေရာမှာ Error ရှိမရှိ စစ်ဆေးရန်
-                console.error("Fetch Error:", err);
-                setLoading(false);
-            });
-    }, [id, isScentPage]);
-    if (loading) return <div className="p-20 text-center">Loading...</div>;
-    if (!data) return <div className="p-20 text-center">No data found.</div>;
+            .catch((err) => console.error("Fetch Error:", err));
+    }, [id]); // [id] တစ်ခုတည်းကိုသာ ထားပါ (Error ပျောက်သွားပါလိမ့်မယ်)
+
+    if (!data) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-6">
+        <div className="min-h-screen bg-gray-50 py-12 px-6 transition-opacity duration-500">
             {isScentPage ? (
-                // === Scent Family Page (ပစ္စည်းစာရင်း) ===
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-3xl font-serif mb-8 text-center">Fragrances in this Collection</h1>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {data.map((product) => (
-                            <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border hover:shadow-md transition-shadow">
-                                <img src={product.image_url} alt={product.name} className="w-full h-48 object-cover rounded-lg" />
-                                <h3 className="mt-4 font-serif text-lg">{product.name}</h3>
-                                <p className="text-gray-500 text-sm mb-4">{product.price_regular} MMK</p>
-                                <Link to={`/products/${product.id}`} className="block w-full text-center bg-black text-white py-2 rounded-lg text-sm">
-                                    View Details
-                                </Link>
-                            </div>
+                        {Array.isArray(data) && data.map((product) => (
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 </div>
             ) : (
-                // === Product Detail Page (ပစ္စည်းတစ်ခုချင်းစီ) ===
                 <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-sm">
                     <Link to="/" className="flex items-center text-gray-500 mb-6 hover:text-black">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back

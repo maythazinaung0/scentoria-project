@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Scent extends Model
 {
-    //
+     protected $fillable = ['name', 'description', 'image_url'];
 }

@@ -15,7 +15,6 @@ export default function ProductsPage({ products = [] }) {
         const brandName = (p.brand?.name || p.brand || '').toString().toLowerCase();
         const productName = (p.name || '').toString().toLowerCase();
 
-        // Scent အချက်အလက်အားလုံးကို စုစည်း၍ ရှာဖွေခြင်း
         let scentString = '';
         if (p.scent_profile?.name) scentString += p.scent_profile.name + ' ';
         if (p.scent) scentString += (typeof p.scent === 'object' ? p.scent.name || '' : p.scent) + ' ';
@@ -25,7 +24,6 @@ export default function ProductsPage({ products = [] }) {
 
         const matchesBrand = !selectedBrand || brandName === selectedBrand.toLowerCase();
 
-        // Brand, Name, Scent သုံးမျိုးလုံးကို စစ်ဆေးခြင်း
         const matchesSearch = !q ||
             brandName.includes(q) ||
             productName.includes(q) ||

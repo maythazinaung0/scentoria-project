@@ -26,8 +26,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
-Route::get('/scents/{id}', [ScentController::class, 'show']);
-Route::get('/scents', [\App\Http\Controllers\ScentController::class, 'index']);
+Route::get('/scents/{scent}', [ScentController::class, 'show']);
+Route::get('/scents', [ScentController::class, 'index']);
 
 
 

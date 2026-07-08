@@ -31,7 +31,6 @@ export default function ScentProfilesPage() {
 
             <div className="border-b border-[#E5E5E5] w-full mb-16"></div>
 
-            {/* Scent Cards Section - ပြင်ဆင်ထားသော ကုဒ် */}
             <div className="max-w-7xl mx-auto px-6 pb-20">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {scents.map((scent) => (
@@ -40,7 +39,6 @@ export default function ScentProfilesPage() {
                             {/* Header: Image (Logo Style) + Arrow */}
                             <div className="flex justify-between items-start mb-4">
                                 <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden border border-[#E5E5E5] shadow-sm">
-                                    {/* အဓိကပြင်လိုက်တဲ့နေရာ - user_image ကို image_url သို့ ပြောင်းပေးလိုက်သည် */}
                                     <img
                                         src={scent.image_url}
                                         alt={scent.name}

@@ -8,21 +8,22 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     public function show($id)
-{
-    // Relationship များနှင့်အတူ ရှာဖွေခြင်း
-    $product = Product::with(['brand', 'scent', 'variants'])->find($id);
+    {
+        // 'product_notes' ကို ဖျက်လိုက်ပြီး သေချာတဲ့ relationship တွေကိုပဲ သုံးပါ
+        // 'notes.note' က notes table ထဲက နာမည်ကိုပါ ယူပေးမှာပါ
+        $product = Product::with(['brand', 'scent', 'variants', 'notes.note'])->find($id);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
 
-    if (!$product) {
-        return response()->json(['message' => 'Product not found'], 404);
+        return response()->json($product);
     }
 
-    // JSON အနေနဲ့ ပြန်ပို့ပါ
-    return response()->json($product);
-}
     public function index()
     {
         try {
-                        $products = Product::with(['brand', 'scent','variants'])->get();
+            // Index မှာလည်း ဒီအတိုင်းပဲ ပြင်ပေးပါ
+            $products = Product::with(['brand', 'scent', 'variants', 'notes.note',])->get();
             return response()->json($products, 200);
         } catch (\Exception $e) {
             return response()->json([

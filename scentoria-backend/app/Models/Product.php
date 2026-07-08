@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Brand;
 use App\Models\ScentProfile;
 use App\Models\Scent;
+use App\Models\ProductVariant;
+use App\Models\ProductNote;
 
 class Product extends Model
 {
@@ -13,7 +15,6 @@ class Product extends Model
         'name', 
         'brand_id', 
         'scent_id',
-        'scent_profile_id', 
         'price_regular', 
         'image_url', 
     ];
@@ -23,22 +24,26 @@ class Product extends Model
         return $this->belongsTo(Brand::class);
     }
 
-    // app/Models/Product.php
+    public function scent() 
+    {
+        return $this->belongsTo(Scent::class, 'scent_id'); 
+    }
 
-public function scent() 
-{
-   
-    return $this->belongsTo(Scent::class, 'scent_id'); 
-}
-
-public function scent_profile()
+    public function scent_profile()
     {
         return $this->belongsTo(ScentProfile::class);
     }
 
     public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    
+public function notes() 
 {
-    return $this->hasMany(ProductVariant::class);
+    return $this->hasMany(ProductNote::class, 'product_id');
 }
 
+   
 }

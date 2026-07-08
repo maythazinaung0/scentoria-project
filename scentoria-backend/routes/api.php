@@ -6,6 +6,7 @@ use App\Http\Controllers\ScentController;
 use App\Http\Controllers\ProductController; 
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Http\Request;
 
 // Public Authentication Routes
@@ -15,8 +16,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', fn (Request $request) => response()->json($request->user()));
     Route::post('/logout', [AuthController::class, 'logout']);
-    
-    // Public/User-facing Catalogue Data (Optional: keeping read-only actions accessible to users if needed)
     Route::get('/scents', [ScentController::class, 'index']);
 });
 
@@ -38,11 +37,10 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/brands/{id}', [BrandController::class, 'update']);
     Route::delete('/brands/{id}', [BrandController::class, 'destroy']);
 
-    // Fetch Master Olfactory Notes list for form drop-downs
-    Route::get('/notes', function() {return response()->json(\App\Models\Note::all());});
+    // Master Olfactory Notes drop-downs
+    Route::get('/notes', function() { return response()->json(\App\Models\Note::all()); });
     
-    /* Future Order Management routes can be cleanly placed here:
-       Route::get('/orders', [OrderController::class, 'index']);
-       Route::put('/orders/{id}', [OrderController::class, 'update']);
-    */
+    // Connected Admin Order Management Routes
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::patch('/orders/{id}', [OrderController::class, 'update']);
 });

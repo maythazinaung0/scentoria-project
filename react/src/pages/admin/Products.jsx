@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, X, Search, Edit2, Package, FolderPlus, Settings } from 'lucide-react';
+import { Plus, Trash2, X, Search, Edit2, Package, Tags, Eye } from 'lucide-react';
 import api from '../../api';
 
 const formatMMK = (amount) => new Intl.NumberFormat('en-MM', { style: 'currency', currency: 'MMK', minimumFractionDigits: 0 }).format(amount);
@@ -15,9 +15,9 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [scents, setScents] = useState([]);
-  const [notes, setNotes] = useState([]); 
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -25,12 +25,7 @@ export default function Products() {
   const [formError, setFormError] = useState('');
   const [deleting, setDeleting] = useState(null);
 
-  const [showBrandForm, setShowBrandForm] = useState(false);
-  const [brandFormName, setBrandFormName] = useState('');
-  const [brandEditTarget, setBrandEditTarget] = useState(null);
-  const [brandSaving, setBrandSaving] = useState(false);
-  const [brandError, setBrandError] = useState('');
-  const [contextMenu, setContextMenu] = useState(null);
+  const [showBrandManager, setShowBrandManager] = useState(false);
 
   // Filter States
   const [search, setSearch] = useState('');
@@ -48,21 +43,18 @@ export default function Products() {
       setBrands(brandsRes.data ?? []);
       setScents(scentsRes.data ?? []);
       setNotes(notesRes.data ?? []);
-    } catch (e) { 
-      console.error("Failed to load admin resources:", e); 
+    } catch (e) {
+      console.error("Failed to load admin resources:", e);
     } finally { setLoading(false); }
   }
 
   useEffect(() => {
     load();
-    const closeMenu = () => setContextMenu(null);
-    window.addEventListener('click', closeMenu);
-    return () => window.removeEventListener('click', closeMenu);
   }, []);
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }));
-  const handleNameChange = (name) => setForm(f => ({ 
-    ...f, name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') 
+  const handleNameChange = (name) => setForm(f => ({
+    ...f, name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
   }));
 
   const addVariant = (size) => {
@@ -73,8 +65,8 @@ export default function Products() {
   };
 
   const removeVariant = (idx) => setForm(f => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }));
-  const updateVariant = (idx, field, value) => setForm(f => { 
-    const v = [...f.variants]; v[idx] = { ...v[idx], [field]: value }; return { ...f, variants: v }; 
+  const updateVariant = (idx, field, value) => setForm(f => {
+    const v = [...f.variants]; v[idx] = { ...v[idx], [field]: value }; return { ...f, variants: v };
   });
 
   const addNoteId = (typeKey, id) => {
@@ -96,20 +88,20 @@ export default function Products() {
     const heart_notes = (p.notes ?? []).filter ? p.notes.filter(n => n.pivot?.type === 'heart').map(n => n.id) : [];
     const base_notes = (p.notes ?? []).filter ? p.notes.filter(n => n.pivot?.type === 'base').map(n => n.id) : [];
 
-    setForm({ 
-      ...p, 
+    setForm({
+      ...p,
       top_notes, heart_notes, base_notes,
-      variants: (p.variants ?? []).map(v => ({ ...v, original_price: String(v.original_price), sale_price: String(v.sale_price), stock_quantity: String(v.stock_quantity) })) 
+      variants: (p.variants ?? []).map(v => ({ ...v, original_price: String(v.original_price), sale_price: String(v.sale_price), stock_quantity: String(v.stock_quantity) }))
     });
     setFormError(''); setShowForm(true);
   }
 
   async function handleSave(e) {
-    e.preventDefault(); 
+    e.preventDefault();
     if (form.variants.length === 0) return setFormError('Please add at least one product size variant.');
     setFormError(''); setSaving(true);
     try {
-      if (editTarget) { await api.put(`/products/${editTarget.id}`, form); } 
+      if (editTarget) { await api.put(`/products/${editTarget.id}`, form); }
       else { await api.post('/products', form); }
       setShowForm(false); setSelectedProduct(null); await load();
     } catch (err) { setFormError(err.response?.data?.message || err.message || 'Error saving product'); } finally { setSaving(false); }
@@ -119,20 +111,11 @@ export default function Products() {
     if (e) e.stopPropagation();
     if (!confirm('Permanently delete this product?')) return;
     setDeleting(id);
-    try { 
-      await api.delete(`/products/${id}`); 
+    try {
+      await api.delete(`/products/${id}`);
       setProducts(p => p.filter(x => x.id !== id));
       if (selectedProduct?.id === id) setSelectedProduct(null);
     } catch (err) { console.error("Error deleting product:", err); } finally { setDeleting(null); }
-  }
-
-  async function handleBrandSave(e) {
-    e.preventDefault(); setBrandError(''); setBrandSaving(true);
-    try {
-      if (brandEditTarget) { await api.put(`/brands/${brandEditTarget.id}`, { name: brandFormName }); } 
-      else { await api.post('/brands', { name: brandFormName }); }
-      setShowBrandForm(false); setBrandFormName(''); await load();
-    } catch (err) { setBrandError(err.response?.data?.message || 'Error saving brand'); } finally { setBrandSaving(false); }
   }
 
   // Updated filter computing logical check to parse search query, filterBrand, and filterGender checks simultaneously
@@ -145,20 +128,13 @@ export default function Products() {
 
   return (
     <div className="text-nature-dark space-y-6 relative">
-      {contextMenu && (
-        <div className="fixed bg-nature-card border border-nature-border shadow-xl rounded-xl z-[100] py-1.5 min-w-[140px]" style={{ top: contextMenu.y, left: contextMenu.x }} onClick={e => e.stopPropagation()}>
-          <button onClick={() => { setBrandEditTarget({ id: contextMenu.brandId, name: contextMenu.brandName }); setBrandFormName(contextMenu.brandName); setShowBrandForm(true); setContextMenu(null); }} className="w-full text-left px-4 py-2 text-xs hover:bg-nature-sage/20 transition-colors">Update Brand</button>
-          <button onClick={() => { if(confirm('Delete brand?')) api.delete(`/brands/${contextMenu.brandId}`).then(load); setContextMenu(null); }} className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors">Delete Brand</button>
-        </div>
-      )}
-
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl">Products</h1>
           <p className="text-nature-muted text-sm mt-0.5">{products.length} fragrances in catalogue</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setBrandEditTarget(null); setBrandFormName(''); setBrandError(''); setShowBrandForm(true); }} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><FolderPlus className="w-4 h-4" /> ADD BRAND</button>
+          <button onClick={() => setShowBrandManager(true)} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><Tags className="w-4 h-4" /> BRAND LISTS</button>
           <button onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setFormError(''); setShowForm(true); }} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><Plus className="w-4 h-4" /> ADD PRODUCT</button>
         </div>
       </div>
@@ -169,7 +145,7 @@ export default function Products() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
             <input type="text" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="bg-nature-card border border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-56" />
           </div>
-          
+
           {/* Brand Filter */}
           <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-nature-card border border-nature-border rounded-xl px-4 py-2 text-sm outline-none transition-colors cursor-pointer appearance-none pr-8">
             <option value="">All Brands</option>
@@ -184,17 +160,10 @@ export default function Products() {
             <option value="unisex">Unisex</option>
           </select>
         </div>
-        
-        <div className="text-xs bg-nature-sage/20 border border-nature-border rounded-xl px-3 py-1.5 flex items-center gap-1.5 text-nature-olive"><Settings className="w-3.5 h-3.5" /> <span>Tip: Right-click brands to modify them.</span></div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 items-center bg-nature-bg p-2 rounded-xl border border-nature-border">
-        <span className="text-xs font-bold text-nature-muted px-2">Brands:</span>
-        {brands.map(b => <span key={b.id} onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, brandId: b.id, brandName: b.name }); }} className="text-xs bg-nature-card border border-nature-border px-2.5 py-1 rounded-lg select-none cursor-context-menu hover:border-nature-olive/50 transition-colors">{b.name}</span>)}
-      </div>
-
-      {showBrandForm && (
-        <BrandModal title={brandEditTarget ? 'Update Brand' : 'Create New Brand'} onSubmit={handleBrandSave} value={brandFormName} onChange={setBrandFormName} error={brandError} saving={brandSaving} onCancel={() => setShowBrandForm(false)} />
+      {showBrandManager && (
+        <BrandManagerModal brands={brands} products={products} onClose={() => setShowBrandManager(false)} onChanged={load} />
       )}
 
       {showForm && (
@@ -216,16 +185,116 @@ export default function Products() {
   );
 }
 
-function BrandModal({ title, onSubmit, value, onChange, error, saving, onCancel }) {
+function BrandManagerModal({ brands, products, onClose, onChanged }) {
+  const [mode, setMode] = useState(null); // null | 'add' | <brandId being edited>
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+
+  const startAdd = () => { setMode('add'); setName(''); setError(''); };
+  const startEdit = (b) => { setMode(b.id); setName(b.name); setError(''); };
+  const cancelForm = () => { setMode(null); setName(''); setError(''); };
+
+  const productsForBrand = (brandId) => products.filter(p => (p.brand_id ?? p.brand?.id) === brandId);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      if (mode === 'add') {
+        await api.post('/brands', { name });
+      } else {
+        await api.put(`/brands/${mode}`, { name });
+      }
+      cancelForm();
+      await onChanged();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error saving brand');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Permanently delete this brand?')) return;
+    setDeleting(id);
+    try {
+      await api.delete(`/brands/${id}`);
+      if (expanded === id) setExpanded(null);
+      if (mode === id) cancelForm();
+      await onChanged();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting brand. It may still be linked to products.');
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-nature-dark/85 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-nature-card border border-nature-border rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4"><h2 className="font-serif text-xl">{title}</h2><button onClick={onCancel} className="text-nature-muted hover:text-nature-dark"><X className="w-5 h-5" /></button></div>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div><label className="block text-nature-muted text-xs mb-1">Brand Name *</label><input required value={value} onChange={e => onChange(e.target.value)} placeholder="e.g. Chanel" className="w-full bg-nature-bg border border-nature-border rounded-lg px-3 py-2 text-sm outline-none" /></div>
-          {error && <p className="text-red-600 text-sm bg-red-50 border rounded px-3 py-2">{error}</p>}
-          <div className="flex gap-3"><button type="button" onClick={onCancel} className="flex-1 border text-nature-muted py-2 rounded-xl text-sm">Cancel</button><button type="submit" disabled={saving} className="flex-1 bg-nature-olive text-white py-2 rounded-xl text-sm font-semibold">{saving ? 'SAVING...' : 'SAVE BRAND'}</button></div>
-        </form>
+    <div className="fixed inset-0 bg-nature-dark/85 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-nature-card border border-nature-border rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="font-serif text-xl">Brand Lists</h2>
+            <p className="text-nature-muted text-xs mt-0.5">{brands.length} brands registered</p>
+          </div>
+          <button onClick={onClose} className="text-nature-muted hover:text-nature-dark"><X className="w-5 h-5" /></button>
+        </div>
+
+        {mode ? (
+          <form onSubmit={handleSubmit} className="space-y-3 bg-nature-bg border border-nature-border rounded-xl p-4 mb-5">
+            <h3 className="text-sm font-semibold">{mode === 'add' ? 'Add New Brand' : 'Update Brand'}</h3>
+            <div>
+              <label className="block text-xs text-nature-muted mb-1">Brand Name *</label>
+              <input required autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Chanel" className="w-full bg-nature-card border border-nature-border rounded-lg px-3 py-2 text-sm outline-none" />
+            </div>
+            {error && <p className="text-red-600 text-sm bg-red-50 border rounded px-3 py-2">{error}</p>}
+            <div className="flex gap-3">
+              <button type="button" onClick={cancelForm} className="flex-1 border text-nature-muted py-2 rounded-xl text-sm">Cancel</button>
+              <button type="submit" disabled={saving} className="flex-1 bg-nature-olive text-white py-2 rounded-xl text-sm font-semibold">{saving ? 'SAVING...' : 'SAVE BRAND'}</button>
+            </div>
+          </form>
+        ) : (
+          <button onClick={startAdd} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors mb-5">
+            <Plus className="w-4 h-4" /> ADD NEW BRAND
+          </button>
+        )}
+
+        <div className="border border-nature-border rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-nature-bg">
+                <th className="text-left text-nature-muted text-xs px-4 py-3">BRAND</th>
+                <th className="text-center text-nature-muted text-xs px-4 py-3">PRODUCTS</th>
+                <th className="px-4 py-3 w-28" />
+              </tr>
+            </thead>
+            <tbody>
+              {brands.length === 0 && (
+                <tr><td colSpan="3" className="text-center py-8 text-nature-muted text-xs italic">No brands registered yet.</td></tr>
+              )}
+              {brands.map(b => {
+                const linked = productsForBrand(b.id);
+                return (
+                  <React.Fragment key={b.id}>
+                    <tr className="border-b border-nature-sand/30 last:border-0 hover:bg-nature-sage/10 transition-colors">
+                      <td className="px-4 py-3 font-medium">{b.name}</td>
+                      <td className="px-4 py-3 text-center text-xs text-nature-muted">{linked.length}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button type="button" onClick={() => startEdit(b)} className="text-nature-muted hover:text-nature-olive p-1" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => handleDelete(b.id)} disabled={deleting === b.id} className="text-nature-subtle hover:text-red-500 p-1 disabled:opacity-40" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -278,7 +347,7 @@ function ProductModal({ editTarget, form, update, handleNameChange, brands, scen
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div><label className="block text-xs text-nature-muted mb-1">Type</label><select value={form.type} onChange={e => update('type', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none"><option value="perfume">Perfume</option><option value="cologne">Cologne</option><option value="body spray">Body Spray</option></select></div>
-            <div><label className="block text-xs text-nature-muted mb-1">Gender *</label><select value={form.gender} onChange={e => update('gender', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none"><option value="men">Men</option><option value="women">Women</option><option value="unisex">Unisex</option></select></div>
+            <div><label className="block text-xs text-nature-muted mb-1">Gender *</label><select value={form.gender} onChange={e => update('gender', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none"><option value="male">Male</option><option value="female">Female</option><option value="unisex">Unisex</option></select></div>
             <div><label className="block text-xs text-nature-muted mb-1">Season</label><select value={form.season} onChange={e => update('season', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none"><option value="spring">Spring</option><option value="summer">Summer</option><option value="fall">Fall</option><option value="winter">Winter</option></select></div>
           </div>
 
@@ -293,7 +362,7 @@ function ProductModal({ editTarget, form, update, handleNameChange, brands, scen
 
           <div><label className="block text-xs text-nature-muted mb-1">Image URL</label><input value={form.image_url} onChange={e => update('image_url', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none" /></div>
           <div><label className="block text-xs text-nature-muted mb-1">Description</label><textarea rows={2} value={form.description} onChange={e => update('description', e.target.value)} className="w-full bg-nature-bg border rounded-lg px-3 py-2 text-sm outline-none resize-none" /></div>
-          
+
           <div className="border-t pt-3">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold">Variants</h3>

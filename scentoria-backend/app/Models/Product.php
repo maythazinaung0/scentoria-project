@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+// Add explicit imports for your relational tables
+use App\Models\Brand;
+use App\Models\Scent;
+use App\Models\Note;
+use App\Models\ProductVariant;
 
 class Product extends Model
 {
@@ -15,20 +21,19 @@ class Product extends Model
 
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class); // Or whatever your variant model name is
+        return $this->hasMany(ProductVariant::class);
     }
 
-    public function brand()
+    public function brand(): BelongsTo
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
 
-    public function scent()
+    public function scent(): BelongsTo
     {
-        return $this->belongsTo(Scent::class);
+        return $this->belongsTo(Scent::class, 'scent_id');
     }
 
-    // Many-to-Many Relationship with pivot attribute 'type'
     public function notes(): BelongsToMany
     {
         return $this->belongsToMany(Note::class, 'product_notes')

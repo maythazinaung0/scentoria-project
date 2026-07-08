@@ -9,10 +9,12 @@ use App\Models\Product;
 
 class Scent extends Model
 {
-    //protected $table = 'scents'; // သင့် database table နာမည်နဲ့ ကိုက်ညီပါစေ
+    
 
-    public function products()
-    {
-        return $this->hasMany(Product::class, 'scent_id');
-    }
+ protected $table = 'scents';  
+public function products()
+{
+    
+    return $this->hasMany(\App\Models\Product::class, 'scent_id', 'id');
+}
 }

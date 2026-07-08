@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom'; // Ensure Link is imported
+import { Link, useParams } from 'react-router-dom';
 import { ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
 import { theme } from '../../theme';
+import { useCart } from '../../contexts/CartContext';
 
 export default function ProductDetailPage() {
     const { id } = useParams();
+    const { addToCart } = useCart(); // Added this
     const [product, setProduct] = useState(null);
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [qty, setQty] = useState(1);
-    const [reviews, setReviews] = useState([]); // Added reviews state
-    const [newReview, setNewReview] = useState(''); // Added newReview state
+    const [reviews, setReviews] = useState([]);
+    const [newReview, setNewReview] = useState('');
 
     useEffect(() => {
         fetch(`http://localhost/api/products/${id}`)
@@ -20,6 +22,12 @@ export default function ProductDetailPage() {
             })
             .catch(err => console.error("Error fetching product:", err));
     }, [id]);
+
+    const handleAddToCart = () => {
+        if (selectedVariant) {
+            addToCart(product, selectedVariant, qty);
+        }
+    };
 
     if (!product) return <div className="pt-24 text-center text-nature-muted">Loading...</div>;
 
@@ -35,14 +43,11 @@ export default function ProductDetailPage() {
     return (
         <div className="min-h-screen bg-nature-bg py-12 px-6 pt-24 text-nature-dark">
             <div className="max-w-6xl mx-auto">
-                {/* Back Link Added Here */}
                 <Link to="/products" className="text-sm text-nature-muted mb-8 block hover:text-nature-olive">
                     ← Back to Fragrances
                 </Link>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-
-                    {/* Left Column: Image & Notes */}
                     <div className="space-y-8">
                         <div className="bg-nature-card rounded-3xl p-8 border border-nature-border">
                             <img src={product.image_url} alt={product.name} className="w-full h-auto object-contain" />
@@ -68,7 +73,6 @@ export default function ProductDetailPage() {
                         </div>
                     </div>
 
-                    {/* Right Column: Info & Actions */}
                     <div className="space-y-8">
                         <div>
                             <h1 className="text-4xl font-serif text-nature-dark mb-4">{product.name}</h1>
@@ -100,13 +104,15 @@ export default function ProductDetailPage() {
                                 <span className="w-12 text-center text-sm">{qty}</span>
                                 <button onClick={() => setQty(q => Math.min(q + 1, selectedVariant?.stock_quantity || 1))} className="p-3 text-nature-muted"><Plus size={16} /></button>
                             </div>
-                            <button className="flex-1 bg-nature-olive text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#2d4533] transition">
+                            <button
+                                onClick={handleAddToCart}
+                                className="flex-1 bg-nature-olive text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#2d4533] transition"
+                            >
                                 <ShoppingCart size={18} /> ADD TO CART
                             </button>
                             <button className="p-3 border border-nature-border rounded-lg text-nature-olive hover:bg-nature-sage/10"><Heart size={20} /></button>
                         </div>
 
-                        {/* Review Section Added Here */}
                         <div className="pt-8 border-t border-nature-border">
                             <h3 className="font-serif text-xl mb-6">Customer Reviews</h3>
                             <div className="space-y-4 mb-6">

@@ -3,30 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RegisterRequest;
 use Illuminate\Http\Request;
-
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
-   public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    if (! auth()->attempt($credentials)) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        if (! auth()->attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $user = auth()->user();
+        if (! $user->isAdmin()) {
+            auth()->logout();
+            return response()->json(['message' => 'Not authorized'], 403);
+        }
+
+        $request->session()->regenerate();
+        return response()->json(['user' => $user]);
     }
-
-    $user = auth()->user();
-    if (! $user->isAdmin()) {
-        auth()->logout();
-        return response()->json(['message' => 'Not authorized'], 403);
-    }
-
-    $request->session()->regenerate();
-    return response()->json(['user' => $user]);
-}
 
     public function logout(Request $request)
     {
@@ -34,5 +36,24 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return response()->json(['message' => 'Logged out successfully']);
+    }
+
+
+    public function register(RegisterRequest $request)
+    {
+        $validated = $request->validated();
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone_number' => $validated['phone_number'] ?? null,
+            'password' => Hash::make($validated['password']),
+            'role' => 'customer',
+        ]);
+
+        auth()->login($user);
+        $request->session()->regenerate();
+
+        return response()->json(['user' => $user], 201);
     }
 }

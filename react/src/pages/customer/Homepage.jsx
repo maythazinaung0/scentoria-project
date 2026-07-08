@@ -12,7 +12,7 @@ export default function HomePage({ searchQuery }) {
         fetch('http://localhost/api/scents')
             .then(res => res.json())
             .then(data => {
-                console.log("Scents received:", data); // ဒီလိုင်းလေးထည့်ပါ
+                console.log("Scents received:", data); 
                 setScents(data);
             })
             .catch(err => console.error("Error fetching scents:", err));
@@ -20,18 +20,18 @@ export default function HomePage({ searchQuery }) {
         fetch('http://localhost/api/products')
             .then(res => res.json())
             .then(data => {
-                console.log("Products received:", data); // ဒီလိုင်းလေးထည့်ပါ
+                console.log("Products received:", data); 
                 setProducts(data);
             })
             .catch(err => console.error("Error fetching products:", err));
     }, []);
 
-    // Search Query ရှိရင် စစ်ထုတ်ခြင်း
+   
     const filteredProducts = searchQuery
         ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
         : products;
 
-    // return သည် တစ်ခုတည်းသာ ရှိရပါမည်
+   
     return (
         <div style={{ backgroundColor: theme.colors.bgBase, color: theme.colors.textPrimary }}>
 
@@ -73,7 +73,7 @@ export default function HomePage({ searchQuery }) {
                     {scents.map(s => {
                         const Icon = SCENT_ICONS[s.name] || Sparkles;
                         return (
-                            // ဤနေရာတွင် Link ကို ထည့်ပါ
+                           
                             <Link to={`/scents/${s.id}`} key={s.id} className="block group">
                                 <div className="border p-6 rounded-xl hover:shadow-md transition-all cursor-pointer">
                                     <Icon className="mx-auto mb-3" style={{ color: theme.colors.accent }} />

@@ -4,6 +4,7 @@ import CustomerLayout from './components/CustomerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
 import ProtectedAdminRoute from './pages/ProtectedAdminRoute';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // Admin Imports
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -11,12 +12,18 @@ import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
+import AdminScents from './pages/admin/Scents';
+import AdminNotes from './pages/admin/Notes';
 
 // Customer Imports
 import HomePage from './pages/customer/Homepage';
 import AboutPage from './pages/customer/About';
 import ScentDetailPage from './pages/customer/ScentDetailPage';
 import ScentProfilesPage from './pages/customer/ScentProfilesPage';
+import ProfilePage from './pages/customer/ProfilePage';
+import CartPage from './pages/customer/CartPage';
+import CheckoutPage from './pages/customer/CheckoutPage';
+import OrderConfirmPage from './pages/customer/OrderConfirmPage';
 import './App.css';
 
 function App() {
@@ -29,10 +36,15 @@ function App() {
       <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
         <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/products/:id" element={<ScentDetailPage />} />
         <Route path="/scents" element={<ScentProfilesPage />} />
         <Route path="/scents/:id" element={<ScentDetailPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders/:id" element={<OrderConfirmPage />} />
       </Route>
 
       {/* Admin panel — separate structured layout gated behind role security validation */}
@@ -43,6 +55,8 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="wallet" element={<AdminWallet />} />
           <Route path="reports" element={<AdminReports />} />
+          <Route path="scents" element={<AdminScents />} />
+          <Route path="notes" element={<AdminNotes />} />
         </Route>
       </Route>
     </Routes>

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->enum('gender', ['male', 'female', 'unisex']);
             $table->enum('season', ['spring', 'summer', 'fall', 'winter']); 
             $table->string('image_url')->nullable();
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });
     }

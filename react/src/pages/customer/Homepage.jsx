@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { theme } from '../../theme';
 import ProductCard from '../../components/ProductCard';
 
@@ -9,16 +9,27 @@ const HERO_IMAGES = [
     'https://images.pexels.com/photos/1190829/pexels-photo-1190829.jpeg?auto=compress&cs=tinysrgb&w=1400',
 ];
 
-export default function HomePage({ searchQuery, products, scents }) {
+const SCENT_ICONS = {}; // TODO: map scent names to specific lucide icons if desired
+
+export default function HomePage({ searchQuery }) {
     const [heroIdx, setHeroIdx] = useState(0);
+    const [scents, setScents] = useState([]);
+    const [products, setProducts] = useState([]);
 
     useEffect(() => {
-        const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_IMAGES.length), 6000);
-        return () => clearInterval(t);
+        fetch('http://localhost/api/scents')
+            .then(res => res.json())
+            .then(data => setScents(Array.isArray(data) ? data : []))
+            .catch(err => console.error("Error fetching scents:", err));
+
+        fetch('http://localhost/api/products')
+            .then(res => res.json())
+            .then(data => setProducts(Array.isArray(data) ? data : []))
+            .catch(err => console.error("Error fetching products:", err));
     }, []);
 
-    const filtered = Array.isArray(products) && searchQuery
-        ? products.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+    const filteredProducts = searchQuery
+        ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
         : products;
 
     return (
@@ -55,38 +66,27 @@ export default function HomePage({ searchQuery, products, scents }) {
                 </div>
             </section>
 
-            {/* Scent profile section */}
-
-            <section className="py-20 px-4 max-w-7xl mx-auto border-t border-gray-100">
-                <div className="text-center mb-12">
-                    <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.colors.accent }}>Fragrance Families</p>
-                    <h2 className="font-serif text-3xl">Explore Scent Profiles</h2>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {scents && scents.map(scent => (
-                        <Link key={scent.id} to={`/scents/${scent.id}`}
-                            className="group border border-gray-200 hover:border-gray-400 rounded-xl p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-white">
-                            <div className="w-full aspect-square mb-3 overflow-hidden rounded-lg bg-gray-50">
-                                <img src={scent.image_url} alt={scent.name} className="w-full h-full object-cover" />
-                            </div>
-                            <p className="text-sm font-medium">{scent.name}</p>
-                        </Link>
-                    ))}
-                </div>
-                <div className="text-center pt-16 pb-8">
-                    <Link
-                        to="/scents"
-                        className="text-sm font-semibold tracking-widest uppercase transition-colors hover:text-[var(--color-accent)]"
-                    >
-                        VIEW ALL SCENT PROFILES →
-                    </Link>
+            {/* Scent Profiles */}
+            <section className="py-20 text-center max-w-6xl mx-auto px-6">
+                <h2 className="text-3xl font-serif mb-10">Explore Scent Profiles</h2>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    {scents.map(s => {
+                        const Icon = SCENT_ICONS[s.name] || Sparkles;
+                        return (
+                            <Link to={`/scents/${s.id}`} key={s.id} className="block group">
+                                <div className="border p-6 rounded-xl hover:shadow-md transition-all cursor-pointer">
+                                    <Icon className="mx-auto mb-3" style={{ color: theme.colors.accent }} />
+                                    <p className="font-medium">{s.name}</p>
+                                </div>
+                            </Link>
+                        );
+                    })}
                 </div>
             </section>
 
             <div className="flex flex-wrap gap-2 py-7 border-b border-[#E5E7E2] mb-8"></div>
 
             {/* Fragrances section */}
-
             <section className="py-20 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-12">
                     <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.colors.accent }}>New Arrivals</p>
@@ -94,7 +94,7 @@ export default function HomePage({ searchQuery, products, scents }) {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    {filtered && filtered.map((product) => (
+                    {filteredProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
                 </div>

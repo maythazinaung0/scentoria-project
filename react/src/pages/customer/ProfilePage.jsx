@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     UserCircle, ShoppingBag, ChevronDown, ChevronUp,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
-    Wallet, Plus, Send, Star, MessageSquare // 💡 Star နှင့် MessageSquare Icons များ Import လုပ်ထားသည်
+    Wallet, Plus, Send, Star, MessageSquare  
 } from 'lucide-react';
 import { useAuth } from "../../contexts/AuthContext";
 
-// Helper function for MMK format currency 
+  
 const formatMMK = (amount) => {
     return new Intl.NumberFormat('en-MM', { style: 'currency', currency: 'MMK', minimumFractionDigits: 0 }).format(amount);
 };
 
-// API Base URL configuration
+ 
 const API_BASE_URL = 'http://localhost/api';
 
 const STATUS_STYLES = {
@@ -45,7 +45,7 @@ export default function ProfilePage() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState([]);
-    const [reviews, setReviews] = useState([]); // 💡 စောစောက error တက်ရခြင်းအကြောင်းရင်း (ဒီလိုင်းမပါလို့ သို့မဟုတ် မှားနေလို့ ဖြစ်သည်)
+    const [reviews, setReviews] = useState([]);   
     const [walletBalance, setWalletBalance] = useState(0);
     const [topupRequests, setTopupRequests] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
@@ -59,7 +59,6 @@ export default function ProfilePage() {
     const [showTopupForm, setShowTopupForm] = useState(false);
     const [topupImage, setTopupImage] = useState(null);
 
-    // Reusable fetching utility with Sanctum Bearer token
     const authenticatedFetch = async (endpoint, options = {}) => {
         const token = localStorage.getItem('token');
         const headers = {
@@ -92,7 +91,7 @@ export default function ProfilePage() {
                 authenticatedFetch('/user/profile'),
                 authenticatedFetch('/orders'),
                 authenticatedFetch('/wallet-topups'),
-                authenticatedFetch('/reviews') // 💡 Laravel ဘက်က reviews API ကို လှမ်းခေါ်ခြင်း
+                authenticatedFetch('/reviews')  
             ]);
 
             const profile = await profileRes.json();
@@ -103,7 +102,7 @@ export default function ProfilePage() {
             setWalletBalance(profile?.wallet_balance ?? 0);
             setOrders(orderData ?? []);
             setTopupRequests(topupData ?? []);
-            setReviews(reviewData ?? []); // 💡 ရလာတဲ့ reviews ဒေတာတွေကို state ထဲထည့်ခြင်း
+            setReviews(reviewData ?? []);  
 
         } catch (error) {
             console.error("Error connecting with Laravel backend APIs:", error);

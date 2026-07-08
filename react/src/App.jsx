@@ -6,6 +6,7 @@ import CustomerLayout from './components/CustomerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
 import ProtectedAdminRoute from './pages/ProtectedAdminRoute';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // Admin Imports
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -13,17 +14,19 @@ import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
+import AdminScents from './pages/admin/Scents';
+import AdminNotes from './pages/admin/Notes';
 
 // Customer Imports
 import HomePage from './pages/customer/Homepage';
 import AboutPage from './pages/customer/About';
 import ScentProfilesPage from './pages/customer/ScentProfilesPage';
-import ScentDetailPage from './pages/customer/ScentDetailPage';
-import ProductDetailPage from './pages/customer/Productdetail';
-import ProductsPage from './pages/customer/Productspage';
-import './index.css';
 import ProfilePage from './pages/customer/ProfilePage';
 import CartPage from './pages/customer/CartPage';
+import CheckoutPage from './pages/customer/CheckoutPage';
+import OrderConfirmPage from './pages/customer/OrderConfirmPage';
+import ScentDetailPage from './pages/customer/ScentDetailPage';
+import './App.css';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,15 +52,17 @@ function App() {
   return (
     <Routes>
       <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
-
-        <Route path="/" element={<HomePage searchQuery={searchQuery} products={products} scents={scents} />} />
+        <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/scents" element={<ScentProfilesPage />} />
         <Route path="/scents/:id" element={<ScentDetailPage />} />
-        <Route path="/products" element={<ProductsPage products={products} searchQuery={searchQuery} />} />
-        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders/:id" element={<OrderConfirmPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>
@@ -67,6 +72,8 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="wallet" element={<AdminWallet />} />
           <Route path="reports" element={<AdminReports />} />
+          <Route path="scents" element={<AdminScents />} />
+          <Route path="notes" element={<AdminNotes />} />
         </Route>
       </Route>
 

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext'; // Keep auth for sign-in state simulation
-
-// Local currency formatter helper
+import { useAuth } from '../../contexts/AuthContext';  
+import axios from 'axios';
+ 
 const formatMMK = (amount) => {
     return new Intl.NumberFormat('en-MM', {
         style: 'currency',
@@ -12,52 +12,33 @@ const formatMMK = (amount) => {
     }).format(amount);
 };
 
-// --- MOCK DATA MATCHING LARAVEL RELATIONSHIPS ---
-const INITIAL_MOCK_ITEMS = [
-    {
-        id: 1,
-        quantity: 1,
-        product_variant: {
-            id: 101,
-            size: '50ml', // 👈 Updated size
-            sale_price: 45000, // 👈 Changed from price to sale_price
-            stock_quantity: 10, // 👈 Changed from stock to stock_quantity
-            product: {
-                name: 'Earthy Oud Perfume',
-                brand: 'Nature Essence',
-                image_url: 'https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=200'
-            }
-        }
-    },
-    {
-        id: 2,
-        quantity: 2,
-        product_variant: {
-            id: 102,
-            size: '100ml', // 👈 Updated size
-            sale_price: 75000, // 👈 Changed from price to sale_price
-            stock_quantity: 5, // 👈 Changed from stock to stock_quantity
-            product: {
-                name: 'Summer Mist Cologne',
-                brand: 'Nature Essence',
-                image_url: null
-            }
-        }
-    }
-];
-
 export default function CartPage() {
     const { user } = useAuth();
+ 
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // 1. We read from our local temporary mock state instead of useCart()
-    const [items, setItems] = useState(INITIAL_MOCK_ITEMS);
+    useEffect(() => {
+        fetchCartItems();
+    }, []);
 
-    // 2. Dynamic state calculations for the summary panel
+    const fetchCartItems = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/cart', { withCredentials: true });
+            setItems(response.data);
+        } catch (error) {
+            console.error("Error fetching cart items:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Dynamic state calculations for the summary panel
     const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
     const total = items.reduce((acc, item) => acc + (item.product_variant.sale_price * item.quantity), 0);
 
-    // 3. Simulated interactivity actions
-    const updateQuantity = (id, newQty) => {
+    // Simulated interactivity actions
+    const updateQuantity = async (id, newQty) => {
         if (newQty < 1) return;
 
         const targetItem = items.find(item => item.id === id);
@@ -65,28 +46,39 @@ export default function CartPage() {
 
         const maxStock = targetItem.product_variant.stock_quantity;
 
-        setItems(items.map(item => {
-            if (item.id === id) {
-                if (newQty > maxStock) {
-                    // Only set error text on this specific item
-                    return {
-                        ...item,
-                        quantity: maxStock,
-                        error: `Only ${maxStock} items available.`
-                    };
-                }
-                // Clear error if quantity goes back within normal bounds
-                return { ...item, quantity: newQty, error: null };
-            }
-            return item;
-        }));
+        if (newQty > maxStock) {
+            setItems(items.map(item => 
+                item.id === id ? { ...item, error: `Only ${maxStock} items available.` } : item
+            ));
+            return;
+        }
+
+        try {
+            await axios.post('http://localhost:8000/api/cart', {
+                product_variant_id: targetItem.product_variant_id,
+                quantity: newQty
+            }, { withCredentials: true });
+ 
+            setItems(items.map(item => 
+                item.id === id ? { ...item, quantity: newQty, error: null } : item
+            ));
+        } catch (error) {
+            console.error("Error updating quantity:", error);
+        }
     };
 
-
-
-    const removeFromCart = (id) => {
-        setItems(items.filter(item => item.id !== id));
+    const removeFromCart = async (id) => {
+        try {
+            
+            await axios.delete(`http://localhost:8000/api/cart/${id}`, { withCredentials: true });
+         
+            setItems(items.filter(item => item.id !== id));
+        } catch (error) {
+            console.error("Error removing item from cart:", error);
+        }
     };
+
+    
 
     // If you delete all items, this view will trigger automatically
     if (itemCount === 0) return (
@@ -106,6 +98,7 @@ export default function CartPage() {
                 <h1 className="font-serif text-3xl text-nature-dark mb-8">Your Cart</h1>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* List Items Grid */}
                     <div className="lg:col-span-2 space-y-3">
                         {items.map(item => {
                             const variant = item.product_variant;
@@ -133,7 +126,6 @@ export default function CartPage() {
                                                     className="w-6 h-6 rounded border border-nature-border text-nature-dark text-sm flex items-center justify-center hover:border-nature-olive transition-colors">+</button>
                                             </div>
 
-                                            {/* 💡 Item-specific inline error message display */}
                                             {item.error && (
                                                 <p className="text-red-500 text-xs mt-1.5 font-medium animate-pulse">
                                                     {item.error}
@@ -153,6 +145,7 @@ export default function CartPage() {
                         })}
                     </div>
 
+                    {/* Summary Panel */}
                     <div className="bg-nature-card border border-nature-border rounded-xl p-5 h-fit sticky top-24">
                         <h3 className="font-serif text-xl text-nature-dark mb-5">Order Summary</h3>
                         <div className="space-y-2.5 mb-5">

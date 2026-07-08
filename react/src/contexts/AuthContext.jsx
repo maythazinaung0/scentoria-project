@@ -27,6 +27,14 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  async function signUp({ name, email, phone_number, password, password_confirmation }) {
+  await axios.get(`${import.meta.env.VITE_BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+  const { data } = await api.post('/register', { name, email, phone_number, password, password_confirmation });
+  setUser(data.user);
+  return data.user;
+}
+
+
   async function signOut() {
     try {
       await api.post('/logout');
@@ -38,7 +46,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

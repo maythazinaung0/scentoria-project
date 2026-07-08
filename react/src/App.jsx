@@ -13,7 +13,7 @@ import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
 
 // Customer Imports
-import HomePage from './pages/customer/HomePage';
+import HomePage from './pages/customer/Homepage';
 import AboutPage from './pages/customer/About';
 import ScentDetailPage from './pages/customer/ScentDetailPage';
 import ScentProfilesPage from './pages/customer/ScentProfilesPage';

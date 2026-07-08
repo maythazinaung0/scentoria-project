@@ -31,7 +31,7 @@ export default function AboutPage() {
                 <p className="text-lg text-nature-muted max-w-2xl mx-auto mb-8">Premium inspired fragrances at honest prices — helping you discover your signature scent.</p>
                 <div className="flex justify-center gap-4">
                     <Link to="/products" className="bg-nature-olive text-white px-8 py-3 rounded-lg hover:bg-nature-dark transition-colors">SHOP NOW</Link>
-                    <Link to="/scent-profiles" className="border border-nature-border px-8 py-3 rounded-lg hover:bg-white transition-colors">EXPLORE SCENTS</Link>
+                    <Link to="/scents" className="border border-nature-border px-8 py-3 rounded-lg hover:bg-white transition-colors">EXPLORE SCENTS</Link>
                 </div>
             </div>
 

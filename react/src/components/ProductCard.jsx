@@ -1,20 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-// Price format လုပ်ရန် helper function
-const formatMMK = (price) => {
-    return new Intl.NumberFormat('en-US').format(price || 0) + ' MMK';
-};
-
 export default function ProductCard({ product }) {
     if (!product) return null;
 
-    const salePrice = product.variants && product.variants.length > 0
-        ? product.variants[0].sale_price
-        : null;
-
     return (
-        // border နှင့် border-[var(--color-border-subtle)] ကို ဖယ်ရှားလိုက်ပါ
         <div className="relative aspect-[3/4] overflow-hidden bg-[var(--color-bg-muted)] group cursor-pointer">
             {/* ပုံရိပ် */}
             <img
@@ -37,8 +27,9 @@ export default function ProductCard({ product }) {
                 <h3 className="font-serif text-lg text-[var(--color-text-primary)] mb-1">{product.name}</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mb-3">{product.scent?.name}</p>
 
-                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-4">
-                    {salePrice ? formatMMK(salePrice) : 'Contact for price'}
+                {/* ဈေးနှုန်းအစား အကြံပြုလိုသည့် စာသား */}
+                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-4 italic opacity-80">
+                    Discover your signature scent
                 </p>
 
                 <Link

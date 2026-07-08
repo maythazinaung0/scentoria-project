@@ -12,15 +12,8 @@ class ScentController extends Controller
     }
 
 
-public function show($id) 
+public function show(Scent $scent)
 {
-    // 'products' relation ကိုပါ တစ်ခါတည်း load လုပ်လိုက်ပါ
-    $scent = Scent::with('products')->find($id);
-
-    if (!$scent) {
-        return response()->json(['message' => 'Scent not found'], 404);
-    }
-    
     return response()->json($scent);
 }
 }

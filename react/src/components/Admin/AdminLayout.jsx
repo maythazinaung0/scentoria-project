@@ -3,10 +3,13 @@ import Navbar from './AdminNavbar';
 
 export default function AdminLayout() {
   return (
-    <div className="min-h-screen bg-nature-bg flex">
+    <div className="min-h-screen bg-nature-bg flex w-full">
+      {/* Sidebar Component */}
       <Navbar />
-      <main className="ml-60 flex-1 min-h-screen">
-        <div className="max-w-screen-2xl mx-auto px-6 py-6">
+      
+      {/* Main Structural Content Viewport Container */}
+      <main className="ml-60 flex-1 min-w-0 max-w-full overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Outlet />
         </div>
       </main>

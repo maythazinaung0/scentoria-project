@@ -5,18 +5,18 @@ import {
 } from 'recharts';
 import { Package, ShoppingBag, DollarSign, Clock, CheckCircle, XCircle, RefreshCw, ArrowUpRight } from 'lucide-react';
 import api from '../../api';
-
+ 
 const STATUS_COLORS = {
   pending:    '#C9A94F',
   processing: '#6B8A9E',
   completed:  '#4A6838',
   cancelled:  '#B0664A',
 };
-
+ 
 function formatMMK(value) {
   return new Intl.NumberFormat('en-US').format(value) + ' MMK';
 }
-
+ 
 function AreaTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
@@ -26,7 +26,7 @@ function AreaTooltip({ active, payload, label }) {
     </div>
   );
 }
-
+ 
 function PieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   return (
@@ -36,13 +36,13 @@ function PieTooltip({ active, payload }) {
     </div>
   );
 }
-
+ 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [productCount, setProductCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+ 
   const fetchData = () => {
     setIsRefreshing(true);
     api.get('/admin/dashboard')
@@ -56,11 +56,11 @@ export default function AdminDashboard() {
         setIsRefreshing(false);
       });
   };
-
+ 
   useEffect(() => {
     fetchData();
   }, []);
-
+ 
   const completedOrders = orders.filter(o => o.status === 'completed');
   const pendingOrders = orders.filter(o => o.status === 'pending');
   const totalRevenue = completedOrders.reduce((s, o) => s + o.total_amount, 0);
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     const now = new Date();
     return d.toDateString() === now.toDateString();
   }).reduce((s, o) => s + o.total_amount, 0);
-
+ 
   const trendData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -80,22 +80,22 @@ export default function AdminDashboard() {
     });
     return { short, revenue: dayOrders.reduce((s, o) => s + o.total_amount, 0) };
   });
-
+ 
   const statusData = ['pending', 'processing', 'completed', 'cancelled'].map(s => ({
     name: s,
     value: orders.filter(o => o.status === s).length,
     fill: STATUS_COLORS[s],
   })).filter(s => s.value > 0);
-
+ 
   const recentOrders = orders.slice(0, 6);
-
+ 
   const statCards = [
     { label: 'Total Revenue', value: loading ? '—' : formatMMK(totalRevenue), sub: loading ? '' : `Today: ${formatMMK(todayRevenue)}`, icon: DollarSign },
     { label: 'Total Orders', value: loading ? '—' : orders.length, sub: loading ? '' : `${completedOrders.length} completed`, icon: ShoppingBag },
     { label: 'Pending Orders', value: loading ? '—' : pendingOrders.length, sub: 'Awaiting action', icon: Clock },
     { label: 'Active Products', value: loading ? '—' : productCount, sub: 'In catalogue', icon: Package },
   ];
-
+ 
   return (
     <div className="min-h-screen relative overflow-hidden   selection:bg-nature-olive/10">
       <style>{`
@@ -106,12 +106,12 @@ export default function AdminDashboard() {
         .anim-blob-b { animation: floatB 30s ease-in-out infinite; background: radial-gradient(circle, rgba(201,169,79,0.08) 0%, rgba(255,255,255,0) 70%); }
         .fade-up { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
       `}</style>
-
-      
-
+ 
+     
+ 
       <div className="relative p-6 md:p-10 z-10">
         <div className="text-nature-dark space-y-10 max-w-7xl mx-auto">
-
+ 
           {/* Header section */}
           <div className="flex items-center justify-between fade-up">
             <div className="space-y-1">
@@ -125,21 +125,21 @@ export default function AdminDashboard() {
               disabled={isRefreshing}
               className="group flex items-center gap-2 text-nature-muted hover:text-nature-olive text-xs font-medium tracking-wide transition-all duration-500 border border-nature-border/80 hover:border-nature-olive/40 bg-white/60 backdrop-blur-md hover:bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 transition-transform duration-700 ease-out ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} /> 
+              <RefreshCw className={`w-3.5 h-3.5 transition-transform duration-700 ease-out ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               Sync Ledger
             </button>
           </div>
-
+ 
           {/* Stats Cards Grid */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
             {statCards.map(({ label, value, sub, icon: Icon }, i) => (
               <div
                 key={label}
-                className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] hover:-translate-y-1.5 hover:bg-white/90 transition-all duration-500 group"
+                className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] hover:-translate-y-1.5 hover:bg-white/50 transition-all duration-500 group"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <p className="text-nature-muted text-xs font-semibold tracking-wider uppercase opacity-70 group-hover:text-nature-olive transition-colors duration-300">{label}</p>
+                  <p className="text-nature-muted text-xs font-semibold tracking-wide uppercase opacity-70 group-hover:text-nature-olive transition-colors duration-300">{label}</p>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-nature-olive/5 border border-nature-olive/10 group-hover:bg-nature-olive group-hover:scale-110 transition-all duration-500 ease-out">
                     <Icon className="w-4 h-4 text-nature-olive group-hover:text-white transition-colors duration-500" />
                   </div>
@@ -149,11 +149,11 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
-
+ 
           {/* Charts Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Main Area Chart Container */}
-            <div className="fade-up xl:col-span-2 bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '200ms' }}>
+            <div className="fade-up xl:col-span-2 bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '200ms' }}>
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -189,9 +189,9 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-
+ 
             {/* Pie Chart Card */}
-            <div className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '300ms' }}>
+            <div className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '300ms' }}>
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-2 h-2 rounded-full bg-nature-olive" />
                 <h2 className="text-xs font-bold tracking-widest uppercase text-nature-olive">Allocation Stream</h2>
@@ -227,9 +227,9 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-
+ 
           {/* Table Container */}
-          <div className="fade-up bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="fade-up bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(74,104,56,0.8)] transition-all duration-500" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between px-8 py-5 border-b border-neutral-200/60 bg-white/30">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-nature-olive" />
@@ -259,8 +259,8 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {recentOrders.map((order, index) => (
-                      <tr 
-                        key={order.id} 
+                      <tr
+                        key={order.id}
                         className="border-b border-neutral-200/40 last:border-0 hover:bg-white/80 transition-all duration-300 group"
                         style={{ animationDelay: `${index * 50}ms` }}
                       >

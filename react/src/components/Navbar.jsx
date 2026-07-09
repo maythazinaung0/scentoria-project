@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Navbar({ searchQuery, onSearchChange }) {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,8 +93,8 @@ export default function Navbar({ searchQuery, onSearchChange }) {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
         scrolled
-          ? 'bg-nature-bg/98 backdrop-blur-lg border-nature-border shadow-sm'
-          : 'bg-nature-bg/80 backdrop-blur-sm border-transparent'
+          ? 'bg-transparent backdrop-blur-md border-nature-border/30'
+          : 'bg-transparent border-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -167,21 +167,12 @@ export default function Navbar({ searchQuery, onSearchChange }) {
             {/* User Actions */}
             {user ? (
               <div className="hidden md:flex items-center gap-0.5">
-                {isAdmin ? (
-                  <Link
-                    to="/admin"
-                    className="text-[11px] text-nature-olive border border-nature-olive/40 px-3 py-1 rounded hover:bg-nature-olive hover:text-white transition-all duration-300 tracking-[0.15em] hover:shadow-sm"
-                  >
-                    ADMIN
-                  </Link>
-                ) : (
-                  <Link
-                    to="/profile"
-                    className="p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110"
-                  >
-                    <UserCircle className="w-[18px] h-[18px]" />
-                  </Link>
-                )}
+                <Link
+                  to="/profile"
+                  className="p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110"
+                >
+                  <UserCircle className="w-[18px] h-[18px]" />
+                </Link>
                 <button
                   onClick={handleSignOut}
                   className="p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110 hover:rotate-12"
@@ -283,23 +274,13 @@ export default function Navbar({ searchQuery, onSearchChange }) {
             <div className="border-t border-nature-border/50 mt-3 pt-3 flex flex-col gap-1">
               {user ? (
                 <>
-                  {isAdmin ? (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMenuOpen(false)}
-                      className="px-3 py-2.5 text-nature-olive text-sm tracking-wider hover:bg-nature-olive/5 rounded transition-all duration-300"
-                    >
-                      ADMIN PANEL
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/profile"
-                      onClick={() => setMenuOpen(false)}
-                      className="px-3 py-2.5 text-nature-charcoal text-sm tracking-wider hover:text-nature-olive hover:bg-nature-olive/5 rounded transition-all duration-300"
-                    >
-                      MY PROFILE
-                    </Link>
-                  )}
+                  <Link
+                    to="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="px-3 py-2.5 text-nature-charcoal text-sm tracking-wider hover:text-nature-olive hover:bg-nature-olive/5 rounded transition-all duration-300"
+                  >
+                    MY PROFILE
+                  </Link>
                   <button
                     onClick={() => { handleSignOut(); setMenuOpen(false); }}
                     className="px-3 py-2.5 text-left text-nature-muted text-sm tracking-wider hover:text-nature-olive hover:bg-nature-olive/5 rounded transition-all duration-300"

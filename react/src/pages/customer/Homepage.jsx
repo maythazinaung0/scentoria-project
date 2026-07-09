@@ -1,67 +1,67 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Wind, Leaf, Flame, Star } from 'lucide-react';
-import { theme } from '../../theme';
 import { Link } from 'react-router-dom';
-const SCENT_ICONS = { Floral: Sparkles, Woody: Leaf, Oriental: Flame, Fresh: Wind, Citrus: Star, Aquatic: Wind };
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { theme } from '../../theme';
+import ProductCard from '../../components/ProductCard';
+
+const HERO_IMAGES = [
+    'https://images.pexels.com/photos/15539722/pexels-photo-15539722.png',
+    'https://images.pexels.com/photos/1190829/pexels-photo-1190829.jpeg?auto=compress&cs=tinysrgb&w=1400',
+];
+
+const SCENT_ICONS = {}; // TODO: map scent names to specific lucide icons if desired
 
 export default function HomePage({ searchQuery }) {
-    const [products, setProducts] = useState([]);
+    const [heroIdx, setHeroIdx] = useState(0);
     const [scents, setScents] = useState([]);
+    const [products, setProducts] = useState([]);
 
     useEffect(() => {
         fetch('http://localhost/api/scents')
             .then(res => res.json())
-            .then(data => {
-                console.log("Scents received:", data); 
-                setScents(data);
-            })
+            .then(data => setScents(Array.isArray(data) ? data : []))
             .catch(err => console.error("Error fetching scents:", err));
 
         fetch('http://localhost/api/products')
             .then(res => res.json())
-            .then(data => {
-                console.log("Products received:", data); 
-                setProducts(data);
-            })
+            .then(data => setProducts(Array.isArray(data) ? data : []))
             .catch(err => console.error("Error fetching products:", err));
     }, []);
 
-   
     const filteredProducts = searchQuery
         ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
         : products;
 
-   
     return (
         <div style={{ backgroundColor: theme.colors.bgBase, color: theme.colors.textPrimary }}>
+            <section className="max-w-7xl mx-auto px-6 md:px-8 py-16 md:py-24">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+                    <div className="relative overflow-hidden rounded-sm shadow-lg h-[500px]">
+                        {HERO_IMAGES.map((img, idx) => (
+                            <div
+                                key={img}
+                                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${idx === heroIdx ? 'opacity-100' : 'opacity-0'}`}
+                                style={{ backgroundImage: `url(${img})` }}
+                            />
+                        ))}
+                    </div>
 
-
-           // Hero Section အတွင်းပိုင်းကို ဒီအတိုင်း ပြင်လိုက်ပါ
-            {/* Hero Section */}
-            <section className="max-w-7xl mx-auto py-16 px-6 grid md:grid-cols-2 gap-12 items-center">
-                <img src="https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg" alt="Fragrance" className="w-full rounded-sm shadow-lg" />
-                <div>
-                    <p style={{ color: theme.colors.accent }} className="tracking-widest uppercase text-xs mb-4">The Art of Fragrance</p>
-                    <h1 className="text-6xl font-serif">Discover Your <span className="italic" style={{ color: theme.colors.accent }}>Signature</span> Scent</h1>
-                    <p className="mt-6 text-gray-600 mb-8">Premium inspired fragrances curated for the discerning nose.</p>
-
-                    {/* Button များ - Hero Section အတွင်း၌သာ ရှိရမည် */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        {/* Explore Scents Button */}
-                        <Link
-                            to="/scents"
-                            className="inline-flex items-center gap-2 bg-[var(--color-accent)] hover:opacity-90 text-white px-8 py-3 transition-colors tracking-widest uppercase text-xs"
-                        >
-                            Explore Scents
-                        </Link>
-
-                        {/* Shop All Button */}
-                        <Link
-                            to="/products"
-                            className="inline-flex items-center gap-2 border border-gray-400 hover:border-black text-black px-8 py-3 transition-colors tracking-widest uppercase text-xs"
-                        >
-                            Shop All
-                        </Link>
+                    <div className="flex flex-col justify-center space-y-8">
+                        <div>
+                            <p className="text-[11px] tracking-[0.4em] uppercase mb-5" style={{ color: theme.colors.accent }}>The Art of Fragrance</p>
+                            <h1 className="font-serif text-5xl md:text-6xl leading-[1.1]">
+                                Discover Your<br />
+                                <span className="italic font-normal" style={{ color: theme.colors.accent }}>Signature</span> Scent
+                            </h1>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Link to="/scents" className="inline-flex items-center gap-2 px-8 py-3 transition-all hover:opacity-90 tracking-widest uppercase text-xs text-white" style={{ backgroundColor: theme.colors.accent }}>
+                                Explore Scents <ArrowRight className="w-4 h-4" />
+                            </Link>
+                            <Link to="/products" className="inline-flex items-center gap-2 px-8 py-3 transition-all border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white tracking-widest uppercase text-xs">
+                                Shop All
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -73,7 +73,6 @@ export default function HomePage({ searchQuery }) {
                     {scents.map(s => {
                         const Icon = SCENT_ICONS[s.name] || Sparkles;
                         return (
-                           
                             <Link to={`/scents/${s.id}`} key={s.id} className="block group">
                                 <div className="border p-6 rounded-xl hover:shadow-md transition-all cursor-pointer">
                                     <Icon className="mx-auto mb-3" style={{ color: theme.colors.accent }} />
@@ -85,20 +84,42 @@ export default function HomePage({ searchQuery }) {
                 </div>
             </section>
 
-            {/* Featured Fragrances Grid */}
-            <section className="max-w-7xl mx-auto py-20 px-6">
-                <h2 className="text-3xl font-serif text-center mb-12">Featured Fragrances</h2>
+            <div className="flex flex-wrap gap-2 py-7 border-b border-[#E5E7E2] mb-8"></div>
+
+            {/* Fragrances section */}
+            <section className="py-20 px-6 max-w-7xl mx-auto">
+                <div className="text-center mb-12">
+                    <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.colors.accent }}>New Arrivals</p>
+                    <h2 className="font-serif text-3xl">Featured Fragrances</h2>
+                </div>
+
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    {filteredProducts.map(p => (
-                        <div key={p.id} className="group border p-4 hover:border-gray-400 transition-all">
-                            <img src={p.image_url} alt={p.name} className="w-full h-64 object-cover group-hover:scale-105 transition-transform" />
-                            <h3 className="mt-4 font-serif text-lg">{p.name}</h3>
-                            <p className="font-semibold" style={{ color: theme.colors.accent }}>{p.price_regular} MMK</p>
-                            <button className="mt-4 w-full py-2 border border-black hover:bg-black hover:text-white transition-colors uppercase text-xs tracking-widest">
-                                Explore
-                            </button>
-                        </div>
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
                     ))}
+                </div>
+
+                <div className="text-center pt-16 pb-8">
+                    <Link to="/products" className="text-sm font-semibold tracking-widest uppercase transition-colors hover:text-[var(--color-accent)]">
+                        VIEW ALL FRAGRANCES →
+                    </Link>
+                </div>
+            </section>
+
+            {/* Banner Section without extra margins */}
+            <section className="relative py-24 overflow-hidden">
+                <div
+                    className="absolute inset-0 bg-cover bg-center z-0"
+                    style={{
+                        backgroundImage: "url('https://images.pexels.com/photos/9944432/pexels-photo-9944432.jpeg')",
+                    }}
+                />
+                <div className="absolute inset-0 bg-white/70 z-0" />
+
+                <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
+                    <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: theme.colors.accent }}>Available Volumes</p>
+                    <h3 className="font-serif text-3xl mb-4">30ml, 50ml &amp; 100ml</h3>
+                    <p className="text-gray-800 max-w-md mx-auto text-sm">Travel light or indulge fully — choose the size that fits your lifestyle.</p>
                 </div>
             </section>
         </div>

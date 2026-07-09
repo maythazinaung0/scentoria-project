@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+       public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
@@ -20,12 +20,15 @@ return new class extends Migration
             $table->foreignId('scent_id')->constrained('scents')->onDelete('cascade');
             $table->enum('type', ['perfume', 'cologne', 'body spray']);
             $table->enum('gender', ['male', 'female', 'unisex']);
-            $table->enum('season', ['spring', 'summer', 'fall', 'winter']); 
+            $table->enum('season', ['spring', 'summer', 'fall', 'winter']);
             $table->string('image_url')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });
     }
+    
+ 
+    
 
     /**
      * Reverse the migrations.

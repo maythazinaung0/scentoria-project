@@ -1,0 +1,50 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+// Price format လုပ်ရန် helper function
+const formatMMK = (price) => {
+    return new Intl.NumberFormat('en-US').format(price || 0) + ' MMK';
+};
+
+export default function ProductCard({ product }) {
+    if (!product) return null;
+
+    const salePrice = product.variants && product.variants.length > 0
+        ? product.variants[0].sale_price
+        : null;
+
+    return (
+        // border နှင့် border-[var(--color-border-subtle)] ကို ဖယ်ရှားလိုက်ပါ
+        <div className="relative aspect-[3/4] overflow-hidden bg-[var(--color-bg-muted)] group cursor-pointer">
+            <img
+                src={product.image_url || 'https://via.placeholder.com/300x400'}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+
+            <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-transform duration-500 group-hover:-translate-y-20">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/80 font-medium mb-1">
+                    {product.brand?.name || 'Scentoria'}
+                </p>
+                <h3 className="font-serif text-lg text-white">{product.name}</h3>
+                <p className="text-xs text-white/70 mt-1">{product.scent?.name}</p>
+            </div>
+
+            <div className="absolute bottom-0 left-0 w-full p-6 bg-[var(--color-bg-base)] translate-y-full transition-transform duration-500 group-hover:translate-y-0">
+                <h3 className="font-serif text-lg text-[var(--color-text-primary)] mb-1">{product.name}</h3>
+                <p className="text-xs text-[var(--color-text-muted)] mb-3">{product.scent?.name}</p>
+
+                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-4">
+                    {salePrice ? formatMMK(salePrice) : 'Contact for price'}
+                </p>
+
+                <Link
+                    to={`/products/${product.id}`}
+                    className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] hover:text-[var(--color-accent)] transition-colors border-b border-transparent hover:border-[var(--color-accent)] pb-1"
+                >
+                    Explore →
+                </Link>
+            </div>
+        </div>
+    );
+}

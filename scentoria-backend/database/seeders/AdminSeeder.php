@@ -19,6 +19,7 @@ class AdminSeeder extends Seeder
             'email' => 'admin@scentoria.com',
             'password' => Hash::make('change-this-password'),
             'role' => 'admin',
-        ]);
+            
+                    ]);
     }
 }

@@ -35,13 +35,15 @@ export function AuthProvider({ children }) {
 }
 
 
-  async function signOut() {
-    try {
-      await api.post('/logout');
-    } finally {
-      setUser(null);
-    }
-  }
+   async function signOut() {
+       try {
+         await api.post('/logout');
+       } catch (err) {
+         console.error('Logout request failed:', err.response?.status, err.response?.data);
+       } finally {
+         setUser(null);
+       }
+     }
 
   const isAdmin = user?.role === 'admin';
 

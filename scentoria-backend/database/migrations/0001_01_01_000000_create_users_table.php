@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['admin', 'customer'])->default('customer');
             $table->string('phone_number')->nullable();
+            $table->string('address')->nullable();;
             $table->integer('wallet_balance')->default(0);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->softDeletes();

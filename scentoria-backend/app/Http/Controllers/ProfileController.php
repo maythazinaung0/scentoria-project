@@ -20,6 +20,8 @@ class ProfileController extends Controller
             'id' => $request->user()->id,
             'name' => $request->user()->name,
             'email' => $request->user()->email,
+            'phone_number'   => $request->user()->phone_number,
+            'address'        => $request->user()->address,
             'wallet_balance' => $request->user()->wallet_balance,
         ]);
     }
@@ -59,11 +61,11 @@ class ProfileController extends Controller
 
         $imageUrl = null;
 
-       if ($request->hasFile('transaction_image')) {
-    $file = $request->file('transaction_image');
-    $path = $file->store('topups', 'public');
-    $imageUrl = asset(Storage::url($path));
-}
+        if ($request->hasFile('transaction_image')) {
+            $file = $request->file('transaction_image');
+            $path = $file->store('topups', 'public'); 
+            $imageUrl = Storage::url($path); 
+        }
 
         $topup = WalletTopup::create([
             'user_id' => $request->user()->id,

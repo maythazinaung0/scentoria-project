@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';  
-import axios from 'axios';
- 
+import { Trash2, ShoppingBag, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
+import api from '../../api';
+
 const formatMMK = (amount) => {
     return new Intl.NumberFormat('en-MM', {
         style: 'currency',
@@ -15,141 +15,175 @@ const formatMMK = (amount) => {
 
 export default function CartPage() {
     const { user } = useAuth();
- 
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { items, setItems, loading, refreshCart } = useCart();
+    const [errors, setErrors] = useState({});
+    const [removingId, setRemovingId] = useState(null);
 
+    // Clear an item's error message after a short delay
     useEffect(() => {
-        fetchCartItems();
-    }, []);
+        const activeErrors = Object.keys(errors).filter(k => errors[k]);
+        if (activeErrors.length === 0) return;
+        const timers = activeErrors.map(id =>
+            setTimeout(() => setErrors(prev => ({ ...prev, [id]: null })), 2500)
+        );
+        return () => timers.forEach(clearTimeout);
+    }, [errors]);
 
-    const fetchCartItems = async () => {
-        try {
-            const response = await axios.get('http://localhost:8000/api/cart', { withCredentials: true });
-            setItems(response.data);
-        } catch (error) {
-            console.error("Error fetching cart items:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Dynamic state calculations for the summary panel
+    // Total quantity across all line items — this is the number shown in every
+    // "N items" badge on this page and on Checkout, so the two stay in sync.
     const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
-    const total = items.reduce((acc, item) => acc + (item.product_variant.sale_price * item.quantity), 0);
+    const total = items.reduce((acc, item) => acc + (item.product_variant?.sale_price ?? 0) * item.quantity, 0);
 
-    // Simulated interactivity actions
-    const updateQuantity = async (id, newQty) => {
+    function updateQuantity(item, newQty) {
         if (newQty < 1) return;
 
-        const targetItem = items.find(item => item.id === id);
-        if (!targetItem) return;
-
-        const maxStock = targetItem.product_variant.stock_quantity;
-
+        const maxStock = item.product_variant?.stock_quantity ?? Infinity;
         if (newQty > maxStock) {
-            setItems(items.map(item => 
-                item.id === id ? { ...item, error: `Only ${maxStock} items available.` } : item
-            ));
+            setErrors(prev => ({ ...prev, [item.id]: `Only ${maxStock} in stock` }));
             return;
         }
 
+        const previousItems = items;
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQty } : i));
+        setErrors(prev => ({ ...prev, [item.id]: null }));
+
+        api.patch(`/cart/${item.id}`, {
+            quantity: newQty,
+        })
+            .then(() => refreshCart(true))
+            .catch(err => {
+                setItems(previousItems);
+                setErrors(prev => ({ ...prev, [item.id]: err.response?.data?.message || 'Update failed' }));
+            });
+    }
+
+    async function removeFromCart(id) {
+        setRemovingId(id);
+        const previousItems = items;
+        setItems(prev => prev.filter(i => i.id !== id)); // optimistic removal
         try {
-            await axios.post('http://localhost:8000/api/cart', {
-                product_variant_id: targetItem.product_variant_id,
-                quantity: newQty
-            }, { withCredentials: true });
- 
-            setItems(items.map(item => 
-                item.id === id ? { ...item, quantity: newQty, error: null } : item
-            ));
-        } catch (error) {
-            console.error("Error updating quantity:", error);
+            await api.delete(`/cart/${id}`);
+        } catch (err) {
+            setItems(previousItems); // roll back
+            console.error('Error removing item from cart:', err);
+        } finally {
+            setRemovingId(null);
         }
-    };
+    }
 
-    const removeFromCart = async (id) => {
-        try {
-            
-            await axios.delete(`http://localhost:8000/api/cart/${id}`, { withCredentials: true });
-         
-            setItems(items.filter(item => item.id !== id));
-        } catch (error) {
-            console.error("Error removing item from cart:", error);
-        }
-    };
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-nature-bg pt-24 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-nature-olive animate-spin" strokeWidth={1.5} />
+            </div>
+        );
+    }
 
-    
-
-    // If you delete all items, this view will trigger automatically
-    if (itemCount === 0) return (
-        <div className="min-h-screen bg-nature-bg pt-24 flex flex-col items-center justify-center text-center px-4 gap-5">
-            <ShoppingBag className="w-14 h-14 text-nature-sand" />
-            <h2 className="font-serif text-3xl text-nature-dark">Your cart is empty</h2>
-            <p className="text-nature-muted text-sm">Discover our fragrance collection and add something beautiful.</p>
-            <Link to="/products" className="bg-nature-olive hover:bg-nature-olive-dark text-white font-medium px-8 py-3 rounded transition-colors tracking-[0.1em] text-sm">
-                SHOP FRAGRANCES
-            </Link>
-        </div>
-    );
+    if (itemCount === 0) {
+        return (
+            <div className="min-h-screen bg-nature-bg pt-24 flex flex-col items-center justify-center text-center px-4">
+                <ShoppingBag className="w-10 h-10 text-nature-sand mb-6" strokeWidth={1} />
+                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-3">Your Bag</p>
+                <h2 className="font-serif text-3xl text-nature-dark mb-3">Your cart is empty</h2>
+                <p className="text-nature-muted text-sm mb-9 max-w-xs">Discover our fragrance collection and add something beautiful.</p>
+                <Link
+                    to="/products"
+                    className="border border-nature-dark text-nature-dark hover:bg-nature-dark hover:text-white font-medium px-10 py-3.5 transition-colors tracking-[0.2em] text-xs"
+                >
+                    SHOP FRAGRANCES
+                </Link>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-nature-bg text-nature-dark pt-24">
-            <div className="max-w-5xl mx-auto px-4 py-12">
-                <h1 className="font-serif text-3xl text-nature-dark mb-8">Your Cart</h1>
+        <div className="min-h-screen bg-nature-bg text-nature-dark pt-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-2">Your Selection</p>
+                <div className="flex items-baseline justify-between mb-8 pb-5 border-b border-nature-border/70">
+                    <h1 className="font-serif text-3xl sm:text-4xl text-nature-dark tracking-tight">Shopping Cart</h1>
+                    <span className="text-nature-muted text-xs uppercase tracking-[0.15em]">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* List Items Grid */}
-                    <div className="lg:col-span-2 space-y-3">
-                        {items.map(item => {
-                            const variant = item.product_variant;
-                            if (!variant) return null;
-                            const price = variant.sale_price;
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    {/* Item Grid — reflows into two columns once there's enough content,
+                        so a large cart stays compact instead of one long scroll. */}
+                    <div className="xl:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {items.map(item => {
+                                const variant = item.product_variant;
+                                if (!variant) return null;
+                                const price = variant.sale_price;
+                                const isRemoving = removingId === item.id;
+                                const hasError = Boolean(errors[item.id]);
 
-                            return (
-                                <div key={item.id} className="bg-nature-card border border-nature-border rounded-xl p-4 flex gap-4 flex-col sm:flex-row">
-                                    <div className="flex gap-4 flex-1">
-                                        <img
-                                            src={variant.product?.image_url ?? 'https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=200'}
-                                            alt={variant.product?.name}
-                                            className="w-[72px] h-[72px] rounded-lg object-cover flex-shrink-0 border border-nature-border"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase">{variant.product?.brand}</p>
-                                            <p className="font-serif text-nature-dark text-base leading-tight">{variant.product?.name}</p>
-                                            <p className="text-nature-muted text-xs capitalize mt-0.5">{variant.size} size</p>
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg p-4 sm:p-5 flex gap-4 shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)] transition-opacity duration-300 ${isRemoving ? 'opacity-40' : 'opacity-100'}`}
+                                    >
+                                        <div className="w-20 h-20 flex-shrink-0 border border-white/70 bg-white/40 rounded-md overflow-hidden">
+                                            <img
+                                                src={variant.product?.image_url ?? 'https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                                                alt={variant.product?.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex flex-col">
+                                            <p className="text-nature-olive text-[10px] tracking-[0.2em] uppercase font-medium">
+                                                {variant.product?.brand?.name ?? variant.product?.brand ?? 'Scentoria'}
+                                            </p>
+                                            <p className="font-serif text-base text-nature-dark leading-tight mt-1 truncate">{variant.product?.name}</p>
+                                            <p className="text-nature-muted text-xs uppercase tracking-wide mt-1">{variant.size} size</p>
 
-                                            <div className="flex items-center gap-3 mt-2">
-                                                <button onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                    className="w-6 h-6 rounded border border-nature-border text-nature-dark text-sm flex items-center justify-center hover:border-nature-olive transition-colors">−</button>
-                                                <span className="text-nature-dark text-sm font-medium">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                    className="w-6 h-6 rounded border border-nature-border text-nature-dark text-sm flex items-center justify-center hover:border-nature-olive transition-colors">+</button>
+                                            <div className="flex items-center justify-between mt-auto pt-3">
+                                                <div className="flex items-center border border-nature-border/70 rounded-md bg-white/40">
+                                                    <button
+                                                        onClick={() => updateQuantity(item, item.quantity - 1)}
+                                                        className="w-7 h-7 text-nature-dark text-sm flex items-center justify-center hover:bg-white/50 transition-colors"
+                                                        aria-label="Decrease quantity"
+                                                    >−</button>
+                                                    <span className="w-8 text-center text-sm font-medium text-nature-dark">{item.quantity}</span>
+                                                    <button
+                                                        onClick={() => updateQuantity(item, item.quantity + 1)}
+                                                        className="w-7 h-7 text-nature-dark text-sm flex items-center justify-center hover:bg-white/50 transition-colors"
+                                                        aria-label="Increase quantity"
+                                                    >+</button>
+                                                </div>
+                                                <p className="text-nature-olive font-serif font-semibold text-sm">{formatMMK(price * item.quantity)}</p>
                                             </div>
 
-                                            {item.error && (
-                                                <p className="text-red-500 text-xs mt-1.5 font-medium animate-pulse">
-                                                    {item.error}
-                                                </p>
-                                            )}
+                                            <div className="flex items-center justify-between mt-2.5">
+                                                <button
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    disabled={isRemoving}
+                                                    className="flex items-center gap-1.5 text-nature-muted hover:text-red-500 transition-colors disabled:opacity-50 text-[11px] uppercase tracking-wide"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                                    Remove
+                                                </button>
+                                                {hasError && (
+                                                    <span className="flex items-center gap-1 text-red-500 text-[11px] font-medium">
+                                                        <AlertCircle className="w-3 h-3" />
+                                                        {errors[item.id]}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+                                );
+                            })}
+                        </div>
 
-                                    <div className="flex flex-col items-end justify-between self-end sm:self-auto">
-                                        <button onClick={() => removeFromCart(item.id)} className="text-nature-subtle hover:text-red-500 transition-colors">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                        <p className="text-nature-olive font-semibold text-sm">{formatMMK(price * item.quantity)}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        <Link to="/products" className="inline-block mt-6 text-nature-muted hover:text-nature-olive text-xs tracking-[0.15em] uppercase transition-colors">
+                            ← Continue Shopping
+                        </Link>
                     </div>
 
                     {/* Summary Panel */}
-                    <div className="bg-nature-card border border-nature-border rounded-xl p-5 h-fit sticky top-24">
-                        <h3 className="font-serif text-xl text-nature-dark mb-5">Order Summary</h3>
-                        <div className="space-y-2.5 mb-5">
+                    <div className="bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg p-6 h-fit xl:sticky xl:top-24 shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]">
+                        <p className="text-[11px] uppercase tracking-[0.25em] text-nature-olive font-medium mb-5">Order Summary</p>
+                        <div className="space-y-3 mb-5 max-h-64 overflow-y-auto pr-1">
                             {items.map(item => {
                                 const variant = item.product_variant;
                                 if (!variant) return null;
@@ -162,31 +196,28 @@ export default function CartPage() {
                                 );
                             })}
                         </div>
-                        <div className="border-t border-nature-border pt-4 mb-5">
-                            <div className="flex justify-between">
-                                <span className="text-nature-dark font-semibold">Total</span>
-                                <span className="text-nature-olive font-semibold text-lg">{formatMMK(total)}</span>
+                        <div className="border-t border-nature-border/70 pt-4 mb-6">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-nature-dark font-medium text-xs tracking-[0.15em] uppercase">Total</span>
+                                <span className="text-nature-olive font-serif font-semibold text-2xl">{formatMMK(total)}</span>
                             </div>
                         </div>
                         {user ? (
                             <Link to="/checkout"
-                                className="w-full bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3 rounded-xl transition-colors tracking-[0.1em] text-sm flex items-center justify-center gap-2">
-                                PROCEED TO CHECKOUT <ArrowRight className="w-4 h-4" />
+                                className="w-full bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3.5 transition-colors tracking-[0.2em] text-xs flex items-center justify-center gap-2 rounded-md">
+                                PROCEED TO CHECKOUT <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
                         ) : (
                             <>
                                 <Link to="/login?redirect=%2Fcheckout"
-                                    className="w-full bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3 rounded-xl transition-colors tracking-[0.1em] text-sm flex items-center justify-center gap-2">
+                                    className="w-full bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3.5 transition-colors tracking-[0.2em] text-xs flex items-center justify-center gap-2 rounded-md">
                                     SIGN IN TO CHECKOUT
                                 </Link>
-                                <p className="text-nature-muted text-xs text-center mt-3">
+                                <p className="text-nature-muted text-xs text-center mt-4 leading-relaxed">
                                     Your cart is saved. Sign in or register to complete your order.
                                 </p>
                             </>
                         )}
-                        <Link to="/products" className="block text-center text-nature-muted hover:text-nature-olive text-xs mt-4 transition-colors tracking-wider">
-                            CONTINUE SHOPPING
-                        </Link>
                     </div>
                 </div>
             </div>

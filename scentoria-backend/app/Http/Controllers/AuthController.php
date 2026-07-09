@@ -7,31 +7,34 @@ use App\Http\Requests\RegisterRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+
 class AuthController extends Controller
 {
- public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    if (! auth()->attempt($credentials)) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        if (! auth()->attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $request->session()->regenerate();
+        return response()->json(['user' => auth()->user()]);
     }
-
-    $request->session()->regenerate();
-    return response()->json(['user' => auth()->user()]);
-}
 
     public function logout(Request $request)
     {
-        auth()->logout();
+        Auth::guard('web')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return response()->json(['message' => 'Logged out successfully']);
     }
-
 
     public function register(RegisterRequest $request)
     {

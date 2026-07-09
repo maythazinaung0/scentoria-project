@@ -43,4 +43,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // Connected Admin Order Management Routes
     Route::get('/orders', [OrderController::class, 'index']);
     Route::patch('/orders/{id}', [OrderController::class, 'update']);
+
+    
 });

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingBag, BarChart2,
-  Wallet, LogOut, ChevronRight, Wind, Flower2
+  Wallet, LogOut, ChevronRight, Wind, Flower2, Tags
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import ScentoriaLogo from '../../components/ScentoriaLogo';
@@ -10,6 +10,7 @@ import { theme } from '../../theme';
 const NAV = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/brands', icon: Tags, label: 'Brand' },
   { to: '/admin/scents', icon: Wind, label: 'Scent Profiles' },
   { to: '/admin/notes', icon: Flower2, label: 'Olfactive Notes' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class ProductController extends Controller
 {
@@ -126,14 +127,22 @@ class ProductController extends Controller
     }
 
     public function destroy($id)
-    {
-        $product = Product::findOrFail($id);
-        
+{
+    $product = Product::findOrFail($id);
+
+    try {
         return DB::transaction(function () use ($product) {
             $product->variants()->delete();
-            $product->notes()->detach(); // Clean pivot records
+            $product->notes()->detach();
             $product->delete();
             return response()->json(['message' => 'Product deleted successfully']);
         });
+    } catch (QueryException $e) {
+        if ($e->getCode() === '23000') { // FK constraint violation (has order history)
+            return response()->json([
+                'message' => 'This product can\'t be deleted because it has existing orders. Archive it instead of deleting.',
+            ], 409);
+        }
+        throw $e;
     }
 }

@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 // Admin Imports
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/Products';
+import AdminBrands from './pages/admin/Brand';
 import AdminOrders from './pages/admin/Orders';
 import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
@@ -40,6 +41,7 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="brands" element={<AdminBrands />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="wallet" element={<AdminWallet />} />
           <Route path="reports" element={<AdminReports />} />

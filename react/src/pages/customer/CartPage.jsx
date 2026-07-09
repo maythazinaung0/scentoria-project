@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';  
+import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext'; 
 import axios from 'axios';
  
 const formatMMK = (amount) => {
@@ -15,8 +15,7 @@ const formatMMK = (amount) => {
 
 export default function CartPage() {
     const { user } = useAuth();
- 
-    const [items, setItems] = useState([]);
+    const {items, setItems} = useCart();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,7 +24,7 @@ export default function CartPage() {
 
     const fetchCartItems = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/cart', { withCredentials: true });
+            const response = await axios.get('http://localhost/api/cart', { withCredentials: true });
             setItems(response.data);
         } catch (error) {
             console.error("Error fetching cart items:", error);
@@ -55,7 +54,7 @@ export default function CartPage() {
         }
 
         try {
-            await axios.post('http://localhost:8000/api/cart', {
+            await axios.post('http://localhost/api/cart', {
                 product_variant_id: targetItem.product_variant_id,
                 quantity: newQty
             }, { withCredentials: true });
@@ -71,7 +70,7 @@ export default function CartPage() {
     const removeFromCart = async (id) => {
         try {
             
-            await axios.delete(`http://localhost:8000/api/cart/${id}`, { withCredentials: true });
+            await axios.delete(`http://localhost/api/cart/${id}`, { withCredentials: true });
          
             setItems(items.filter(item => item.id !== id));
         } catch (error) {

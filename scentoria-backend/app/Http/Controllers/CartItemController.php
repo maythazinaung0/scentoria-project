@@ -46,10 +46,13 @@ class CartItemController extends Controller
                 'quantity' => $request->quantity,[cite: 2]
             ]
         );
+        //notification
+        $totalQuantity = CartItem::where('user_id', Auth::id())->sum('quantity');
 
         return response()->json([
             'message' => 'Cart updated successfully',
-            'data' => $cartItem->load('productVariant.product')[cite: 4]
+            'data' => $cartItem->load('productVariant.product'),[cite: 4]
+            'total_quantity' => $totalQuantity
         ]);
     }
 

@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     UserCircle, ShoppingBag, ChevronDown, ChevronUp,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
-    Wallet, Plus, Send, Star, MessageSquare  
+    Wallet, Plus, Send, Star, MessageSquare, Lock  
 } from 'lucide-react';
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from '../../contexts/AuthContext';
 
   
 const formatMMK = (amount) => {
@@ -58,6 +58,14 @@ export default function ProfilePage() {
     const [topupSuccess, setTopupSuccess] = useState(false);
     const [showTopupForm, setShowTopupForm] = useState(false);
     const [topupImage, setTopupImage] = useState(null);
+
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordSuccess, setPasswordSuccess] = useState('');
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
 
     const authenticatedFetch = async (endpoint, options = {}) => {
         const token = localStorage.getItem('token');
@@ -157,6 +165,51 @@ export default function ProfilePage() {
         } finally {
             setTopupLoading(false);
         }
+    }
+
+    async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+        setPasswordError('New passwords do not match.');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        setPasswordError('Password must be at least 6 characters.');
+        return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+        const response = await authenticatedFetch('/user/change-password', {
+            method: 'POST',
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword,
+                new_password_confirmation: confirmPassword
+            })
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(resData.message || 'Failed to update password.');
+        }
+
+        setPasswordSuccess('Password updated successfully!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPasswordForm(false);
+    } catch (err) {
+        setPasswordError(err.message);
+    } finally {
+        setPasswordLoading(false);
+    }
     }
 
     const displayName = user?.name || user?.email?.split('@')[0] || 'Customer';
@@ -378,6 +431,85 @@ export default function ProfilePage() {
                             ))}
                         </div>
                     )}
+                </section>
+
+                {/* --- CHANGE PASSWORD SECTION --- */}
+                <section>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Lock className="w-4 h-4 text-nature-olive" />
+                        <h2 className="text-nature-olive text-sm tracking-widest uppercase">Security Settings</h2>
+                    </div>
+
+                    <div className="bg-nature-card border border-nature-border rounded-2xl p-6 mb-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <p className="text-nature-dark text-sm font-medium">Account Password</p>
+                                <p className="text-nature-muted text-xs mt-0.5">Update your password regularly to keep your account secure.</p>
+                            </div>
+                            <button
+                                onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess(''); }}
+                                className="flex items-center gap-2 bg-nature-sage/30 border border-nature-border hover:bg-nature-sage/50 text-nature-olive px-4 py-2.5 rounded-xl text-sm transition-colors"
+                            >
+                                {showPasswordForm ? 'Hide Form' : 'Change Password'}
+                            </button>
+                        </div>
+
+                        {showPasswordForm && (
+                            <form onSubmit={handleChangePassword} className="mt-5 pt-5 border-t border-nature-border space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-nature-muted text-xs mb-1">Current Password *</label>
+                                        <input
+                                            required
+                                            type="password"
+                                            value={currentPassword}
+                                            onChange={e => setCurrentPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full bg-nature-bg border border-nature-border focus:border-nature-olive/50 rounded-lg px-4 py-2 text-nature-dark text-sm outline-none transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-nature-muted text-xs mb-1">New Password *</label>
+                                        <input
+                                            required
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={e => setNewPassword(e.target.value)}
+                                            placeholder="Min 6 characters"
+                                            className="w-full bg-nature-bg border border-nature-border focus:border-nature-olive/50 rounded-lg px-4 py-2 text-nature-dark text-sm outline-none transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-nature-muted text-xs mb-1">Confirm New Password *</label>
+                                        <input
+                                            required
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={e => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full bg-nature-bg border border-nature-border focus:border-nature-olive/50 rounded-lg px-4 py-2 text-nature-dark text-sm outline-none transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                {passwordError && <p className="text-red-600 text-xs">{passwordError}</p>}
+
+                                <div className="flex gap-2 pt-2">
+                                    <button type="submit" disabled={passwordLoading} className="bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
+                                        {passwordLoading ? 'Updating...' : 'Save Password'}
+                                    </button>
+                                    <button type="button" onClick={() => setShowPasswordForm(false)} className="px-4 py-2.5 text-nature-muted hover:text-nature-dark text-sm transition-colors">Cancel</button>
+                                </div>
+                            </form>
+                        )}
+
+                        {passwordSuccess && (
+                            <div className="mt-4 bg-nature-sage/20 border border-nature-sage/40 rounded-xl px-4 py-3 flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-nature-olive flex-shrink-0" />
+                                <p className="text-nature-olive text-sm">{passwordSuccess}</p>
+                            </div>
+                        )}
+                    </div>
                 </section>
 
             </div>

@@ -30,7 +30,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [ProfileController::class, 'getOrders']);
     Route::get('/wallet-topups', [ProfileController::class, 'getWalletTopups']);
     Route::post('/wallet-topups', [ProfileController::class, 'storeWalletTopup']);
-    Route::get('/reviews', [ProfileController::class, 'getReviews']);  
+    Route::get('/reviews', [ProfileController::class, 'getReviews']); 
+    Route::post('/user/change-password', [ProfileController::class, 'changePassword']); 
 
     // Cart Items  
     Route::get('/cart', [CartItemController::class, 'index']);

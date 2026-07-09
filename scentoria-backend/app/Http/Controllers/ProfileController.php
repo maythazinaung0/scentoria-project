@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;  
 use Illuminate\Support\Facades\DB;  
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller  
 {   
@@ -90,4 +91,31 @@ class ProfileController extends Controller
 
         return response()->json($reviews);
     }
+
+    public function changePassword(Request $request)
+    {
+    $request->validate([
+        'current_password' => 'required',
+        'new_password' => 'required|string|min:6|confirmed',
+    ]);
+
+    $user = $request->user();
+
+    // Check current password really match 
+    if (!Hash::check($request->current_password, $user->password)) {
+        return response()->json([
+            'message' => 'The provided current password does not match our records.'
+        ], 422);
+    }
+
+    // Save new password 
+    $user->update([
+        'password' => Hash::make($request->new_password)
+    ]);
+
+    return response()->json([
+        'message' => 'Password changed successfully.'
+    ], 200);
+    }
+
 }

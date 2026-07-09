@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     UserCircle, ShoppingBag, ChevronDown, ChevronUp,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
-    Wallet, Plus, Send, Star, MessageSquare, Lock  
+    Wallet, Plus, Send, Star, MessageSquare, Lock, Heart  
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -45,7 +45,8 @@ export default function ProfilePage() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState([]);
-    const [reviews, setReviews] = useState([]);   
+    const [reviews, setReviews] = useState([]);
+    const [wishlists, setWishlists] = useState([]);   
     const [walletBalance, setWalletBalance] = useState(0);
     const [topupRequests, setTopupRequests] = useState([]);
     const [expandedOrder, setExpandedOrder] = useState(null);
@@ -99,18 +100,21 @@ export default function ProfilePage() {
                 authenticatedFetch('/user/profile'),
                 authenticatedFetch('/orders'),
                 authenticatedFetch('/wallet-topups'),
-                authenticatedFetch('/reviews')  
+                authenticatedFetch('/reviews'),
+                authenticatedFetch('/wishlists')  
             ]);
 
             const profile = await profileRes.json();
             const orderData = await ordersRes.json();
             const topupData = await topupsRes.json();
             const reviewData = await reviewsRes.json();
+            const wishlistData = await wishlistsRes.json();
 
             setWalletBalance(profile?.wallet_balance ?? 0);
             setOrders(orderData ?? []);
             setTopupRequests(topupData ?? []);
-            setReviews(reviewData ?? []);  
+            setReviews(reviewData ?? []);
+            setWishlists(wishlistData ?? []);  
 
         } catch (error) {
             console.error("Error connecting with Laravel backend APIs:", error);
@@ -384,16 +388,84 @@ export default function ProfilePage() {
                                             </div>
                                         </button>
                                         {isExpanded && (
-                                            <div className="border-t border-nature-border px-5 py-4 space-y-3">
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-nature-muted mb-3">
-                                                    <span className="col-span-2">Address: <span className="text-nature-dark">{order.address}</span></span>
-                                                    <span>Payment Method: <span className="text-nature-dark capitalize">{order.payment_method?.replace('_', ' ')}</span></span>
+                                            <div className="border-t border-nature-border px-5 py-4 space-y-4 bg-nature-bg/30 text-sm">
+                                                {/* Shipping Info */}
+                                                <div className="flex flex-wrap justify-between gap-y-2 text-xs text-nature-muted border-b border-nature-border/60 pb-3">
+                                                    <div>
+                                                        <p>Ship to: <span className="text-nature-dark font-medium">{order.shipping_name || 'Customer'}</span></p>
+                                                        <p className="mt-1">Address: <span className="text-nature-dark">{order.address}</span></p>
+                                                    </div>
+                                                    <div>
+                                                        <p>Phone: <span className="text-nature-dark font-medium">{order.shipping_phone || 'N/A'}</span></p>
+                                                        <p className="mt-1">Payment: <span className="text-nature-dark capitalize">{order.payment_method?.replace('_', ' ')}</span></p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Order Items List */}
+                                                <div className="space-y-3">
+                                                    {order.items && order.items.map(item => (
+                                                        <div key={item.id} className="flex justify-between items-start text-xs border-b border-nature-border/40 pb-3 last:border-0 last:pb-0">
+                                                            <div>
+                                                                <h4 className="text-nature-dark text-sm font-medium">{item.product_name}</h4>
+                                                                <p className="text-nature-muted mt-0.5">
+                                                                    {item.brand_name} - <span className="font-medium text-nature-dark">{item.variant_size || '30ml'}</span> - qty {item.quantity}
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-nature-dark font-medium">{formatMMK(item.price * item.quantity)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Total Price Summary Row */}
+                                                <div className="flex justify-between items-center pt-2 border-t border-nature-border font-medium text-nature-dark">
+                                                    <span>Total:</span>
+                                                    <span className="text-base font-semibold">{formatMMK(order.total_amount)}</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+                </section>
+
+                {/* --- WISHLISTS SECTION --- */}
+                <section>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Heart className="w-4 h-4 text-nature-olive fill-nature-olive" />
+                        <h2 className="text-nature-olive text-sm tracking-widest uppercase">My Wishlist</h2>
+                        <span className="ml-auto text-nature-muted text-xs">{wishlists.length} item{wishlists.length !== 1 ? 's' : ''}</span>
+                    </div>
+
+                    {wishlists.length === 0 ? (
+                        <div className="bg-nature-card border border-nature-border rounded-2xl p-10 text-center">
+                            <Heart className="w-10 h-10 text-nature-sand mx-auto mb-3" />
+                            <p className="text-nature-muted text-sm mb-4">Your wishlist is currently empty.</p>
+                            <Link to="/products" className="text-nature-olive hover:text-nature-olive-dark text-sm transition-colors">Discover favorites</Link>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {wishlists.map(item => (
+                                <div key={item.id} className="bg-nature-card border border-nature-border rounded-2xl p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+                                    {/* Product Image */}
+                                    <div className="w-16 h-16 bg-nature-bg rounded-xl border border-nature-border overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                        {item.product_image ? (
+                                            <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Package className="w-6 h-6 text-nature-sand" />
+                                        )}
+                                    </div>
+                                    {/* Product Details */}
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-nature-dark font-medium text-sm truncate">{item.product_name}</h3>
+                                        <p className="text-nature-muted text-xs capitalize mt-0.5">{item.product_type || 'Perfume'}</p>
+                                        <Link to={`/products/${item.product_id}`} className="inline-flex items-center gap-1 text-nature-olive hover:text-nature-olive-dark text-xs font-semibold mt-2 transition-colors">
+                                            View Product <ArrowRight className="w-3 h-3" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </section>

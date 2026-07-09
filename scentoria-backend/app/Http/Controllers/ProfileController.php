@@ -25,15 +25,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function getOrders(Request $request)
-    {
-        $orders = Order::where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($orders);
-    }
-
     public function getWalletTopups(Request $request)
     {
         $topups = WalletTopup::where('user_id', $request->user()->id)
@@ -78,7 +69,45 @@ class ProfileController extends Controller
             'message' => 'Top-up request submitted successfully.',
             'data' => $topup
         ], 201);
-    }  
+    } 
+
+    public function getOrders(Request $request)
+    {
+    
+        $orders = DB::table('orders')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        foreach ($orders as $order) {
+            $order->items = DB::table('order_items')
+                ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
+                ->join('products', 'product_variants.product_id', '=', 'products.id')
+                ->join('brands', 'products.brand_id', '=', 'brands.id') 
+                ->where('order_items.order_id', $order->id)
+                ->select(
+                    'order_items.*',
+                    'products.name as product_name',
+                    'brands.name as brand_name',
+                    'product_variants.size as variant_size'
+                )
+                ->get();
+        }
+
+        return response()->json($orders);
+    }
+    
+    public function getWishlists(Request $request)
+    {
+        $wishlists = DB::table('wishlists')
+            ->join('products', 'wishlists.product_id', '=', 'products.id')
+            ->where('wishlists.user_id', $request->user()->id)
+            ->select('wishlists.*', 'products.name as product_name', 'products.image_url as product_image', 'products.type as product_type')
+            ->orderBy('wishlists.created_at', 'desc')
+            ->get();
+
+        return response()->json($wishlists);
+    }
  
     public function getReviews(Request $request)
     {

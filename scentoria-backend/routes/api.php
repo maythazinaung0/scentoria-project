@@ -80,4 +80,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/notes', function () {
         return response()->json(\App\Models\Note::all());
     });
+
+    // Admin Orders — now properly registered as siblings
+    Route::get('/admin/orders', [OrderController::class, 'index']);
+    Route::patch('/admin/orders/{id}', [OrderController::class, 'update']);
 });

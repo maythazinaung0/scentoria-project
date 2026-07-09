@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     UserCircle, ShoppingBag, ChevronDown, ChevronUp,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
-    Wallet, Plus, Send, Star, MessageSquare, Lock, Heart  
+    Wallet, Plus, Send, Star, MessageSquare, Lock, Bookmark  
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -433,14 +433,14 @@ export default function ProfilePage() {
                 {/* --- WISHLISTS SECTION --- */}
                 <section>
                     <div className="flex items-center gap-2 mb-4">
-                        <Heart className="w-4 h-4 text-nature-olive fill-nature-olive" />
+                        <Bookmark className="w-4 h-4 text-nature-olive fill-nature-olive" />
                         <h2 className="text-nature-olive text-sm tracking-widest uppercase">My Wishlist</h2>
                         <span className="ml-auto text-nature-muted text-xs">{wishlists.length} item{wishlists.length !== 1 ? 's' : ''}</span>
                     </div>
 
                     {wishlists.length === 0 ? (
                         <div className="bg-nature-card border border-nature-border rounded-2xl p-10 text-center">
-                            <Heart className="w-10 h-10 text-nature-sand mx-auto mb-3" />
+                            <Bookmark className="w-10 h-10 text-nature-sand mx-auto mb-3" />
                             <p className="text-nature-muted text-sm mb-4">Your wishlist is currently empty.</p>
                             <Link to="/products" className="text-nature-olive hover:text-nature-olive-dark text-sm transition-colors">Discover favorites</Link>
                         </div>

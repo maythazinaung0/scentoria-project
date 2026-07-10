@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Bookmark } from 'lucide-react';
 import { theme } from '../../theme';
 import { useCart } from '../../contexts/CartContext';
 
@@ -110,7 +110,7 @@ export default function ProductDetailPage() {
                             >
                                 <ShoppingCart size={18} /> ADD TO CART
                             </button>
-                            <button className="p-3 border border-nature-border rounded-lg text-nature-olive hover:bg-nature-sage/10"><Heart size={20} /></button>
+                            <button className="p-3 border border-nature-border rounded-lg text-nature-olive hover:bg-nature-sage/10"><Bookmark size={20} /> </button>
                         </div>
 
                         <div className="pt-8 border-t border-nature-border">

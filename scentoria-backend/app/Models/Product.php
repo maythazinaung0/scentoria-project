@@ -9,6 +9,7 @@ use App\Models\Scent;
 use App\Models\ProductVariant;
 use App\Models\ProductNote;
 
+
 class Product extends Model
 {
     protected $fillable = [

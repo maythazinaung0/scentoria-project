@@ -21,7 +21,7 @@ export default function AboutPage() {
     const [openFaq, setOpenFaq] = useState(null);
 
     return (
-        <div className="bg-nature-bg text-nature-dark">
+        <div style={{ backgroundColor: theme.colors.bgBase, color: theme.colors.textPrimary }}>
             {/* Header with explicit top padding */}
             <div className="max-w-5xl mx-auto px-4 text-center pt-24 mb-16">
                 <div className="flex items-center justify-center gap-3 mb-5">
@@ -29,9 +29,21 @@ export default function AboutPage() {
                     <h1 className="font-serif text-5xl text-nature-dark tracking-tight">{theme.brand.name}</h1>
                 </div>
                 <p className="text-lg text-nature-muted max-w-2xl mx-auto mb-8">Premium inspired fragrances at honest prices — helping you discover your signature scent.</p>
-                <div className="flex justify-center gap-4">
-                    <Link to="/products" className="bg-nature-olive text-white px-8 py-3 rounded-lg hover:bg-nature-dark transition-colors">SHOP NOW</Link>
-                    <Link to="/scents" className="border border-nature-border px-8 py-3 rounded-lg hover:bg-white transition-colors">EXPLORE SCENTS</Link>
+                {/* Updated Buttons */}
+                <div className="flex flex-wrap justify-center items-center gap-4">
+                    <Link
+                        to="/products"
+                        className="inline-flex items-center gap-2 px-8 py-3 transition-all hover:opacity-90 tracking-widest uppercase text-xs text-white"
+                        style={{ backgroundColor: theme.colors.accent }}
+                    >
+                        SHOP NOW
+                    </Link>
+                    <Link
+                        to="/scents"
+                        className="inline-flex items-center gap-2 px-8 py-3 transition-all border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white tracking-widest uppercase text-xs"
+                    >
+                        EXPLORE SCENTS
+                    </Link>
                 </div>
             </div>
 

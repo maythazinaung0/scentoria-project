@@ -1,108 +1,63 @@
-import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React from 'react';
 import ProductCard from '../../components/ProductCard';
-import { theme } from '../../theme';
 import SizeBanner from '../../components/SizeBanner';
+import { theme } from '../../theme';
 
-export default function ProductsPage({ products = [] }) {
-    const { searchQuery } = useOutletContext();
-    const [selectedBrand, setSelectedBrand] = useState('');
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+export default function ProductsPage({ products = [], scents = [] }) {
     const safeProducts = Array.isArray(products) ? products : [];
-    const brands = [...new Set(safeProducts.map(p => p.brand?.name || p.brand))].filter(Boolean).sort();
-
-    const filtered = safeProducts.filter(p => {
-        const brandName = (p.brand?.name || p.brand || '').toString().toLowerCase();
-        const productName = (p.name || '').toString().toLowerCase();
-
-        let scentString = '';
-        if (p.scent_profile?.name) scentString += p.scent_profile.name + ' ';
-        if (p.scent) scentString += (typeof p.scent === 'object' ? p.scent.name || '' : p.scent) + ' ';
-
-        const scentName = scentString.toLowerCase();
-        const q = (searchQuery ?? '').toLowerCase();
-
-        const matchesBrand = !selectedBrand || brandName === selectedBrand.toLowerCase();
-
-        const matchesSearch = !q ||
-            brandName.includes(q) ||
-            productName.includes(q) ||
-            scentName.includes(q);
-
-        return matchesBrand && matchesSearch;
-    });
+    const safeScents = Array.isArray(scents) ? scents : [];
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] text-[var(--color-text-primary)] pt-24">
+        <div
+            className="min-h-screen pt-12"
+            style={{ backgroundColor: theme.colors.bgBase, color: theme.colors.textPrimary }}
+        >
             {/* Header */}
-            <div className="py-14 px-4 text-center border-b border-[#E5E7E2]">
-                <p className="text-[var(--color-accent)] text-[11px] tracking-[0.3em] uppercase mb-2">Our Collection</p>
+            <div className="py-12 px-4 text-center">
+                <p className="text-[11px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.colors.accent }}>
+                    Our Collection
+                </p>
                 <h1 className="font-serif text-4xl">All Fragrances</h1>
+
+                <p className="mt-4 text-xs uppercase tracking-[0.2em]" style={{ color: theme.colors.textMuted }}>
+                    A curated selection of premium inspired fragrances for every personality.
+                </p>
             </div>
 
-            {/* Full-width container for the border line */}
-            <div className="w-full border-b border-[#E5E7E2] mb-8">
-                {/* Centered container for the button alignment */}
-                <div className="max-w-7xl mx-auto px-4 py-7 relative">
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className={`text-[11px] px-6 py-2 rounded border transition-colors tracking-wider flex items-center gap-3 ${selectedBrand
-                                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white'
-                                : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]'
-                            }`}
-                    >
-                        {selectedBrand ? selectedBrand.toUpperCase() : 'ALL'}
-                        <span className="text-[10px]">▼</span>
-                    </button>
+            {/* Content */}
+            <div className="py-6">
+                {safeScents.map((scent) => {
+                    const associatedProducts = safeProducts.filter(
+                        (p) => p.scent_id === scent.id || p.scent_name === scent.name
+                    );
 
-                    {/* Dropdown Menu */}
-                    {isDropdownOpen && (
-                        <div className="absolute left-4 mt-2 w-48 bg-white border border-[var(--color-border)] rounded shadow-xl z-50">
-                            <button
-                                className="block w-full text-left px-4 py-3 text-[11px] hover:bg-[var(--color-accent)] hover:text-white uppercase tracking-wider transition-colors"
-                                onClick={() => { setSelectedBrand(''); setIsDropdownOpen(false); }}
-                            >
-                                All
-                            </button>
-                            {brands.map(b => (
-                                <button
-                                    key={b}
-                                    className="block w-full text-left px-4 py-3 text-[11px] hover:bg-[var(--color-accent)] hover:text-white uppercase tracking-wider transition-colors border-t border-gray-100"
-                                    onClick={() => { setSelectedBrand(b); setIsDropdownOpen(false); }}
-                                >
-                                    {b}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                    if (associatedProducts.length === 0) return null;
 
-            {/* Products Section */}
-            <div className="max-w-7xl mx-auto px-4 pb-24">
-                <section className="py-12">
-                    <div className="text-center mb-12">
-                        <p className="text-[var(--color-accent)] text-[11px] tracking-[0.3em] uppercase mb-2">
-                            {searchQuery ? `Search: "${searchQuery}"` : 'Curated Selection'}
-                        </p>
-                        <h2 className="font-serif text-3xl">
-                            {searchQuery ? 'Fragrances Found' : 'Featured Fragrances'}
-                        </h2>
-                    </div>
+                    return (
+                        <section key={scent.id} className="py-8">
+                            {/* Scent Title Section */}
+                            <div className="text-center mb-8">
+                                <h2 className="font-serif text-2xl mb-2">{scent.name}</h2>
 
-                    {filtered.length === 0 ? (
-                        <div className="text-center py-20 text-[var(--color-text-muted)]">
-                            <p>Currently We Don't Have The Product That You Search</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                            {filtered.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    )}
-                </section>
+                            </div>
+
+                            {/* Scrollable Container */}
+                            <div className="flex overflow-x-auto gap-6 pb-6 px-6 scrollbar-hide max-w-[1280px] mx-auto">
+                                {associatedProducts.map((product) => (
+                                    <div key={product.id} className="min-w-[200px] max-w-[200px] md:min-w-[240px] md:max-w-[240px] flex-shrink-0">
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Decorative Line */}
+                            <div
+                                className="w-full border-b mt-4"
+                                style={{ borderColor: theme.colors.borderSubtle }}
+                            ></div>
+                        </section>
+                    );
+                })}
             </div>
             <SizeBanner />
         </div>

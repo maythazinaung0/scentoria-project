@@ -22,8 +22,6 @@ import ScentDetailPage from './pages/customer/ScentDetailPage';
 import ProductDetailPage from './pages/customer/Productdetail';
 import ProductsPage from './pages/customer/Productspage';
 import './index.css';
-import ProfilePage from './pages/customer/ProfilePage';
-import CartPage from './pages/customer/CartPage';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,8 +42,6 @@ function App() {
       .catch(err => console.error("Error fetching scents:", err));
   }, []);
 
-  //return <ProfilePage />;
-
   return (
     <Routes>
       <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
@@ -56,9 +52,9 @@ function App() {
         <Route path="/scents" element={<ScentProfilesPage />} />
         <Route path="/scents/:id" element={<ScentDetailPage />} />
 
-        <Route path="/products" element={<ProductsPage products={products} searchQuery={searchQuery} />} />
+        <Route path="/products" element={<ProductsPage products={products} scents={scents} />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
-        <Route path="/cart" element={<CartPage />} />
+
       </Route>
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>

@@ -45,9 +45,11 @@ export default function ScentProfilesPage() {
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <svg className="w-5 h-5 text-gray-500 mt-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                </svg>
+                                <Link to={`/scents/${scent.id}`}>
+                                    <svg className="w-5 h-5 text-gray-500 mt-2 hover:text-[#2D2E2B] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                </Link>
                             </div>
 
                             {/* Title & Description */}

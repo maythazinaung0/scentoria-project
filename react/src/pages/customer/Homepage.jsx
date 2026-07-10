@@ -9,7 +9,8 @@ const HERO_IMAGES = [
     'https://images.pexels.com/photos/1190829/pexels-photo-1190829.jpeg?auto=compress&cs=tinysrgb&w=1400',
 ];
 
-export default function HomePage({ searchQuery, products, scents }) {
+// SearchQuery ကို ဖယ်ထုတ်ပြီး products နဲ့ scents ကိုပဲ အဓိကထား
+export default function HomePage({ products, scents }) {
     const [heroIdx, setHeroIdx] = useState(0);
 
     useEffect(() => {
@@ -17,12 +18,9 @@ export default function HomePage({ searchQuery, products, scents }) {
         return () => clearInterval(t);
     }, []);
 
-    const filtered = Array.isArray(products) && searchQuery
-        ? products.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : products;
-
     return (
         <div style={{ backgroundColor: theme.colors.bgBase, color: theme.colors.textPrimary }}>
+            {/* Hero Section */}
             <section className="max-w-7xl mx-auto px-6 md:px-8 py-16 md:py-24">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
                     <div className="relative overflow-hidden rounded-sm shadow-lg h-[500px]">
@@ -55,15 +53,14 @@ export default function HomePage({ searchQuery, products, scents }) {
                 </div>
             </section>
 
-            {/* Scent profile section */}
-
+            {/* Scent Profiles Section */}
             <section className="py-20 px-4 max-w-7xl mx-auto border-t border-gray-100">
                 <div className="text-center mb-12">
                     <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.colors.accent }}>Fragrance Families</p>
                     <h2 className="font-serif text-3xl">Explore Scent Profiles</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {scents && scents.map(scent => (
+                    {scents && scents.slice(0, 6).map(scent => (
                         <Link key={scent.id} to={`/scents/${scent.id}`}
                             className="group border border-gray-200 hover:border-gray-400 rounded-xl p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-white">
                             <div className="w-full aspect-square mb-3 overflow-hidden rounded-lg bg-gray-50">
@@ -73,53 +70,37 @@ export default function HomePage({ searchQuery, products, scents }) {
                         </Link>
                     ))}
                 </div>
-                <div className="text-center pt-16 pb-8">
-                    <Link
-                        to="/scents"
-                        className="text-sm font-semibold tracking-widest uppercase transition-colors hover:text-[var(--color-accent)]"
-                    >
-                        VIEW ALL SCENT PROFILES →
+                <div className="text-center pt-8">
+                    <Link to="/products" className="text-sm font-semibold tracking-widest uppercase transition-colors hover:text-[var(--color-accent)]">
+                        EXPLORE SCENT PROFILES →
                     </Link>
                 </div>
             </section>
 
-            <div className="flex flex-wrap gap-2 py-7 border-b border-[#E5E7E2] mb-8"></div>
 
-            {/* Fragrances section */}
-
+            {/* Featured Fragrances Section  */}
             <section className="py-20 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-12">
                     <p className="text-[11px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.colors.accent }}>New Arrivals</p>
                     <h2 className="font-serif text-3xl">Featured Fragrances</h2>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    {filtered && filtered.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
+                <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide">
+                    {Array.isArray(products) && [...products]
+                        .sort((a, b) => b.id - a.id)
+                        .slice(0, 8)
+                        .map((product) => (
+                            <div key={product.id} className="min-w-[240px] md:min-w-[280px]">
+                                <ProductCard product={product} />
+                            </div>
+                        ))
+                    }
                 </div>
 
-                <div className="text-center pt-16 pb-8">
+                <div className="text-center pt-8">
                     <Link to="/products" className="text-sm font-semibold tracking-widest uppercase transition-colors hover:text-[var(--color-accent)]">
                         VIEW ALL FRAGRANCES →
                     </Link>
-                </div>
-            </section>
-
-            {/* Banner Section without extra margins */}
-            <section className="relative py-24 overflow-hidden">
-                <div
-                    className="absolute inset-0 bg-cover bg-center z-0"
-                    style={{
-                        backgroundImage: "url('https://images.pexels.com/photos/9944432/pexels-photo-9944432.jpeg')",
-                    }}
-                />
-                <div className="absolute inset-0 bg-white/70 z-0" />
-
-                <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-                    <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: theme.colors.accent }}>Available Volumes</p>
-                    <h3 className="font-serif text-3xl mb-4">30ml, 50ml &amp; 100ml</h3>
-                    <p className="text-gray-800 max-w-md mx-auto text-sm">Travel light or indulge fully — choose the size that fits your lifestyle.</p>
                 </div>
             </section>
         </div>

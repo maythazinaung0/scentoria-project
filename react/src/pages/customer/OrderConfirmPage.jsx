@@ -20,10 +20,11 @@ const STEPS = [
 
 export default function OrderConfirmPage() {
   const { id } = useParams();
-  const [order, setOrder] = useState(null);
+   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imgErrors, setImgErrors] = useState({});
 
   useEffect(() => {
     if (!id) return;
@@ -138,26 +139,46 @@ export default function OrderConfirmPage() {
 
           {/* Items — scrolls instead of pushing the page tall on large orders */}
           {items.length > 0 && (
-            <div className="divide-y divide-nature-border/60 mb-6 max-h-72 overflow-y-auto pr-1">
-              {items.map(item => (
-                <div key={item.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-                  <div className="w-12 h-12 flex-shrink-0 border border-white/70 bg-white/40 rounded-md overflow-hidden">
-                    <img
-                      src={item.variant?.product?.image_url ?? 'https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=200'}
-                      alt={item.variant?.product?.name ?? ''}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-nature-dark text-sm font-medium truncate">{item.variant?.product?.name ?? 'Fragrance Product'}</p>
-                    <p className="text-nature-muted text-xs uppercase tracking-wide mt-0.5">{item.variant?.size ?? 'Variant'} × {item.quantity}</p>
-                  </div>
-                  <span className="text-nature-dark text-sm flex-shrink-0">{formatMMK(item.price * item.quantity)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+  <div className="divide-y divide-nature-border/60 mb-6 max-h-72 overflow-y-auto pr-1">
+    {items.map(item => {
+      const imageUrl = item.variant?.product?.image_url;
+      const showImage = imageUrl && !imgErrors[item.id];
 
+      return (
+        <div key={item.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+          {/* Image / Fallback Container */}
+          <div className="w-12 h-12 flex-shrink-0 border border-white/70 bg-white/40 rounded-md overflow-hidden flex items-center justify-center">
+            {showImage ? (
+              <img
+                src={imageUrl}
+                alt={item.variant?.product?.name ?? ''}
+                onError={() => setImgErrors(prev => ({ ...prev, [item.id]: true }))}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package className="w-5 h-5 text-nature-sand" strokeWidth={1} />
+            )}
+          </div>
+
+          {/* Item Details */}
+          <div className="flex-1 min-w-0">
+            <p className="text-nature-dark text-sm font-medium truncate">
+              {item.variant?.product?.name ?? 'Fragrance Product'}
+            </p>
+            <p className="text-nature-muted text-xs uppercase tracking-wide mt-0.5">
+              {item.variant?.size ?? 'Variant'} × {item.quantity}
+            </p>
+          </div>
+
+          {/* Item Price */}
+          <span className="text-nature-dark text-sm flex-shrink-0">
+            {formatMMK(item.price * item.quantity)}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+)}
           <div className="border-t border-nature-border/70 pt-5 space-y-4">
             <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-nature-olive mt-0.5 flex-shrink-0" strokeWidth={1.5} />

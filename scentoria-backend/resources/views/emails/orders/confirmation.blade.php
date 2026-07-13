@@ -1,5 +1,5 @@
 @component('mail::message')
-# Thank you for your order, {{ $order->full_name }}!
+# Thank you for your order, {{$order->customer->name }}!
 
 Your order **#{{ $order->id }}** has been placed successfully.
 

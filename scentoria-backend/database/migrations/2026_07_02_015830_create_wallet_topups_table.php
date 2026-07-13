@@ -16,8 +16,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->integer('deposit_amount');
             $table->enum('topup_channel', ['kbzpay','cbpay']);
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
+            $table->enum('status', ['pending', 'completed', 'rejected'])->default('pending');
             $table->string('transaction_image_url')->nullable();
+            $table->string('image_hash', 64)->nullable();
+            $table->string('sender_name')->nullable();
+            $table->string('transaction_reference')->nullable();
+            $table->timestamp('approved_at')->nullable();
+            $table->unique(['topup_channel', 'transaction_reference']);
             $table->timestamps();
         });
     }

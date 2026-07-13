@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Loader2, ImageOff, Wallet, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Check, X, Loader2, ImageOff, Wallet, Clock, CheckCircle2, XCircle, Hash, User } from 'lucide-react';
 import api from '../../api';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'text-amber-600 bg-amber-50 border-amber-200/60', icon: Clock },
   completed: { label: 'Completed', color: 'text-emerald-700 bg-emerald-50 border-emerald-200/60', icon: CheckCircle2 },
-  cancelled: { label: 'Cancelled', color: 'text-rose-600 bg-rose-50 border-rose-200/60', icon: XCircle },
+  // Backend enum is 'rejected', not 'cancelled' — this used to be 'cancelled'
+  // here, which meant the reject action silently failed (backend returned
+  // a 422 the UI never surfaced).
+  rejected: { label: 'Rejected', color: 'text-rose-600 bg-rose-50 border-rose-200/60', icon: XCircle },
 };
 
 const CHANNEL_LABELS = {
@@ -24,6 +27,8 @@ function StatusBadge({ status }) {
   );
 }
 
+// `url` is expected to already be a full, absolute URL — the backend's
+// filesystems.php builds it from APP_URL, so no origin-prepending needed here.
 function ImagePreviewModal({ url, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -35,9 +40,7 @@ function ImagePreviewModal({ url, onClose }) {
         >
           <X className="w-6 h-6" />
         </button>
-        <img
-          src={url}
-          alt="Transaction proof"
+        <img src={url} alt="Transaction proof"
           className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"
         />
       </div>
@@ -81,7 +84,7 @@ function TopupRow({ topup, onDecide, deciding }) {
               <StatusBadge status={topup.status} />
             </div>
 
-            <div className="flex items-center gap-4 mt-3 text-sm">
+            <div className="flex items-center gap-4 mt-3 text-sm flex-wrap">
               <span className="font-serif text-xl text-neutral-800">
                 {Number(topup.deposit_amount).toLocaleString()} Ks
               </span>
@@ -92,6 +95,34 @@ function TopupRow({ topup, onDecide, deciding }) {
                 {new Date(topup.created_at).toLocaleString()}
               </span>
             </div>
+
+            {/* Cross-check info — this is what the admin actually matches
+                against their own KBZ Pay/CB Pay transaction history */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-3 pt-3 border-t border-nature-border/40">
+              <span className="flex items-center gap-1.5 text-xs text-neutral-700">
+                <User className="w-3.5 h-3.5 text-nature-muted" />
+                Sender: <span className="font-medium">{topup.sender_name || '—'}</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-neutral-700">
+                <Hash className="w-3.5 h-3.5 text-nature-muted" />
+                Ref: <span className="font-mono font-medium">{topup.transaction_reference || '—'}</span>
+              </span>
+              {topup.transaction_image_url && (
+                <button
+                  onClick={() => setPreviewOpen(true)}
+                  className="text-xs text-nature-olive hover:text-nature-olive-dark font-medium transition-colors"
+                >
+                  View Screenshot
+                </button>
+              )}
+            </div>
+
+            {topup.status !== 'pending' && topup.approved_by && (
+              <p className="text-nature-muted text-[11px] mt-2">
+                Reviewed by {topup.approved_by?.name || `user #${topup.approved_by}`}
+                {topup.approved_at && ` on ${new Date(topup.approved_at).toLocaleString()}`}
+              </p>
+            )}
 
             {isPending && (
               <div className="flex items-center gap-2 mt-4">
@@ -104,11 +135,11 @@ function TopupRow({ topup, onDecide, deciding }) {
                   Approve
                 </button>
                 <button
-                  onClick={() => onDecide(topup.id, 'cancelled')}
+                  onClick={() => onDecide(topup.id, 'rejected')}
                   disabled={deciding}
                   className="flex items-center gap-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-60 text-xs font-medium tracking-wide rounded-xl px-3.5 py-2 border border-rose-200/60 transition-colors"
                 >
-                  {deciding === 'cancelled' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                  {deciding === 'rejected' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                   Reject
                 </button>
               </div>
@@ -131,6 +162,7 @@ export default function WalletTopups() {
   const [filter, setFilter] = useState('pending');
   const [decidingId, setDecidingId] = useState(null);
   const [decidingStatus, setDecidingStatus] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   function fetchTopups(signal) {
     if (!hasLoadedOnce) setLoading(true);
@@ -154,11 +186,13 @@ export default function WalletTopups() {
   async function handleDecide(id, status) {
     setDecidingId(id);
     setDecidingStatus(status);
+    setActionError('');
     try {
       const { data } = await api.put(`/admin/wallet-topups/${id}`, { status });
       setTopups((prev) => prev.map((t) => (t.id === id ? data : t)));
     } catch (err) {
       console.error('Failed to update top-up:', err);
+      setActionError(err.response?.data?.message || 'Could not update this request. Please try again.');
     } finally {
       setDecidingId(null);
       setDecidingStatus(null);
@@ -171,7 +205,7 @@ export default function WalletTopups() {
   const tabs = [
     { key: 'pending', label: 'Pending', count: pendingCount },
     { key: 'completed', label: 'Completed' },
-    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'rejected', label: 'Rejected' },
     { key: 'all', label: 'All' },
   ];
 
@@ -191,6 +225,12 @@ export default function WalletTopups() {
               </p>
             </div>
           </div>
+
+          {actionError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3">
+              {actionError}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 border-b border-nature-border/60 pb-px">
             {tabs.map((tab) => (

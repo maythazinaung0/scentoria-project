@@ -9,10 +9,10 @@ class OrderCompletionController extends Controller
     public function show(Order $order)
     {
         if ($order->status !== 'processing') {
-            return view('orders.already-handled', ['order' => $order]);
+            return view('emails.orders.already-handled', ['order' => $order]);
         }
 
-        return view('orders.confirm-completion', ['order' => $order]);
+        return view('emails.orders.confirm-completion', ['order' => $order]);
     }
 
     public function complete(Order $order)
@@ -21,6 +21,6 @@ class OrderCompletionController extends Controller
             $order->update(['status' => 'completed']);
         }
 
-        return view('orders.completed', ['order' => $order]);
+        return view('emails.orders.completed', ['order' => $order]);
     }
 }

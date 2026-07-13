@@ -20,9 +20,9 @@ class OrderProcessingMail extends Mailable
         $this->order = $order;
 
         $this->signedUrl = URL::temporarySignedRoute(
-            'orders.confirm-completion',
-            now()->addDays(14),
-            ['order' => $order->id]
+        'orders.confirm-completion',
+        now()->addDays(14),
+        ['order' => $order->id]
         );
     }
 

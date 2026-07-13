@@ -1,37 +1,79 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Scent;
 use Illuminate\Http\Request;
 use App\Http\Requests\ScentRequest;
 use Illuminate\Http\JsonResponse;
 
-
 class ScentController extends Controller
 {
-    public function index() {
-        return response()->json(Scent::all());
+    public function index()
+    {
+        $scents = Scent::all()->map(function ($scent) {
+            $data = $scent->toArray();
+            $data['common_notes'] = $scent->commonNotes(4)->pluck('name');
+            return $data;
+        });
+
+        return response()->json($scents);
     }
 
+    // GET /api/scents/{id} — includes active products in this scent family
+    // (with brand/variants eager-loaded so ProductCard has what it needs)
+    // plus common_notes, computed live from those products' actual notes.
+    public function show($id)
+    {
+        $scent = Scent::with(['products' => function ($q) {
+            $q->where('status', 'active')->with(['brand', 'variants']);
+        }])->find($id);
 
-public function show(Scent $scent)
-{
-    return response()->json($scent);
-}
+        if (!$scent) {
+            return response()->json(['message' => 'Scent not found'], 404);
+        }
 
-public function store(ScentRequest $request): JsonResponse
+        $scentData = $scent->toArray();
+        $scentData['common_notes'] = $scent->commonNotes()->pluck('name');
+
+        return response()->json($scentData);
+    }
+
+    public function store(ScentRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
 
         $scent = Scent::create([
             'name' => $validatedData['name'],
             'description' => $validatedData['description'],
-            'image_url' => $validatedData['image_url'] ?? null, 
+            'image_url' => $validatedData['image_url'] ?? null,
         ]);
 
-        return response()->json([
-            'message' => 'Scent created successfully!',
-            'data' => $scent
-        ], 201); 
+        // Returned directly (not wrapped in {message, data}) so the admin
+        // frontend can drop the response straight into state — ScentModal's
+        // onSaved(data) expects `data` to BE the scent object.
+        return response()->json($scent, 201);
+    }
+
+    public function update(ScentRequest $request, $id): JsonResponse
+    {
+        $scent = Scent::findOrFail($id);
+        $validatedData = $request->validated();
+
+        $scent->update([
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'],
+            'image_url' => $validatedData['image_url'] ?? null,
+        ]);
+
+        return response()->json($scent);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $scent = Scent::findOrFail($id);
+        $scent->delete();
+
+        return response()->json(['message' => 'Scent deleted successfully']);
     }
 }
-

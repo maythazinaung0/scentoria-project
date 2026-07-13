@@ -2,136 +2,158 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProductRequest;
+use App\Models\Brand;
 use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function show($id)
-{
-    // Relationship များနှင့်အတူ ရှာဖွေခြင်း
-    $product = Product::with(['brand', 'scent', 'variants'])->find($id);
-
-    if (!$product) {
-        return response()->json(['message' => 'Product not found'], 404);
-    }
-
-    // JSON အနေနဲ့ ပြန်ပို့ပါ
-    return response()->json($product);
-}
+    // GET /api/products — storefront listing.
     public function index()
     {
-        // Eager loads everything requested including the structural notes
-        return response()->json(Product::with(['brand', 'scent', 'variants', 'notes'])->latest()->get());
+        try {
+            $products = Product::with(['brand', 'scent', 'variants', 'notes'])
+                ->where('status', 'active')
+                ->latest()
+                ->get();
+
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function store(Request $request)
+    // GET /api/products/{slug} — storefront product detail page.
+    // Looked up by slug (e.g. "dior-sauvage"), not id — so the URL in the
+    // browser is human-readable instead of /products/14.
+    public function show($slug)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:products,slug',
-            'brand_id' => 'required|exists:brands,id',
-            'scent_id' => 'required|exists:scents,id',
-            'description' => 'nullable|string',
-            'type' => 'required|string',
-            'gender' => 'required|string',
-            'season' => 'required|string',
-            'image_url' => 'nullable|url',
-            'variants' => 'required|array',
-            'variants.*.size' => 'required|string',
-            'variants.*.original_price' => 'required|numeric',
-            'variants.*.sale_price' => 'required|numeric',
-            'variants.*.stock_quantity' => 'required|integer',
-            'variants.*.sku' => 'nullable|string',
-            // Note validation rules
-            'top_notes' => 'nullable|array',
-            'top_notes.*' => 'exists:notes,id',
-            'heart_notes' => 'nullable|array',
-            'heart_notes.*' => 'exists:notes,id',
-            'base_notes' => 'nullable|array',
-            'base_notes.*' => 'exists:notes,id',
-        ]);
+        $product = Product::with(['brand', 'scent', 'variants', 'notes'])
+            ->where('status', 'active')
+            ->where('slug', $slug)
+            ->first();
 
-        return DB::transaction(function () use ($validated) {
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        return response()->json($product);
+    }
+
+    // GET /api/admin/products — admin listing.
+    public function adminIndex()
+    {
+        try {
+            $products = Product::with(['brand', 'scent', 'variants', 'notes'])
+                ->latest()
+                ->get();
+
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // GET /api/admin/products/{id} — admin still looks up by id (edit modal
+    // needs a stable key that doesn't shift if the slug is regenerated).
+    public function adminShow($id)
+    {
+        $product = Product::with(['brand', 'scent', 'variants', 'notes'])->find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        return response()->json($product);
+    }
+
+    public function store(ProductRequest $request)
+    {
+        $validated = $request->validated();
+        $brand = Brand::findOrFail($validated['brand_id']);
+
+        return DB::transaction(function () use ($validated, $brand) {
+            // Slug/SKU are always server-generated — whatever the client
+            // sends (if anything) is ignored and overwritten here.
+            $validated['slug'] = $this->generateUniqueSlug($brand->name, $validated['name']);
+
             $product = Product::create($validated);
 
-            // Save Variants
             foreach ($validated['variants'] as $variantData) {
                 if (filled($variantData['original_price'] ?? null)) {
+                    $variantData['sku'] = $this->generateSku($product->slug, $variantData['size']);
                     $product->variants()->create($variantData);
                 }
             }
 
-            // Sync Notes with types
-            $syncData = [];
-            foreach ($validated['top_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'top'];
-            }
-            foreach ($validated['heart_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'heart'];
-            }
-            foreach ($validated['base_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'base'];
-            }
-            $product->notes()->sync($syncData);
+            $this->syncProductNotes($product, $validated);
+            $product->refreshStockStatus();
 
             return response()->json($product->load(['brand', 'scent', 'variants', 'notes']), 201);
         });
     }
 
-    public function update(Request $request, $id)
+    public function update(ProductRequest $request, $id)
     {
         $product = Product::findOrFail($id);
+        $validated = $request->validated();
+        $brand = Brand::findOrFail($validated['brand_id']);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:products,slug,' . $product->id,
-            'brand_id' => 'required|exists:brands,id',
-            'scent_id' => 'required|exists:scents,id',
-            'description' => 'nullable|string',
-            'type' => 'required|string',
-            'gender' => 'required|string',
-            'season' => 'required|string',
-            'image_url' => 'nullable|url',
-            'variants' => 'required|array',
-            'variants.*.size' => 'required|string',
-            'variants.*.original_price' => 'required|numeric',
-            'variants.*.sale_price' => 'required|numeric',
-            'variants.*.stock_quantity' => 'required|integer',
-            'variants.*.sku' => 'nullable|string',
-            // Note validation rules
-            'top_notes' => 'nullable|array',
-            'top_notes.*' => 'exists:notes,id',
-            'heart_notes' => 'nullable|array',
-            'heart_notes.*' => 'exists:notes,id',
-            'base_notes' => 'nullable|array',
-            'base_notes.*' => 'exists:notes,id',
-        ]);
+        return DB::transaction(function () use ($validated, $product, $brand) {
+            // Regenerate the slug every update — if the brand or name
+            // changed, the slug (and downstream SKUs) should follow.
+            $validated['slug'] = $this->generateUniqueSlug($brand->name, $validated['name'], $product->id);
 
-        return DB::transaction(function () use ($validated, $product) {
             $product->update($validated);
 
-            // Refresh variants
-            $product->variants()->delete();
+            $keepIds = [];
+
             foreach ($validated['variants'] as $variantData) {
-                if (filled($variantData['original_price'] ?? null)) {
-                    $product->variants()->create($variantData);
+                if (!filled($variantData['original_price'] ?? null)) {
+                    continue;
                 }
+
+                $variantId = $variantData['id'] ?? null;
+                unset($variantData['id']);
+
+                $variant = $variantId ? $product->variants()->find($variantId) : null;
+
+                if (!$variant) {
+                    $variant = $product->variants()->where('size', $variantData['size'])->first();
+                }
+
+                // Always recompute — keeps SKU in sync with the (possibly
+                // just-changed) product slug.
+                $variantData['sku'] = $this->generateSku($product->slug, $variantData['size']);
+
+                if ($variant) {
+                    $variant->update($variantData);
+                } else {
+                    $variant = $product->variants()->create($variantData);
+                }
+
+                $keepIds[] = $variant->id;
             }
 
-            // Sync Notes with types
-            $syncData = [];
-            foreach ($validated['top_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'top'];
-            }
-            foreach ($validated['heart_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'heart'];
-            }
-            foreach ($validated['base_notes'] ?? [] as $noteId) {
-                $syncData[$noteId] = ['type' => 'base'];
-            }
-            $product->notes()->sync($syncData);
+            $product->variants()
+                ->whereNotIn('id', $keepIds)
+                ->get()
+                ->each(function ($variant) {
+                    if (!$variant->orderItems()->exists()) {
+                        $variant->delete();
+                    }
+                });
+
+            $this->syncProductNotes($product, $validated);
+            $product->refreshStockStatus();
 
             return response()->json($product->load(['brand', 'scent', 'variants', 'notes']));
         });
@@ -140,12 +162,73 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        
+
         return DB::transaction(function () use ($product) {
-            $product->variants()->delete();
-            $product->notes()->detach(); // Clean pivot records
+            $product->variants()->doesntHave('orderItems')->delete();
+
+            if ($product->variants()->has('orderItems')->exists()) {
+                return response()->json([
+                    'message' => 'This product has variants tied to existing orders and cannot be deleted. Consider deactivating it instead.',
+                ], 422);
+            }
+
+            $product->notes()->detach();
             $product->delete();
             return response()->json(['message' => 'Product deleted successfully']);
         });
+    }
+
+    // "Dior" + "Sauvage" -> "dior-sauvage". Appends -2, -3, ... on collision
+    // (e.g. a re-release with the same brand+name), excluding the product
+    // being updated so editing without renaming doesn't false-collide with
+    // itself.
+    private function generateUniqueSlug(string $brandName, string $productName, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($brandName . ' ' . $productName);
+        $slug = $base;
+        $suffix = 2;
+
+        while (
+            Product::where('slug', $slug)
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    // "dior-sauvage" + "30ml" -> "dior-sauvage-30ml". Unique by construction
+    // as long as product slugs are unique and a product can't have two
+    // variants of the same size (already enforced by the UI's size picker).
+    private function generateSku(string $productSlug, string $size): string
+    {
+        return $productSlug . '-' . Str::slug($size);
+    }
+
+    private function syncProductNotes(Product $product, array $validated): void
+    {
+        $product->notes()->detach();
+
+        $rows = [];
+        $now = now();
+
+        foreach (['top_notes' => 'top', 'heart_notes' => 'heart', 'base_notes' => 'base'] as $field => $type) {
+            foreach ($validated[$field] ?? [] as $noteId) {
+                $rows[] = [
+                    'product_id' => $product->id,
+                    'note_id' => $noteId,
+                    'type' => $type,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if (!empty($rows)) {
+            DB::table('product_notes')->insert($rows);
+        }
     }
 }

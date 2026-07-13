@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout & Auth
@@ -16,6 +16,7 @@ import AdminWallet from './pages/admin/Wallet';
 import AdminReports from './pages/admin/Report';
 import AdminScents from './pages/admin/Scents';
 import AdminNotes from './pages/admin/Notes';
+import AdminBrands from './pages/admin/Brand';
 
 // Customer Imports
 import HomePage from './pages/customer/Homepage';
@@ -27,29 +28,11 @@ import CheckoutPage from './pages/customer/CheckoutPage';
 import OrderConfirmPage from './pages/customer/OrderConfirmPage';
 import ScentDetailPage from './pages/customer/ScentDetailPage';
 import ProductsPage from './pages/customer/Productspage';
-import ProductDetailPage from './pages/customer/Productdetail';
+import ProductDetailPage from './pages/customer/ProductDetailPage';
 import './App.css';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState([]);
-  const [scents, setScents] = useState([]); // Scents State 
-
-  useEffect(() => {
-    // Products Fetch
-    fetch('http://localhost/api/products', { headers: { 'Accept': 'application/json' } })
-      .then(res => res.json())
-      .then(data => setProducts(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error fetching products:", err));
-
-    // Scents Fetch
-    fetch('http://localhost/api/scents', { headers: { 'Accept': 'application/json' } }) // products အစား scents ကို ပြင်ပါ
-      .then(res => res.json())
-      .then(data => setScents(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error fetching scents:", err));
-  }, []);
-
-  //return <ProfilePage />;
 
   return (
     <Routes>
@@ -58,15 +41,14 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/scents" element={<ScentProfilesPage />} />
         <Route path="/scents/:id" element={<ScentDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/:id" element={<OrderConfirmPage />} />
-        <Route path="/products"  element={<ProductsPage products={products} />} />
-        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/products" element={<ProductsPage searchQuery={searchQuery} />} />
+        <Route path="/products/:slug" element={<ProductDetailPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>
@@ -78,6 +60,7 @@ function App() {
           <Route path="reports" element={<AdminReports />} />
           <Route path="scents" element={<AdminScents />} />
           <Route path="notes" element={<AdminNotes />} />
+          <Route path="brands" element={<AdminBrands />} />
         </Route>
       </Route>
 

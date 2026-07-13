@@ -54,11 +54,11 @@ class CheckoutController extends Controller
 
             // Order 
             $order = Order::create([
-                'user_id'        => $user->id,
-                'total_amount'   => $validated['total_amount'],
-                'status'         => 'pending', 
-                'payment_method' => $validated['payment_method'],
-            ]);
+        'user_id'        => $user->id,
+        'total_amount'   => $validated['total_amount'],
+        'status'         => 'pending', 
+        'payment_method' => $validated['payment_method'],
+]);
 
             foreach ($validated['items'] as $item) {
                 $variant = ProductVariant::find($item['product_variant_id']);
@@ -92,7 +92,7 @@ class CheckoutController extends Controller
 
            
             CartItem::where('user_id', $user->id)->delete();
-            Mail::to($user->email)->send(new OrderConfirmationMail($order));
+           Mail::to($user->email)->send(new OrderConfirmationMail($order->load('customer')));
             return response()->json(['message' => 'Order placed.', 'order_id' => $order->id], 201);
         });
     }

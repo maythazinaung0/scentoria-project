@@ -19,15 +19,19 @@ class WalletTopUpController extends Controller
     public function update(Request $request, WalletTopup $walletTopup)
     {
         $validated = $request->validate([
-            'status' => 'required|in:completed,cancelled',
-        ]);*
+            'status' => 'required|in:completed,rejected',
+        ]);
 
-        if ($walletTopup->status !== 'pending') {
-            return response()->json(['message' => 'This request has already been reviewed.'], 422);
-        }
+        return DB::transaction(function () use ($walletTopup, $validated) {
+            // Keep this! It protects against double-clicks from the same admin.
+            $walletTopup = WalletTopup::where('id', $walletTopup->id)->lockForUpdate()->first();
 
-        DB::transaction(function () use ($walletTopup, $validated) {
+            if ($walletTopup->status !== 'pending') {
+                return response()->json(['message' => 'This request has already been reviewed.'], 422);
+            }
+
             $walletTopup->status = $validated['status'];
+            $walletTopup->approved_at = now(); // Kept this so you know WHEN it happened
             $walletTopup->save();
 
             if ($validated['status'] === 'completed') {
@@ -47,8 +51,9 @@ class WalletTopUpController extends Controller
                     'balance_after_transaction' => $newBalance,
                 ]);
             }
-        });
 
-        return $walletTopup->fresh('user:id,name,email');
+            // Removed 'approvedBy:id,name' from the relations load
+            return $walletTopup->fresh(['user:id,name,email']);
+        });
     }
 }

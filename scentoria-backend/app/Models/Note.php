@@ -15,4 +15,8 @@ class Note extends Model
                     ->withPivot('type')
                     ->withTimestamps();
     }
+
+    public function productNotes() {
+        return $this->hasMany(ProductNote::class, 'note_id');
+    }
 }

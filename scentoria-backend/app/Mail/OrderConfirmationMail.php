@@ -38,7 +38,7 @@ class OrderConfirmationMail extends Mailable
         ->with([
             'order' => $this->order,
             'items' => $this->order->items()->with('variant.product')->get(),
-            'address' => $this->order->user->address,
+            'address' => $this->order->customer->address,
         ]);
 }
     /**

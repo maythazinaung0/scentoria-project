@@ -8,9 +8,11 @@ use Illuminate\Http\Request;
 
 class NoteController extends Controller
 {
-  public function index()
+    public function index()
     {
-        return Note::orderBy('name')->get();
+        return Note::select('id', 'name', 'icon_url')
+            ->orderBy('name')
+            ->get();
     }
 
     public function store(NoteRequest $request)

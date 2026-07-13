@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import ScentoriaLogo from './ScentoriaLogo';
 import { theme } from '../theme';
-
+import SearchModal from './SearchModal';
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
   { label: 'Fragrances', path: '/products' },
@@ -90,11 +90,12 @@ export default function Navbar({ searchQuery, onSearchChange }) {
   }
 
   return (
+    <>
     <nav
       className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
-        scrolled
-          ? 'bg-transparent backdrop-blur-md border-nature-border/30'
-          : 'bg-transparent border-transparent'
+        
+           'bg-transparent backdrop-blur-md border-nature-border/30'
+          
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -311,5 +312,12 @@ export default function Navbar({ searchQuery, onSearchChange }) {
         </div>
       </div>
     </nav>
+    <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        searchQuery={searchQuery}
+        onSearchChange={onSearchChange}
+      />
+    </>
   );
 }

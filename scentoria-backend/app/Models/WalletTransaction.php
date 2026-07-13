@@ -9,6 +9,7 @@ class WalletTransaction extends Model
 {
     protected $fillable = [
         'user_id',
+        'topup_id',
         'type',
         'order_id',
         'direction',

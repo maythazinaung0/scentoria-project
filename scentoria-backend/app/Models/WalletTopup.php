@@ -14,11 +14,15 @@ class WalletTopup extends Model
 
     
     protected $fillable = [
-        'user_id',
-        'deposit_amount',
-        'topup_channel',
-        'status',
-        'transaction_image_url', 
+       'user_id',
+    'deposit_amount',
+    'topup_channel',
+    'status',
+    'transaction_image_url',
+    'image_hash',
+    'sender_name',
+    'transaction_reference',
+    'approved_at',
     ];
 
     

@@ -35,7 +35,6 @@ function ScentTile({ scent }) {
                 </div>
             )}
 
-            {/* Gradient + label, same language as the featured fragrance cards */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
             <div className="absolute inset-x-0 bottom-0 p-4">
                 <p className="text-white font-serif text-lg leading-tight">
@@ -83,15 +82,11 @@ export default function HomePage() {
         load();
     }, []);
 
-    // Show a generous first screenful, but never force a layout that assumes
-    // a fixed count — the grid below wraps gracefully at any total.
     const visibleScents = scents.slice(0, 12);
-    const hasMoreScents = scents.length > visibleScents.length;
 
     return (
         <div className="bg-nature-bg text-nature-dark">
 
-            {/* --- HERO: full-bleed, cinematic --- */}
             <section className="relative h-[92vh] min-h-[560px] w-full overflow-hidden">
                 {HERO_IMAGES.map((img, idx) => (
                     <div
@@ -125,7 +120,6 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {/* Hero progress indicator, replaces implicit dots with something quieter */}
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
                     {HERO_IMAGES.map((_, idx) => (
                         <div key={idx} className={`h-[2px] rounded-full transition-all duration-500 ${idx === heroIdx ? 'w-8 bg-white' : 'w-3 bg-white/40'}`} />
@@ -133,8 +127,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* --- SCENT PROFILES: dynamic, no fixed slot count --- */}
-            {/* --- SCENT PROFILES: dynamic, no fixed slot count --- */}
             <section className="py-24 px-6 max-w-6xl mx-auto">
                 <div className="text-center mb-14">
                     <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">Fragrance Families</p>
@@ -159,19 +151,16 @@ export default function HomePage() {
                     </div>
                 )}
 
-                {hasMoreScents && (
-                    <div className="text-center pt-14">
-                        <Link
-                            to="/scents"
-                            className="text-nature-dark text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive inline-flex items-center gap-2"
-                        >
-                            View All Scent Profiles <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                    </div>
-                )}
+                <div className="text-center pt-14">
+                    <Link
+                        to="/scents"
+                        className="text-nature-dark text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive inline-flex items-center gap-2"
+                    >
+                        View All Scent Profiles <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                </div>
             </section>
 
-            {/* --- EDITORIAL STATEMENT: the page's one big moment --- */}
             <section className="relative h-[70vh] min-h-[420px] w-full overflow-hidden">
                 <div
                     className="absolute inset-0 bg-cover bg-center"
@@ -195,29 +184,33 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* --- FEATURED FRAGRANCES (kept as-is) --- */}
             <section className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-14">
                     <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">New Arrivals</p>
                     <h2 className="font-serif text-3xl sm:text-4xl">Featured Fragrances</h2>
                 </div>
 
+
+
                 <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide">
                     {loading ? (
                         Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="min-w-[240px] md:min-w-[280px] h-80 bg-nature-sand/20 rounded-xl animate-pulse" />
+                            // Increase these values to make the loading skeletons larger
+                            <div key={i} className="min-w-[280px] max-w-[280px] h-96 bg-nature-sand/20 rounded-xl animate-pulse shrink-0" />
                         ))
                     ) : (
                         [...products]
                             .sort((a, b) => b.id - a.id)
                             .slice(0, 8)
                             .map((product) => (
-                                <div key={product.id} className="min-w-[240px] md:min-w-[280px]">
+                                // Increase these values to make the actual cards larger
+                                <div key={product.id} className="min-w-[280px] max-w-[280px] shrink-0">
                                     <ProductCard product={product} />
                                 </div>
                             ))
                     )}
                 </div>
+
 
                 <div className="text-center pt-8">
                     <Link

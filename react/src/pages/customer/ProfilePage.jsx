@@ -86,6 +86,7 @@ export default function ProfilePage() {
     const [wishlists, setWishlists] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
     const [topupRequests, setTopupRequests] = useState([]);
+    const [topupErrors, setTopupErrors] = useState({}); // { field: [messages] }
     const [loading, setLoading] = useState(true);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -109,10 +110,10 @@ export default function ProfilePage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordLoading, setPasswordLoading] = useState(false);
- const [passwordErrors, setPasswordErrors] = useState({}); // { field: [messages] }
-    const [passwordFormError, setPasswordFormError] = useState('');    const [passwordSuccess, setPasswordSuccess] = useState('');
+    const [passwordErrors, setPasswordErrors] = useState({}); // { field: [messages] }
+    const [passwordFormError, setPasswordFormError] = useState(''); const [passwordSuccess, setPasswordSuccess] = useState('');
     const [showPasswordForm, setShowPasswordForm] = useState(false);
-const passwordChecks = [
+    const passwordChecks = [
         { label: 'At least 8 characters', pass: newPassword.length >= 8 },
         { label: 'One uppercase & one lowercase letter', pass: /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) },
         { label: 'At least one number', pass: /\d/.test(newPassword) },
@@ -184,32 +185,69 @@ const passwordChecks = [
         setLoading(false);
     }
 
+    // async function submitTopup(e) {
+    //     e.preventDefault();
+    //     const amount = parseInt(topupAmount.replace(/,/g, ''), 10);
+    //     if (!amount || amount < 1000) { setTopupError('Minimum top-up amount is 1,000 MMK.'); return; }
+    //     if (amount > 10000000) { setTopupError('Maximum top-up request is 10,000,000 MMK.'); return; }
+    //     if (!senderName.trim()) { setTopupError('Please enter the sender name shown in your payment app.'); return; }
+    //     if (!transactionRef.trim()) { setTopupError('Please enter the transaction reference number.'); return; }
+    //     if (!topupImage) { setTopupError('Please attach your transaction screenshot.'); return; }
+
+    //     setTopupLoading(true);
+    //     setTopupError('');
+
+    //     try {
+    //         const formData = new FormData();
+    //         formData.append('deposit_amount', amount);
+    //         formData.append('topup_channel', topupMethod);
+    //         formData.append('sender_name', senderName.trim());
+    //         formData.append('transaction_reference', transactionRef.trim());
+    //         formData.append('transaction_image', topupImage);
+
+    //         await api.post('/wallet-topups', formData, {
+    //             headers: { 'Content-Type': 'multipart/form-data' },
+    //         });
+
+    //         setTopupAmount('');
+    //         setTopupMethod('kbzpay');
+    //         setSenderName('');
+    //         setTransactionRef('');
+    //         setTopupImage(null);
+    //         setTopupSuccess(true);
+    //         setShowTopupForm(false);
+    //         setTimeout(() => setTopupSuccess(false), 4000);
+    //         loadData();
+    //     } catch (err) {
+    //         setTopupError(err.response?.data?.message || 'Failed to submit request. Please try again.');
+    //     } finally {
+    //         setTopupLoading(false);
+    //     }
+    // }
+
     async function submitTopup(e) {
         e.preventDefault();
+        setTopupErrors({}); // clear old errors
+        setTopupError('');
+
         const amount = parseInt(topupAmount.replace(/,/g, ''), 10);
-        if (!amount || amount < 1000) { setTopupError('Minimum top-up amount is 1,000 MMK.'); return; }
-        if (amount > 10000000) { setTopupError('Maximum top-up request is 10,000,000 MMK.'); return; }
-        if (!senderName.trim()) { setTopupError('Please enter the sender name shown in your payment app.'); return; }
-        if (!transactionRef.trim()) { setTopupError('Please enter the transaction reference number.'); return; }
-        if (!topupImage) { setTopupError('Please attach your transaction screenshot.'); return; }
 
         setTopupLoading(true);
-        setTopupError('');
 
         try {
             const formData = new FormData();
-            formData.append('deposit_amount', amount);
+            formData.append('deposit_amount', amount || '');
             formData.append('topup_channel', topupMethod);
             formData.append('sender_name', senderName.trim());
             formData.append('transaction_reference', transactionRef.trim());
-            formData.append('transaction_image', topupImage);
+            if (topupImage) formData.append('transaction_image', topupImage);
 
             await api.post('/wallet-topups', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
+            // Success 
             setTopupAmount('');
-            setTopupMethod('kbzpay');
             setSenderName('');
             setTransactionRef('');
             setTopupImage(null);
@@ -218,13 +256,15 @@ const passwordChecks = [
             setTimeout(() => setTopupSuccess(false), 4000);
             loadData();
         } catch (err) {
-            setTopupError(err.response?.data?.message || 'Failed to submit request. Please try again.');
+            // Backend FormRequest 
+            setTopupErrors(getFieldErrors(err));
+            setTopupError(getErrorMessage(err));
         } finally {
-            setTopupLoading(false);
+            topupLoading(false);
         }
     }
 
-   async function handleChangePassword(e) {
+    async function handleChangePassword(e) {
         e.preventDefault();
         setPasswordErrors({});
         setPasswordFormError('');
@@ -368,8 +408,8 @@ const passwordChecks = [
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
                                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-nature-olive text-white'
-                                            : 'text-nature-muted hover:bg-nature-sage/20 hover:text-nature-dark'
+                                        ? 'bg-nature-olive text-white'
+                                        : 'text-nature-muted hover:bg-nature-sage/20 hover:text-nature-dark'
                                         }`}
                                 >
                                     <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-nature-olive'}`} strokeWidth={1.5} />
@@ -421,8 +461,8 @@ const passwordChecks = [
                                                     <button
                                                         key={m.value} type="button" onClick={() => setTopupMethod(m.value)}
                                                         className={`px-3 py-1.5 rounded border text-xs tracking-wide transition-colors ${topupMethod === m.value
-                                                                ? 'bg-nature-olive border-nature-olive text-white'
-                                                                : 'border-nature-border text-nature-muted hover:border-nature-olive'
+                                                            ? 'bg-nature-olive border-nature-olive text-white'
+                                                            : 'border-nature-border text-nature-muted hover:border-nature-olive'
                                                             }`}
                                                     >
                                                         {m.label}
@@ -453,43 +493,60 @@ const passwordChecks = [
                                         </div>
 
                                         {/* Step 2: the actual submission form */}
-                                        <form onSubmit={submitTopup} className="space-y-4">
+                                        <form onSubmit={submitTopup} className="space-y-4" noValidate>
                                             <label className={labelClass}>2. Confirm Your Payment</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                                                 <div>
                                                     <label className={labelClass}>Amount Sent (MMK) *</label>
                                                     <input
-                                                        required type="number" min={1000} step={1000}
+                                                        type="number"
                                                         value={topupAmount} onChange={e => setTopupAmount(e.target.value)}
                                                         placeholder="e.g. 50000" className={inputClass}
                                                     />
+                                                    {/* Error ပြရန် */}
+                                                    <FieldError errors={topupErrors} field="deposit_amount" />
                                                 </div>
+
                                                 <div>
                                                     <label className={labelClass}>Sender Name *</label>
                                                     <input
-                                                        required type="text"
-                                                        value={senderName} onChange={e => setSenderName(e.target.value)}
-                                                        placeholder="Name shown in your payment app" className={inputClass}
+                                                        type="text"
+                                                        value={senderName}
+                                                        onChange={e => setSenderName(e.target.value)}
+                                                        maxLength={255}
+                                                        placeholder="Name shown in your payment app"
+                                                        className={inputClass}
                                                     />
+
+                                                    {/* half-weight font (font-normal) */}
+                                                    <div className="font-normal text-xs text-red-600">
+                                                        <FieldError errors={topupErrors} field="sender_name" />
+                                                    </div>
                                                 </div>
+
                                                 <div className="sm:col-span-2">
                                                     <label className={labelClass}>Transaction Reference No. *</label>
                                                     <input
-                                                        required type="text"
+                                                        type="text"
                                                         value={transactionRef} onChange={e => setTransactionRef(e.target.value)}
                                                         placeholder="e.g. 20260711098765" className={inputClass}
                                                     />
-                                                    <p className="text-nature-muted text-[11px] mt-1">Found on your payment confirmation screen after sending money.</p>
+                                                    {/* Error */}
+                                                    <FieldError errors={topupErrors} field="transaction_reference" />
                                                 </div>
+
                                                 <div className="sm:col-span-2">
                                                     <label className={labelClass}>Transaction Screenshot *</label>
                                                     <input
-                                                        required type="file" accept="image/*"
+                                                        type="file" accept="image/*"
                                                         onChange={e => setTopupImage(e.target.files[0])}
                                                         className="w-full text-nature-dark text-sm mt-1.5 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-nature-sage/30 file:text-nature-olive hover:file:bg-nature-sage/50"
                                                     />
+                                                    {/* Error */}
+                                                    <FieldError errors={topupErrors} field="transaction_image" />
                                                 </div>
                                             </div>
+
                                             {topupError && <p className="text-red-600 text-sm bg-red-50/80 border border-red-200 px-4 py-3 rounded-md">{topupError}</p>}
                                             <div className="flex items-center gap-4">
                                                 <button type="submit" disabled={topupLoading}
@@ -666,9 +723,9 @@ const passwordChecks = [
                                                                     : <Package className="w-4 h-4 text-nature-sand" strokeWidth={1.5} />}
                                                             </div>
                                                             <div>
-                                                              <Link to={`/products/${review.product_slug}`} className="text-nature-dark font-medium text-sm hover:text-nature-olive transition-colors">
-    {review.product_name || `Product #${review.product_slug}`}
-</Link>
+                                                                <Link to={`/products/${review.product_slug}`} className="text-nature-dark font-medium text-sm hover:text-nature-olive transition-colors">
+                                                                    {review.product_name || `Product #${review.product_slug}`}
+                                                                </Link>
 
                                                                 {review.brand_name && <p className="text-nature-muted text-xs">{review.brand_name}</p>}
                                                             </div>

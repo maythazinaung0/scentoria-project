@@ -17,7 +17,7 @@ class AdminSeeder extends Seeder
         User::create([
             'name' => 'Admin',
             'email' => 'admin@scentoria.com',
-            'password' => Hash::make('change-this-password'),
+            'password' => Hash::make(''),
             'role' => 'admin',
             
                     ]);

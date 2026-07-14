@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\ReviewRequest;
 
 class ReviewController extends Controller
 {
-    // GET /products/{product}/reviews — public list, anyone can view
+    // GET /products/{product}/reviews — public list
     public function index($productId)
     {
         $reviews = DB::table('reviews')
@@ -21,13 +22,12 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
-    // POST /products/{product}/reviews — create the logged-in user's review
-    public function store(Request $request, $productId)
+    // POST /products/{product}/reviews — create the user's review
+    // We type-hint ReviewRequest here to trigger your custom validation rules
+    public function store(ReviewRequest $request, $productId)
     {
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-        ]);
+        // $request->validated() now uses the rules from ReviewRequest automatically
+        $validated = $request->validated();
 
         $existing = Review::where('user_id', $request->user()->id)
             ->where('product_id', $productId)
@@ -38,32 +38,36 @@ class ReviewController extends Controller
         }
 
         $review = Review::create([
-            'user_id' => $request->user()->id,
-            'product_id' => $productId,
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'] ?? null,
+            'user_id'    => $request->user()->id,
+            'product_id' => $productId, // Assuming this is passed from the URL
+            'rating'     => $validated['rating'],
+            'comment'    => $validated['comment'],
         ]);
 
-        return response()->json($review, 201);
+        return response()->json([
+            'message' => 'Review Posting Success',
+            'review' => $review
+        ], 201);
     }
 
-    // PUT /reviews/{review} — update your own review only
+    // PUT /reviews/{review}
     public function update(Request $request, Review $review)
     {
         if ($review->user_id !== $request->user()->id) {
             abort(403, 'You do not own this review.');
         }
 
+        // Using manual validation here as requested (keeping your update logic consistent)
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
+            'comment' => 'required|string|min:10|max:1000', 
         ]);
 
         $review->update($validated);
         return response()->json($review);
     }
 
-    // DELETE /reviews/{review} — delete your own review only
+    // DELETE /reviews/{review}
     public function destroy(Request $request, Review $review)
     {
         if ($review->user_id !== $request->user()->id) {

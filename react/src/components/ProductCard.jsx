@@ -44,8 +44,8 @@ export default function ProductCard({ product }) {
                 <h3 className="font-serif text-lg text-nature-dark mb-1">{product.name}</h3>
                 <p className="text-xs text-nature-muted mb-3">{product.scent?.name}</p>
 
-                <p className="text-sm font-medium text-nature-dark mb-4">
-                    {salePrice ? formatMMK(salePrice) : 'Contact for price'}
+                <p className="text-sm font-medium text-nature-olive mb-4 italic">
+                    Click to view details
                 </p>
 
                 <Link

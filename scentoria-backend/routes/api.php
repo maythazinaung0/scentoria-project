@@ -51,6 +51,7 @@ Route::post('/orders/{order}/complete', [OrderCompletionController::class, 'comp
     ->name('orders.complete');
 
     // reviews
+Route::post('/reviews', [ReviewController::class, 'store']);
 Route::get('/products/{product}/reviews', [ReviewController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {

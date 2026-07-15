@@ -120,4 +120,4 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::patch('/admin/orders/{order}', [OrderController::class, 'update']);
     // sales report
 Route::get('/admin/sales-report', [SalesReportController::class, 'index']);
-Route::post('/admin/sales-report/run-batch', [SalesReportController::class, 'runBatch']);});
+Route::post('/admin/sales-report/run-batch', [SalesReportController::class, 'runBatch']);});g

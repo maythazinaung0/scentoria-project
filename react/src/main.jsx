@@ -7,14 +7,17 @@ import { CartProvider } from './contexts/CartContext';
 import CartDrawer from './components/CartDrawer.jsx';
 import { NotificationProvider } from './contexts/NotificationContext';
 import './index.css';
+import { ConfirmProvider } from './contexts/ConfirmContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <AuthProvider>
       <CartProvider>
         <NotificationProvider>
-        <App />
-        </NotificationProvider>      
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
+        </NotificationProvider>
         <CartDrawer />
       </CartProvider>
     </AuthProvider>

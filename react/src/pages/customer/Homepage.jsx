@@ -86,7 +86,6 @@ export default function HomePage() {
     // Show a generous first screenful, but never force a layout that assumes
     // a fixed count — the grid below wraps gracefully at any total.
     const visibleScents = scents.slice(0, 12);
-    const hasMoreScents = scents.length > visibleScents.length;
 
     return (
         <div className="bg-nature-bg text-nature-dark">
@@ -159,7 +158,7 @@ export default function HomePage() {
                     </div>
                 )}
 
-                {hasMoreScents && (
+                {scents.length > 0 && (
                     <div className="text-center pt-14">
                         <Link
                             to="/scents"

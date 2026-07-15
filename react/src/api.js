@@ -24,8 +24,6 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
     (response) => {
-        // Only auto-toast for actions that change something — GETs firing a
-        // toast on every page load would be noisy and unwanted.
         const method = response.config.method?.toLowerCase();
         if (['post', 'put', 'patch', 'delete'].includes(method) && response.data?.message) {
             notifyFromOutsideReact({ type: 'success', message: response.data.message });
@@ -33,10 +31,13 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        const message = error.response?.data?.message || 'Something went wrong. Please try again.';
-        notifyFromOutsideReact({ type: 'error', message });
-        return Promise.reject(error); // still rejects — pages can add their own .catch() for extra handling
+        const isValidationError = error.response?.status === 422;
+
+        if (!error.config?.skipErrorToast && !isValidationError) {
+            const message = error.response?.data?.message || 'Something went wrong. Please try again.';
+            notifyFromOutsideReact({ type: 'error', message });
+        }
+        return Promise.reject(error);
     }
 );
-
 export default api;

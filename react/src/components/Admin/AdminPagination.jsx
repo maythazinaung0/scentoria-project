@@ -4,7 +4,11 @@ const PER_PAGE_OPTIONS = [8, 16, 24, 48];
 
 /**
  * Compact, data-dense pagination for admin tables/grids.
- * Styled as a footer bar so it visually continues the table/grid above it.
+ * Meant to be rendered as the LAST CHILD inside the same rounded
+ * card that wraps the table — not as a separate sibling element.
+ * It only adds a top border to visually close off the card; it does
+ * not own its own background, radius, or shadow, so there's no seam
+ * and nothing to overlap the content above it.
  */
 export default function AdminPagination({ page, totalPages, onPageChange, perPage, onPerPageChange, totalItems }) {
   const start = totalItems === 0 ? 0 : (page - 1) * perPage + 1;
@@ -21,14 +25,14 @@ export default function AdminPagination({ page, totalPages, onPageChange, perPag
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 bg-nature-card border border-nature-olive/20 border-t-0 rounded-b-2xl px-5 py-4 -mt-6">
+    <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3 border-t border-nature-border/60">
       <div className="flex items-center gap-3 text-xs text-nature-muted">
         <span>
           Showing <span className="font-medium text-nature-dark">{start}–{end}</span> of{' '}
           <span className="font-medium text-nature-dark">{totalItems}</span>
         </span>
 
-        <div className="w-px h-4 bg-nature-olive/20" />
+        <div className="w-px h-3.5 bg-nature-border" />
 
         <label className="flex items-center gap-1.5">
           <span>Rows</span>
@@ -36,7 +40,7 @@ export default function AdminPagination({ page, totalPages, onPageChange, perPag
             <select
               value={perPage}
               onChange={(e) => onPerPageChange(Number(e.target.value))}
-              className="appearance-none bg-nature-bg border border-nature-olive/25 rounded-lg pl-2.5 pr-6 py-1 text-xs text-nature-dark outline-none focus:border-nature-olive/60 transition-colors cursor-pointer"
+              className="appearance-none bg-white/60 border border-nature-border rounded-lg pl-2.5 pr-6 py-1 text-xs text-nature-dark outline-none focus:border-nature-olive/60 transition-colors cursor-pointer"
             >
               {PER_PAGE_OPTIONS.map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -52,7 +56,7 @@ export default function AdminPagination({ page, totalPages, onPageChange, perPag
           <button
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-nature-olive/25 text-nature-dark disabled:opacity-30 disabled:cursor-not-allowed hover:border-nature-olive hover:text-nature-olive hover:bg-nature-olive/5 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-nature-border text-nature-dark disabled:opacity-30 disabled:cursor-not-allowed hover:border-nature-olive hover:text-nature-olive hover:bg-nature-olive/5 transition-colors"
             aria-label="Previous page"
           >
             <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -70,7 +74,7 @@ export default function AdminPagination({ page, totalPages, onPageChange, perPag
                 aria-current={p === page ? 'page' : undefined}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
                   p === page
-                    ? 'bg-nature-olive text-white shadow-[0_2px_8px_-2px_rgba(74,104,56,0.5)]'
+                    ? 'bg-nature-olive text-white'
                     : 'text-nature-dark hover:bg-nature-sage/20'
                 }`}
               >
@@ -82,7 +86,7 @@ export default function AdminPagination({ page, totalPages, onPageChange, perPag
           <button
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-nature-olive/25 text-nature-dark disabled:opacity-30 disabled:cursor-not-allowed hover:border-nature-olive hover:text-nature-olive hover:bg-nature-olive/5 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-nature-border text-nature-dark disabled:opacity-30 disabled:cursor-not-allowed hover:border-nature-olive hover:text-nature-olive hover:bg-nature-olive/5 transition-colors"
             aria-label="Next page"
           >
             <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />

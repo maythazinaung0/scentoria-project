@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Search, Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Plus, Pencil, Trash2, X, Search, Loader2, UploadCloud, Link as LinkIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../../api';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import AdminPagination from '../../components/Admin/AdminPagination';
+import FieldError from '../../components/FieldError';
+
 
 function NoteModal({ note, onClose, onSaved }) {
   const isEdit = Boolean(note);
@@ -9,17 +13,18 @@ function NoteModal({ note, onClose, onSaved }) {
   const [mode, setMode] = useState('upload'); // 'upload' | 'url'
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
   async function uploadFile(file) {
     if (!file || !file.type.startsWith('image/')) {
-      setError('Please choose an image file.');
+      setFormError('Please choose an image file.');
       return;
     }
     setUploading(true);
-    setError('');
+    setFormError('');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -28,7 +33,7 @@ function NoteModal({ note, onClose, onSaved }) {
       });
       setIconUrl(data.url);
     } catch (err) {
-      setError(err.response?.data?.message || 'Upload failed. Please try again.');
+      setFormError(err.response?.data?.message || 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -49,7 +54,8 @@ function NoteModal({ note, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
-    setError('');
+    setErrors({});
+    setFormError('');
     try {
       const payload = { name, icon_url: iconUrl || null };
       const { data } = isEdit
@@ -57,7 +63,11 @@ function NoteModal({ note, onClose, onSaved }) {
         : await api.post('/admin/notes', payload);
       onSaved(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      if (err.response?.status === 422) {
+        setErrors(err.response.data.errors || {});
+      } else {
+        setFormError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -78,12 +88,12 @@ function NoteModal({ note, onClose, onSaved }) {
           <div>
             <label className="block text-nature-muted text-xs font-semibold tracking-wider uppercase mb-1.5">Name</label>
             <input
-              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Bergamot, Oud, Vanilla"
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
+            <FieldError errors={errors} field="name" />
           </div>
 
           <div>
@@ -151,9 +161,10 @@ function NoteModal({ note, onClose, onSaved }) {
                 )}
               </>
             )}
+            <FieldError errors={errors} field="icon_url" />
           </div>
 
-          {error && <p className="text-rose-600 text-xs bg-rose-50 border border-rose-200/60 rounded-lg px-3 py-2">{error}</p>}
+          {formError && <p className="text-rose-600 text-xs bg-rose-50 border border-rose-200/60 rounded-lg px-3 py-2">{formError}</p>}
 
           <div className="flex items-center gap-3 pt-2">
             <button
@@ -178,61 +189,68 @@ function NoteModal({ note, onClose, onSaved }) {
   );
 }
 
-function NoteCard({ note, onEdit, onDelete, deleting }) {
+function NoteRow({ note, onEdit, onDelete, deleting }) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)] hover:shadow-[0_16px_40px_-8px_rgba(74,104,56,0.25)] hover:-translate-y-1 transition-all duration-300 group">
-      <div className="p-5 flex items-center gap-4">
-        <div className="w-14 h-14 shrink-0 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100">
-          {note.icon_url && !imgError ? (
-            <img
-              src={note.icon_url}
-              alt={note.name}
-              onError={() => setImgError(true)}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="font-serif text-xl text-nature-olive/40">
-              {note.name?.[0]?.toUpperCase()}
-            </span>
-          )}
+    <tr className="border-b border-nature-border/40 hover:bg-nature-olive/5 transition-colors">
+      <td className="py-2.5 pl-4 pr-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100">
+            {note.icon_url && !imgError ? (
+              <img
+                src={note.icon_url}
+                alt={note.name}
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="font-serif text-sm text-nature-olive/40">
+                {note.name?.[0]?.toUpperCase()}
+              </span>
+            )}
+          </div>
+          <p className="font-medium text-neutral-800 text-sm truncate">{note.name}</p>
         </div>
-        <div className="min-w-0">
-          <p className="text-nature-olive text-[10px] font-semibold tracking-[0.15em] uppercase mb-0.5">
-            Olfactive Note
-          </p>
-          <h3 className="font-serif text-lg text-neutral-800 truncate">{note.name}</h3>
+      </td>
+      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => onEdit(note)}
+            className="p-1.5 rounded-lg text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors"
+            title="Edit"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(note.id)}
+            disabled={deleting}
+            className="p-1.5 rounded-lg text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+            title="Delete"
+          >
+            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+          </button>
         </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-1 px-5 pb-4 pt-3 border-t border-nature-border/50">
-        <button
-          onClick={() => onEdit(note)}
-          className="flex items-center gap-1.5 text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg"
-        >
-          <Pencil className="w-3.5 h-3.5" /> Edit
-        </button>
-        <button
-          onClick={() => onDelete(note.id)}
-          disabled={deleting}
-          className="flex items-center gap-1.5 text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-        >
-          {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-          Delete
-        </button>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
 export default function NoteManagement() {
+  const confirm = useConfirm();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  // Table view state
+  const [sortDir, setSortDir] = useState('asc');
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(8);
 
   function fetchNotes() {
     setLoading(true);
@@ -264,22 +282,58 @@ export default function NoteManagement() {
     setModalOpen(false);
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this note? This cannot be undone.')) return;
-    setDeletingId(id);
-    try {
-      await api.delete(`/admin/notes/${id}`);
-      setNotes((prev) => prev.filter((n) => n.id !== id));
-    } catch (err) {
-      console.error('Failed to delete note:', err);
-    } finally {
-      setDeletingId(null);
-    }
+  function handleDelete(id) {
+    confirm({
+      title: 'Delete Note',
+      message: 'Delete this note? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        setDeletingId(id);
+        try {
+          await api.delete(`/admin/notes/${id}`);
+          setNotes((prev) => prev.filter((n) => n.id !== id));
+        } catch (err) {
+          console.error('Failed to delete note:', err);
+          throw err;
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   }
 
-  const filteredNotes = notes.filter((n) =>
-    n.name.toLowerCase().includes(search.toLowerCase())
+  function toggleSort() {
+    setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+  }
+
+  const filteredNotes = useMemo(
+    () => notes.filter((n) => n.name.toLowerCase().includes(search.toLowerCase())),
+    [notes, search]
   );
+
+  const sortedNotes = useMemo(() => {
+    const arr = [...filteredNotes];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      const av = a.name?.toLowerCase() ?? '';
+      const bv = b.name?.toLowerCase() ?? '';
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [filteredNotes, sortDir]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedNotes.length / perPage));
+  const clampedPage = Math.min(page, totalPages);
+  const visibleNotes = useMemo(() => {
+    const start = (clampedPage - 1) * perPage;
+    return sortedNotes.slice(start, start + perPage);
+  }, [sortedNotes, clampedPage, perPage]);
 
   return (
     <div className="min-h-screen relative overflow-hidden selection:bg-nature-olive/10">
@@ -312,28 +366,54 @@ export default function NoteManagement() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-28 bg-white/20 border border-white/50 rounded-2xl animate-pulse" />
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-14 bg-white/20 animate-pulse" />
               ))}
             </div>
-          ) : filteredNotes.length === 0 ? (
+          ) : sortedNotes.length === 0 ? (
             <div className="bg-white/70 backdrop-blur-xl border border-nature-border/80 rounded-2xl p-16 text-center">
               <p className="text-nature-muted text-sm">
                 {search ? `No notes match "${search}".` : 'No notes yet — add your first one.'}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredNotes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                  deleting={deletingId === note.id}
-                />
-              ))}
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[420px]">
+                  <thead>
+                    <tr className="border-b border-nature-border text-[11px] uppercase tracking-wide text-nature-muted bg-white/20">
+                      <th onClick={toggleSort} className="py-2.5 pl-4 pr-3 font-medium cursor-pointer select-none group whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-nature-olive">
+                          Note
+                          {sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                        </span>
+                      </th>
+                      <th className="py-2.5 px-3 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleNotes.map((note) => (
+                      <NoteRow
+                        key={note.id}
+                        note={note}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        deleting={deletingId === note.id}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <AdminPagination
+                page={clampedPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                perPage={perPage}
+                onPerPageChange={setPerPage}
+                totalItems={sortedNotes.length}
+              />
             </div>
           )}
         </div>

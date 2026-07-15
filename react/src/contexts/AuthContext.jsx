@@ -8,9 +8,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // true until we know if a session already exists
 
-  // On first load (or page refresh), check whether a valid session cookie already exists.
   useEffect(() => {
-    api.get('/me')
+    api.get('/me', { skipErrorToast: true })
       .then(({ data }) => setUser(data))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));

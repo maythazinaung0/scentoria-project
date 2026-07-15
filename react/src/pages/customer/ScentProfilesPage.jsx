@@ -7,25 +7,58 @@ import api from '../../api';
 
 const PER_PAGE_OPTIONS = [8, 12, 16, 24];
 
-function ScentImage({ src, alt }) {
+function ScentTile({ scent }) {
     const [imgError, setImgError] = useState(false);
-    const showImage = src && !imgError;
+    const showImage = scent.image_url && !imgError;
 
     return (
-        <div className="aspect-[3/4] w-full overflow-hidden bg-nature-sand/20">
+        <Link
+            to={`/scents/${scent.id}`}
+            className="group relative block aspect-[3/4] overflow-hidden rounded-sm bg-nature-sand/20"
+        >
             {showImage ? (
                 <img
-                    src={src}
-                    alt={alt}
+                    src={scent.image_url}
+                    alt={scent.name}
                     onError={() => setImgError(true)}
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
             ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-6 h-6 text-nature-sand" strokeWidth={1} />
+                    <Package className="w-8 h-8 text-nature-sand" strokeWidth={1} />
                 </div>
             )}
-        </div>
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-white font-serif text-lg leading-tight">
+                    {scent.name}
+                </p>
+                <span className="block w-6 h-px bg-white/50 mt-2 transition-all duration-500 group-hover:w-10 group-hover:bg-white" />
+                {scent.description && (
+                    <p className="text-white/75 text-xs leading-relaxed mt-2 line-clamp-2">
+                        {scent.description}
+                    </p>
+                )}
+                {scent.tags && scent.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        {scent.tags.slice(0, 2).map((tag, i) => (
+                            <span
+                                key={i}
+                                className="px-2.5 py-1 bg-white/15 backdrop-blur-sm text-white text-[9px] rounded-full uppercase tracking-wider"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                        {scent.tags.length > 2 && (
+                            <span className="px-2.5 py-1 text-white/70 text-[9px] uppercase tracking-wider">
+                                +{scent.tags.length - 2}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+        </Link>
     );
 }
 
@@ -50,8 +83,6 @@ export default function ScentProfilesPage() {
         load();
     }, []);
 
-    // Reset to page 1 whenever the page size changes, so the user
-    // is never stranded on an out-of-range page.
     useEffect(() => {
         setPage(1);
     }, [perPage]);
@@ -62,6 +93,10 @@ export default function ScentProfilesPage() {
         const start = (clampedPage - 1) * perPage;
         return scents.slice(start, start + perPage);
     }, [scents, clampedPage, perPage]);
+
+    const pageStart = (clampedPage - 1) * perPage;
+    const rangeStart = scents.length === 0 ? 0 : pageStart + 1;
+    const rangeEnd = Math.min(pageStart + perPage, scents.length);
 
     return (
         <div className="min-h-screen bg-nature-bg">
@@ -103,13 +138,9 @@ export default function ScentProfilesPage() {
                 </div>
 
                 {loading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="animate-pulse">
-                                <div className="aspect-[3/4] bg-nature-sand/20" />
-                                <div className="h-4 w-1/2 bg-nature-sand/20 rounded mt-3" />
-                                <div className="h-3 w-full bg-nature-sand/20 rounded mt-2" />
-                            </div>
+                            <div key={i} className="aspect-[3/4] rounded-sm bg-nature-sand/20 animate-pulse" />
                         ))}
                     </div>
                 ) : scents.length === 0 ? (
@@ -119,51 +150,17 @@ export default function ScentProfilesPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             {visible.map((scent) => (
-                                <Link
-                                    key={scent.id}
-                                    to={`/scents/${scent.id}`}
-                                    className="group flex flex-col"
-                                >
-                                    <ScentImage src={scent.image_url} alt={scent.name} />
-
-                                    <div className="flex items-start justify-between gap-2 mt-4">
-                                        <h3 className="font-serif text-lg text-nature-dark leading-tight">
-                                            {scent.name}
-                                        </h3>
-                                        <ArrowRight className="w-3.5 h-3.5 text-nature-muted mt-1.5 flex-shrink-0 transition-transform group-hover:translate-x-1 group-hover:text-nature-olive" strokeWidth={1.5} />
-                                    </div>
-
-                                    {scent.description && (
-                                        <p className="text-nature-muted text-xs leading-relaxed mt-1.5 line-clamp-2">
-                                            {scent.description}
-                                        </p>
-                                    )}
-
-                                    {scent.tags && scent.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 mt-3">
-                                            {scent.tags.slice(0, 2).map((tag, i) => (
-                                                <span
-                                                    key={i}
-                                                    className="px-2.5 py-1 bg-nature-sage/20 text-nature-olive text-[9px] rounded-full uppercase tracking-wider"
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                            {scent.tags.length > 2 && (
-                                                <span className="px-2.5 py-1 text-nature-muted text-[9px] uppercase tracking-wider">
-                                                    +{scent.tags.length - 2}
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-                                </Link>
+                                <ScentTile key={scent.id} scent={scent} />
                             ))}
                         </div>
 
-                        <div className="mt-16">
+                        <div className="flex flex-col items-center gap-3 mt-16">
                             <Pagination page={clampedPage} totalPages={totalPages} onChange={setPage} />
+                            <p className="text-nature-muted text-xs mt-2">
+                                Showing {rangeStart}–{rangeEnd} of {scents.length}
+                            </p>
                         </div>
                     </>
                 )}

@@ -1,88 +1,117 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Search, Package, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Pencil, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../../api';
 import Dropdown from '../../components/Admin/Dropdown';
 import AdminPagination from '../../components/Admin/AdminPagination';
 import { EMPTY_FORM } from './products/constants';
 import ProductModal from './products/ProductModal';
 import ProductDetailModal from './products/ProductDetailModal';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
-function ProductCard({ product, openEdit, handleDelete, deleting, onSelect }) {
+const COLUMNS = [
+  { key: 'name', label: 'Product', sortable: true },
+  { key: 'type', label: 'Type', sortable: true },
+  { key: 'gender', label: 'Gender', sortable: true },
+  { key: 'variants', label: 'Variants', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
+  { key: 'actions', label: '', sortable: false },
+];
+
+function SortHeader({ col, sortKey, sortDir, onSort }) {
+  if (!col.sortable) {
+    return <th className="py-2.5 px-3 text-right">{col.label}</th>;
+  }
+  const active = sortKey === col.key;
+  return (
+    <th
+      onClick={() => onSort(col.key)}
+      className="py-2.5 px-3 font-medium cursor-pointer select-none group whitespace-nowrap"
+    >
+      <span className={`inline-flex items-center gap-1 ${active ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
+        {col.label}
+        {active ? (
+          sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function ProductRow({ product, openEdit, handleDelete, deleting, onSelect }) {
   const [imgError, setImgError] = useState(false);
   const status = product.status === 'inactive' ? 'inactive' : 'active';
   const showImage = product.image_url && !imgError;
 
   return (
-    <div
+    <tr
       onClick={() => onSelect(product)}
-      className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)] hover:shadow-[0_16px_40px_-8px_rgba(74,104,56,0.25)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+      className="border-b border-nature-border/40 hover:bg-nature-olive/5 cursor-pointer transition-colors"
     >
-      <div className="relative h-40 w-full overflow-hidden">
-        {showImage ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100">
-            <Package className="w-8 h-8 text-nature-olive/35" strokeWidth={1} />
+      <td className="py-2.5 pl-4 pr-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg overflow-hidden bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100 flex-shrink-0 flex items-center justify-center">
+            {showImage ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package className="w-3.5 h-3.5 text-nature-olive/40" strokeWidth={1.5} />
+            )}
           </div>
-        )}
-
+          <div className="min-w-0">
+            <p className="font-medium text-neutral-800 text-sm truncate">{product.name}</p>
+            <p className="text-nature-olive text-[10px] font-semibold tracking-[0.1em] uppercase truncate">
+              {product.brand?.name ?? 'Unknown Brand'}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="py-2.5 px-3 text-sm text-nature-muted capitalize whitespace-nowrap">{product.type}</td>
+      <td className="py-2.5 px-3 text-sm text-nature-muted capitalize whitespace-nowrap">{product.gender}</td>
+      <td className="py-2.5 px-3 text-sm text-nature-muted whitespace-nowrap">
+        {product.variants?.length || 0}
+      </td>
+      <td className="py-2.5 px-3 whitespace-nowrap">
         <span
-          className={`absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium capitalize backdrop-blur-sm ${
-            status === 'active' ? 'bg-emerald-100/90 text-emerald-800' : 'bg-red-100/90 text-red-700'
+          className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-medium capitalize ${
+            status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'
           }`}
         >
+          <span className={`w-1.5 h-1.5 rounded-full ${status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
           {status}
         </span>
-      </div>
-
-      <div className="p-5">
-        <p className="text-nature-olive text-[10px] font-semibold tracking-[0.15em] uppercase mb-1">
-          {product.brand?.name ?? 'Unknown Brand'}
-        </p>
-        <h3 className="font-serif text-xl text-neutral-800 mb-1.5 truncate">{product.name}</h3>
-
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          {product.scent?.name && (
-            <span className="bg-nature-sage/30 text-nature-olive px-2 py-0.5 rounded-full text-[11px]">
-              {product.scent.name}
-            </span>
-          )}
-          <span className="text-nature-muted text-[11px] capitalize">
-            {product.type} · {product.gender}
-          </span>
-        </div>
-
-        <p className="text-nature-muted text-xs">
-          {product.variants?.length || 0} size{(product.variants?.length || 0) !== 1 ? 's' : ''} available
-        </p>
-
-        <div className="flex items-center justify-end gap-1 mt-4 pt-3 border-t border-nature-border/50">
+      </td>
+      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={(e) => openEdit(product, e)}
-            className="flex items-center gap-1.5 text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg"
+            className="p-1.5 rounded-lg text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors"
+            title="Edit"
           >
-            <Pencil className="w-3.5 h-3.5" /> Edit
+            <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => handleDelete(product.id, e)}
             disabled={deleting}
-            className="flex items-center gap-1.5 text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+            className="p-1.5 rounded-lg text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+            title="Delete"
           >
             {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Delete
           </button>
         </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
 export default function Products() {
+  const confirm = useConfirm();
+
   // Core data loaded from the API
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -103,6 +132,10 @@ export default function Products() {
   const [filterBrand, setFilterBrand] = useState('');
   const [filterGender, setFilterGender] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Table view state
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -192,15 +225,35 @@ export default function Products() {
     } catch (err) { setFormError(err.response?.data?.message || err.message || 'Error saving product'); } finally { setSaving(false); }
   }
 
-  async function handleDelete(id, e) {
+  function handleDelete(id, e) {
     if (e) e.stopPropagation();
-    if (!confirm('Permanently delete this product?')) return;
-    setDeleting(id);
-    try {
-      await api.delete(`/admin/products/${id}`);
-      setProducts(p => p.filter(x => x.id !== id));
-      if (selectedProduct?.id === id) setSelectedProduct(null);
-    } catch (err) { console.error('Error deleting product:', err); } finally { setDeleting(null); }
+    confirm({
+      title: 'Delete Product',
+      message: 'Permanently delete this product? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        setDeleting(id);
+        try {
+          await api.delete(`/admin/products/${id}`);
+          setProducts(p => p.filter(x => x.id !== id));
+          if (selectedProduct?.id === id) setSelectedProduct(null);
+        } catch (err) {
+          console.error('Error deleting product:', err);
+          throw err;
+        } finally {
+          setDeleting(null);
+        }
+      },
+    });
+  }
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
   }
 
   const filtered = useMemo(() => products.filter(p => {
@@ -210,18 +263,36 @@ export default function Products() {
     return matchesSearch && matchesBrand && matchesGender;
   }), [products, search, filterBrand, filterGender]);
 
-  // Reset to page 1 whenever filters or page size change, so the user
-  // is never stranded on an out-of-range page.
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      let av, bv;
+      switch (sortKey) {
+        case 'name': av = a.name?.toLowerCase() ?? ''; bv = b.name?.toLowerCase() ?? ''; break;
+        case 'type': av = a.type?.toLowerCase() ?? ''; bv = b.type?.toLowerCase() ?? ''; break;
+        case 'gender': av = a.gender?.toLowerCase() ?? ''; bv = b.gender?.toLowerCase() ?? ''; break;
+        case 'variants': av = a.variants?.length || 0; bv = b.variants?.length || 0; break;
+        case 'status': av = a.status === 'inactive' ? 0 : 1; bv = b.status === 'inactive' ? 0 : 1; break;
+        default: av = ''; bv = '';
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
   useEffect(() => {
     setPage(1);
   }, [search, filterBrand, filterGender, perPage]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
   const clampedPage = Math.min(page, totalPages);
   const visible = useMemo(() => {
     const start = (clampedPage - 1) * perPage;
-    return filtered.slice(start, start + perPage);
-  }, [filtered, clampedPage, perPage]);
+    return sorted.slice(start, start + perPage);
+  }, [sorted, clampedPage, perPage]);
 
   return (
     <div className="text-nature-dark space-y-6 relative">
@@ -276,36 +347,62 @@ export default function Products() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-64 bg-white/20 border border-white/50 rounded-2xl animate-pulse" />
+        <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-14 bg-white/20 animate-pulse" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="text-center py-20 text-nature-muted"><Package className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No products match your filters.</p></div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {visible.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                openEdit={openEdit}
-                handleDelete={handleDelete}
-                deleting={deleting === p.id}
-                onSelect={setSelectedProduct}
-              />
-            ))}
-          </div>
+          <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[720px]">
+                <thead>
+                  <tr className="border-b border-nature-border text-[11px] uppercase tracking-wide text-nature-muted bg-white/20">
+                    {COLUMNS.map((col, i) =>
+                      i === 0 ? (
+                        <th key={col.key} onClick={() => handleSort(col.key)} className="py-2.5 pl-4 pr-3 font-medium cursor-pointer select-none group whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 ${sortKey === col.key ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
+                            {col.label}
+                            {sortKey === col.key ? (
+                              sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+                            )}
+                          </span>
+                        </th>
+                      ) : (
+                        <SortHeader key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((p) => (
+                    <ProductRow
+                      key={p.id}
+                      product={p}
+                      openEdit={openEdit}
+                      handleDelete={handleDelete}
+                      deleting={deleting === p.id}
+                      onSelect={setSelectedProduct}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <AdminPagination
-            page={clampedPage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            perPage={perPage}
-            onPerPageChange={setPerPage}
-            totalItems={filtered.length}
-          />
+            <AdminPagination
+              page={clampedPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              perPage={perPage}
+              onPerPageChange={setPerPage}
+              totalItems={sorted.length}
+            />
+          </div>
         </>
       )}
     </div>

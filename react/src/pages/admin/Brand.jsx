@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, X, Search, Pencil, Tags, Loader2, Package } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Plus, Trash2, X, Search, Pencil, Tags, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../../api';
+import AdminPagination from '../../components/Admin/AdminPagination';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const EMPTY_FORM = { name: '' };
+
+const COLUMNS = [
+  { key: 'name', label: 'Brand', sortable: true },
+  { key: 'products', label: 'Products', sortable: true },
+  { key: 'actions', label: '', sortable: false },
+];
 
 function BrandFormModal({ editTarget, form, setForm, error, saving, onSubmit, onCancel }) {
   return (
@@ -54,47 +62,73 @@ function BrandFormModal({ editTarget, form, setForm, error, saving, onSubmit, on
   );
 }
 
-function BrandCard({ brand, productCount, onEdit, onDelete, deleting }) {
+function SortHeader({ col, sortKey, sortDir, onSort }) {
+  if (!col.sortable) {
+    return <th className="py-2.5 px-3 text-right">{col.label}</th>;
+  }
+  const active = sortKey === col.key;
   return (
-    <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)] hover:shadow-[0_16px_40px_-8px_rgba(74,104,56,0.25)] hover:-translate-y-1 transition-all duration-300 group">
-      <div className="h-40 w-full flex items-center justify-center bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100">
-        <span className="font-serif text-4xl text-nature-olive/35">
-          {brand.name?.[0]?.toUpperCase()}
-        </span>
-      </div>
+    <th
+      onClick={() => onSort(col.key)}
+      className="py-2.5 px-3 font-medium cursor-pointer select-none group whitespace-nowrap"
+    >
+      <span className={`inline-flex items-center gap-1 ${active ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
+        {col.label}
+        {active ? (
+          sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+        )}
+      </span>
+    </th>
+  );
+}
 
-      <div className="p-5">
-        <p className="text-nature-olive text-[10px] font-semibold tracking-[0.15em] uppercase mb-1">
-          Brand
-        </p>
-        <h3 className="font-serif text-xl text-neutral-800 mb-1.5">{brand.name}</h3>
-        <p className="text-nature-muted text-xs leading-relaxed flex items-center gap-1.5">
+function BrandRow({ brand, productCount, onEdit, onDelete, deleting }) {
+  return (
+    <tr className="border-b border-nature-border/40 hover:bg-nature-olive/5 transition-colors">
+      <td className="py-2.5 pl-4 pr-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg overflow-hidden bg-gradient-to-br from-nature-olive/15 via-nature-sage/25 to-neutral-100 flex-shrink-0 flex items-center justify-center">
+            <span className="font-serif text-sm text-nature-olive/50">
+              {brand.name?.[0]?.toUpperCase()}
+            </span>
+          </div>
+          <p className="font-medium text-neutral-800 text-sm truncate">{brand.name}</p>
+        </div>
+      </td>
+      <td className="py-2.5 px-3 text-sm text-nature-muted whitespace-nowrap">
+        <span className="inline-flex items-center gap-1.5">
           <Package className="w-3.5 h-3.5" strokeWidth={1.5} />
           {productCount} {productCount === 1 ? 'product' : 'products'}
-        </p>
-
-        <div className="flex items-center justify-end gap-1 mt-4 pt-3 border-t border-nature-border/50">
+        </span>
+      </td>
+      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => onEdit(brand)}
-            className="flex items-center gap-1.5 text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg"
+            className="p-1.5 rounded-lg text-nature-muted hover:text-nature-olive hover:bg-nature-olive/10 transition-colors"
+            title="Edit"
           >
-            <Pencil className="w-3.5 h-3.5" /> Edit
+            <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onDelete(brand.id)}
             disabled={deleting}
-            className="flex items-center gap-1.5 text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+            className="p-1.5 rounded-lg text-nature-muted hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+            title="Delete"
           >
             {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Delete
           </button>
         </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
 export default function Brand() {
+  const confirm = useConfirm();
+
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +142,14 @@ export default function Brand() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+
+  // Table view state
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(8);
 
   async function load(signal) {
     if (!hasLoadedOnce) setLoading(true);
@@ -168,22 +210,70 @@ export default function Brand() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this brand? This cannot be undone.')) return;
-    setDeletingId(id);
-    try {
-      await api.delete(`/admin/brands/${id}`);
-      setBrands((prev) => prev.filter((b) => b.id !== id));
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error deleting brand. It may still be linked to products.');
-    } finally {
-      setDeletingId(null);
+  function handleDelete(id) {
+    confirm({
+      title: 'Delete Brand',
+      message: 'Delete this brand? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        setDeletingId(id);
+        try {
+          await api.delete(`/admin/brands/${id}`);
+          setBrands((prev) => prev.filter((b) => b.id !== id));
+        } catch (err) {
+          console.error('Failed to delete brand:', err);
+          throw err;
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
+  }
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
     }
   }
 
-  const filteredBrands = brands.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase())
+  const filteredBrands = useMemo(
+    () => brands.filter((b) => b.name.toLowerCase().includes(search.toLowerCase())),
+    [brands, search]
   );
+
+  const sortedBrands = useMemo(() => {
+    const arr = [...filteredBrands];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      let av, bv;
+      if (sortKey === 'products') {
+        av = productsForBrand(a.id).length;
+        bv = productsForBrand(b.id).length;
+      } else {
+        av = a.name?.toLowerCase() ?? '';
+        bv = b.name?.toLowerCase() ?? '';
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredBrands, sortKey, sortDir, products]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedBrands.length / perPage));
+  const clampedPage = Math.min(page, totalPages);
+  const visibleBrands = useMemo(() => {
+    const start = (clampedPage - 1) * perPage;
+    return sortedBrands.slice(start, start + perPage);
+  }, [sortedBrands, clampedPage, perPage]);
 
   return (
     <div className="min-h-screen relative overflow-hidden selection:bg-nature-olive/10">
@@ -216,12 +306,12 @@ export default function Brand() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-64 bg-white/20 border border-white/50 rounded-2xl animate-pulse" />
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-14 bg-white/20 animate-pulse" />
               ))}
             </div>
-          ) : filteredBrands.length === 0 ? (
+          ) : sortedBrands.length === 0 ? (
             <div className="bg-white/70 backdrop-blur-xl border border-nature-border/80 rounded-2xl p-16 text-center">
               <Tags className="w-8 h-8 mx-auto mb-3 text-nature-muted opacity-40" strokeWidth={1.5} />
               <p className="text-nature-muted text-sm">
@@ -229,17 +319,52 @@ export default function Brand() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredBrands.map((brand) => (
-                <BrandCard
-                  key={brand.id}
-                  brand={brand}
-                  productCount={productsForBrand(brand.id).length}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                  deleting={deletingId === brand.id}
-                />
-              ))}
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[480px]">
+                  <thead>
+                    <tr className="border-b border-nature-border text-[11px] uppercase tracking-wide text-nature-muted bg-white/20">
+                      {COLUMNS.map((col, i) =>
+                        i === 0 ? (
+                          <th key={col.key} onClick={() => handleSort(col.key)} className="py-2.5 pl-4 pr-3 font-medium cursor-pointer select-none group whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 ${sortKey === col.key ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
+                              {col.label}
+                              {sortKey === col.key ? (
+                                sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+                              )}
+                            </span>
+                          </th>
+                        ) : (
+                          <SortHeader key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        )
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleBrands.map((brand) => (
+                      <BrandRow
+                        key={brand.id}
+                        brand={brand}
+                        productCount={productsForBrand(brand.id).length}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        deleting={deletingId === brand.id}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <AdminPagination
+                page={clampedPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                perPage={perPage}
+                onPerPageChange={setPerPage}
+                totalItems={sortedBrands.length}
+              />
             </div>
           )}
         </div>

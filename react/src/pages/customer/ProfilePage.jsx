@@ -10,6 +10,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../api';
 import FieldError from '../../components/FieldError';
 import { getFieldErrors, getErrorMessage } from '../../utils/formErrors';
+import OrderDetail from '../../components/OrderDetail';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 const formatMMK = (amount) =>
     new Intl.NumberFormat('en-MM', { style: 'currency', currency: 'MMK', minimumFractionDigits: 0 }).format(amount ?? 0);
@@ -20,8 +22,6 @@ const STATUS_STYLES = {
     completed: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-red-100 text-red-700',
 };
-
-
 
 const STATUS_ICONS = {
     pending: Clock,
@@ -42,7 +42,6 @@ const PAYMENT_METHOD_LABELS = {
     cbpay: 'CB Pay',
 };
 
-// Shared visual language, matching CheckoutPage
 const panelClass = "bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]";
 const modalPanelClass = "bg-white border border-nature-border/50 rounded-lg shadow-[0_20px_60px_-15px_rgba(44,53,39,0.35)]";
 const inputClass = "w-full bg-transparent border-b border-nature-border/80 focus:border-nature-olive rounded-none px-0 py-1.5 text-nature-dark text-sm outline-none transition-colors placeholder:text-nature-muted/60";
@@ -76,6 +75,7 @@ function CopyableField({ label, value }) {
 }
 
 export default function ProfilePage() {
+        const openConfirm = useConfirm();
     const { user, isAdmin, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
@@ -86,19 +86,17 @@ export default function ProfilePage() {
     const [wishlists, setWishlists] = useState([]);
     const [walletBalance, setWalletBalance] = useState(0);
     const [topupRequests, setTopupRequests] = useState([]);
+    const [topupErrors, setTopupErrors] = useState({});
     const [loading, setLoading] = useState(true);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [visibleCount, setVisibleCount] = useState(5);
 
-    // Admin's KBZ Pay / CB Pay receiving details, fetched once so the
-    // top-up form can show the right QR code + account info per channel.
     const [paymentMethods, setPaymentMethods] = useState(null);
 
     const [topupAmount, setTopupAmount] = useState('');
     const [topupMethod, setTopupMethod] = useState('kbzpay');
     const [senderName, setSenderName] = useState('');
-    const [transactionRef, setTransactionRef] = useState('');
     const [topupLoading, setTopupLoading] = useState(false);
     const [topupError, setTopupError] = useState('');
     const [topupSuccess, setTopupSuccess] = useState(false);
@@ -109,41 +107,25 @@ export default function ProfilePage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordLoading, setPasswordLoading] = useState(false);
- const [passwordErrors, setPasswordErrors] = useState({}); // { field: [messages] }
-    const [passwordFormError, setPasswordFormError] = useState('');    const [passwordSuccess, setPasswordSuccess] = useState('');
+    const [passwordErrors, setPasswordErrors] = useState({});
+    const [passwordFormError, setPasswordFormError] = useState('');
+    const [passwordSuccess, setPasswordSuccess] = useState('');
     const [showPasswordForm, setShowPasswordForm] = useState(false);
-const passwordChecks = [
+
+    const passwordChecks = [
         { label: 'At least 8 characters', pass: newPassword.length >= 8 },
         { label: 'One uppercase & one lowercase letter', pass: /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) },
         { label: 'At least one number', pass: /\d/.test(newPassword) },
         { label: 'At least one symbol', pass: /[^A-Za-z0-9]/.test(newPassword) },
     ];
-    // Review editing
+
     const [editingReviewId, setEditingReviewId] = useState(null);
     const [editRating, setEditRating] = useState(0);
     const [editComment, setEditComment] = useState('');
     const [editSaving, setEditSaving] = useState(false);
     const [editError, setEditError] = useState('');
 
-    const [confirmModal, setConfirmModal] = useState(null); // { title, message, confirmLabel, onConfirm }
-    const [confirmLoading, setConfirmLoading] = useState(false);
 
-    function openConfirm({ title, message, confirmLabel = 'Confirm', onConfirm }) {
-        setConfirmModal({ title, message, confirmLabel, onConfirm });
-    }
-
-    async function handleConfirm() {
-        if (!confirmModal) return;
-        setConfirmLoading(true);
-        try {
-            await confirmModal.onConfirm();
-            setConfirmModal(null);
-        } catch (err) {
-            alert(err.response?.data?.message || 'Something went wrong. Please try again.');
-        } finally {
-            setConfirmLoading(false);
-        }
-    }
 
     useEffect(() => {
         if (authLoading) return;
@@ -186,45 +168,44 @@ const passwordChecks = [
 
     async function submitTopup(e) {
         e.preventDefault();
+        setTopupErrors({});
+        setTopupError('');
+
         const amount = parseInt(topupAmount.replace(/,/g, ''), 10);
-        if (!amount || amount < 1000) { setTopupError('Minimum top-up amount is 1,000 MMK.'); return; }
-        if (amount > 10000000) { setTopupError('Maximum top-up request is 10,000,000 MMK.'); return; }
-        if (!senderName.trim()) { setTopupError('Please enter the sender name shown in your payment app.'); return; }
-        if (!transactionRef.trim()) { setTopupError('Please enter the transaction reference number.'); return; }
-        if (!topupImage) { setTopupError('Please attach your transaction screenshot.'); return; }
 
         setTopupLoading(true);
-        setTopupError('');
 
         try {
             const formData = new FormData();
-            formData.append('deposit_amount', amount);
+            formData.append('deposit_amount', amount || '');
             formData.append('topup_channel', topupMethod);
             formData.append('sender_name', senderName.trim());
-            formData.append('transaction_reference', transactionRef.trim());
-            formData.append('transaction_image', topupImage);
+            if (topupImage) formData.append('transaction_image', topupImage);
 
             await api.post('/wallet-topups', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
+                skipErrorToast: true,
             });
 
             setTopupAmount('');
-            setTopupMethod('kbzpay');
             setSenderName('');
-            setTransactionRef('');
             setTopupImage(null);
             setTopupSuccess(true);
             setShowTopupForm(false);
             setTimeout(() => setTopupSuccess(false), 4000);
             loadData();
         } catch (err) {
-            setTopupError(err.response?.data?.message || 'Failed to submit request. Please try again.');
+            const fieldErrors = getFieldErrors(err);
+            setTopupErrors(fieldErrors);
+            if (Object.keys(fieldErrors).length === 0) {
+                setTopupError(getErrorMessage(err));
+            }
         } finally {
             setTopupLoading(false);
         }
     }
 
-   async function handleChangePassword(e) {
+    async function handleChangePassword(e) {
         e.preventDefault();
         setPasswordErrors({});
         setPasswordFormError('');
@@ -250,7 +231,7 @@ const passwordChecks = [
             setPasswordLoading(false);
         }
     }
-    // --- Orders ---
+
     async function handleCancelOrder(orderId) {
         await api.put(`/orders/${orderId}/cancel`);
         await loadData();
@@ -266,7 +247,6 @@ const passwordChecks = [
         });
     }
 
-    // --- Wishlist ---
     async function handleRemoveWishlist(wishlistId) {
         await api.delete(`/wishlists/${wishlistId}`);
         setWishlists(prev => prev.filter(w => w.id !== wishlistId));
@@ -281,7 +261,6 @@ const passwordChecks = [
         });
     }
 
-    // --- Reviews ---
     function startEditReview(review) {
         setEditingReviewId(review.id);
         setEditRating(review.rating);
@@ -357,7 +336,6 @@ const passwordChecks = [
 
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
 
-                    {/* SIDEBAR NAVIGATION */}
                     <aside className={`${panelClass} p-4 space-y-1 h-fit xl:sticky xl:top-24`}>
                         <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-2 px-3">Account Menu</p>
                         {sidebarItems.map((item) => {
@@ -384,10 +362,8 @@ const passwordChecks = [
                         })}
                     </aside>
 
-                    {/* DYNAMIC CONTENT AREA */}
                     <main className="xl:col-span-3 min-h-[400px] space-y-6">
 
-                        {/* --- WALLET & TOP UP --- */}
                         {activeTab === 'wallet' && (
                             <div className={`${panelClass} p-6`}>
                                 <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Virtual Wallet</h3>
@@ -413,7 +389,6 @@ const passwordChecks = [
                                 {showTopupForm && (
                                     <div className="pb-6 mb-6 border-b border-nature-border/60 space-y-5">
 
-                                        {/* Step 1: choose channel + show where to actually send money */}
                                         <div>
                                             <label className={labelClass}>1. Send Money Via</label>
                                             <div className="flex gap-2 mt-1.5 mb-4">
@@ -452,44 +427,43 @@ const passwordChecks = [
                                             )}
                                         </div>
 
-                                        {/* Step 2: the actual submission form */}
-                                        <form onSubmit={submitTopup} className="space-y-4">
+                                        <form onSubmit={submitTopup} className="space-y-4" noValidate>
                                             <label className={labelClass}>2. Confirm Your Payment</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                                                 <div>
                                                     <label className={labelClass}>Amount Sent (MMK) *</label>
                                                     <input
-                                                        required type="number" min={1000} step={1000}
+                                                        type="number"
                                                         value={topupAmount} onChange={e => setTopupAmount(e.target.value)}
                                                         placeholder="e.g. 50000" className={inputClass}
                                                     />
+                                                    <FieldError errors={topupErrors} field="deposit_amount" />
                                                 </div>
+
                                                 <div>
                                                     <label className={labelClass}>Sender Name *</label>
                                                     <input
-                                                        required type="text"
-                                                        value={senderName} onChange={e => setSenderName(e.target.value)}
-                                                        placeholder="Name shown in your payment app" className={inputClass}
+                                                        type="text"
+                                                        value={senderName}
+                                                        onChange={e => setSenderName(e.target.value)}
+                                                        maxLength={255}
+                                                        placeholder="Name shown in your payment app"
+                                                        className={inputClass}
                                                     />
+                                                    <FieldError errors={topupErrors} field="sender_name" />
                                                 </div>
-                                                <div className="sm:col-span-2">
-                                                    <label className={labelClass}>Transaction Reference No. *</label>
-                                                    <input
-                                                        required type="text"
-                                                        value={transactionRef} onChange={e => setTransactionRef(e.target.value)}
-                                                        placeholder="e.g. 20260711098765" className={inputClass}
-                                                    />
-                                                    <p className="text-nature-muted text-[11px] mt-1">Found on your payment confirmation screen after sending money.</p>
-                                                </div>
+
                                                 <div className="sm:col-span-2">
                                                     <label className={labelClass}>Transaction Screenshot *</label>
                                                     <input
-                                                        required type="file" accept="image/*"
+                                                        type="file" accept="image/*"
                                                         onChange={e => setTopupImage(e.target.files[0])}
                                                         className="w-full text-nature-dark text-sm mt-1.5 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-nature-sage/30 file:text-nature-olive hover:file:bg-nature-sage/50"
                                                     />
+                                                    <FieldError errors={topupErrors} field="transaction_image" />
                                                 </div>
                                             </div>
+
                                             {topupError && <p className="text-red-600 text-sm bg-red-50/80 border border-red-200 px-4 py-3 rounded-md">{topupError}</p>}
                                             <div className="flex items-center gap-4">
                                                 <button type="submit" disabled={topupLoading}
@@ -512,26 +486,28 @@ const passwordChecks = [
                                 {topupRequests.length > 0 ? (
                                     <div className="space-y-2">
                                         <p className={labelClass}>Top-Up History</p>
-                                        {topupRequests.map(req => {
-                                            const statusStyle = TOPUP_STATUS_STYLES[req.status] ?? 'bg-nature-sand/30 text-nature-muted';
-                                            return (
-                                                <div key={req.id} className="flex items-center justify-between border-b border-nature-border/40 py-3 last:border-0">
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="text-nature-dark text-sm font-medium">+{formatMMK(req.deposit_amount)}</p>
-                                                            <span className="text-nature-muted text-[11px] bg-nature-sage/20 px-1.5 py-0.5 rounded">
-                                                                {PAYMENT_METHOD_LABELS[req.topup_channel] ?? req.topup_channel}
-                                                            </span>
+                                        <div className="max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                                            {topupRequests.map(req => {
+                                                const statusStyle = TOPUP_STATUS_STYLES[req.status] ?? 'bg-nature-sand/30 text-nature-muted';
+                                                return (
+                                                    <div key={req.id} className="flex items-center justify-between border-b border-nature-border/40 py-3 last:border-0">
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-nature-dark text-sm font-medium">+{formatMMK(req.deposit_amount)}</p>
+                                                                <span className="text-nature-muted text-[11px] bg-nature-sage/20 px-1.5 py-0.5 rounded">
+                                                                    {PAYMENT_METHOD_LABELS[req.topup_channel] ?? req.topup_channel}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-nature-muted text-xs mt-0.5">{new Date(req.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                            {req.transaction_reference && (
+                                                                <p className="text-nature-subtle text-[11px] font-mono mt-0.5">Ref: {req.transaction_reference}</p>
+                                                            )}
                                                         </div>
-                                                        <p className="text-nature-muted text-xs mt-0.5">{new Date(req.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                                        {req.transaction_reference && (
-                                                            <p className="text-nature-subtle text-[11px] font-mono mt-0.5">Ref: {req.transaction_reference}</p>
-                                                        )}
+                                                        <span className={`text-xs px-2.5 py-1 rounded-full capitalize ${statusStyle}`}>{req.status}</span>
                                                     </div>
-                                                    <span className={`text-xs px-2.5 py-1 rounded-full capitalize ${statusStyle}`}>{req.status}</span>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 ) : (
                                     <p className="text-nature-muted text-sm text-center py-6">No top-up request history found.</p>
@@ -539,7 +515,6 @@ const passwordChecks = [
                             </div>
                         )}
 
-                        {/* --- ORDER HISTORY --- */}
                         {activeTab === 'orders' && (
                             <div className={`${panelClass} p-6`}>
                                 <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Order History</h3>
@@ -597,7 +572,6 @@ const passwordChecks = [
                             </div>
                         )}
 
-                        {/* --- WISHLIST --- */}
                         {activeTab === 'wishlist' && (
                             <div className={`${panelClass} p-6`}>
                                 <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Your Wishlist</h3>
@@ -609,38 +583,39 @@ const passwordChecks = [
                                         <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Discover Favorites</Link>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {wishlists.map(item => (
-                                            <div key={item.id} className="relative flex items-center gap-4 border border-nature-border/60 rounded-md p-4 hover:border-nature-olive/40 transition-colors">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => confirmRemoveWishlist(item)}
-                                                    title="Remove from wishlist"
-                                                    className="absolute top-2.5 right-2.5 text-nature-muted hover:text-red-600 transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                                                </button>
+                                    <div className="max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {wishlists.map(item => (
+                                                <div key={item.id} className="relative flex items-center gap-4 border border-nature-border/60 rounded-md p-4 hover:border-nature-olive/40 transition-colors">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => confirmRemoveWishlist(item)}
+                                                        title="Remove from wishlist"
+                                                        className="absolute top-2.5 right-2.5 text-nature-muted hover:text-red-600 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                                                    </button>
 
-                                                <div className="w-16 h-16 bg-nature-bg rounded-md border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                                    {item.product_image
-                                                        ? <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
-                                                        : <Package className="w-6 h-6 text-nature-sand" strokeWidth={1.5} />}
+                                                    <div className="w-16 h-16 bg-nature-bg rounded-md border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                                        {item.product_image
+                                                            ? <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
+                                                            : <Package className="w-6 h-6 text-nature-sand" strokeWidth={1.5} />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 pr-6">
+                                                        <h4 className="text-nature-dark font-medium text-sm truncate">{item.product_name}</h4>
+                                                        <p className="text-nature-muted text-xs capitalize mt-0.5">{item.product_type || 'Perfume'}</p>
+                                                        <Link to={`/products/${item.product_slug}`} className="inline-flex items-center gap-1 text-nature-olive hover:text-nature-olive-dark text-xs font-medium mt-2 transition-colors">
+                                                            View Product <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 min-w-0 pr-6">
-                                                    <h4 className="text-nature-dark font-medium text-sm truncate">{item.product_name}</h4>
-                                                    <p className="text-nature-muted text-xs capitalize mt-0.5">{item.product_type || 'Perfume'}</p>
-                                                    <Link to={`/products/${item.product_slug}`} className="inline-flex items-center gap-1 text-nature-olive hover:text-nature-olive-dark text-xs font-medium mt-2 transition-colors">
-                                                        View Product <ArrowRight className="w-3 h-3" />
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* --- REVIEWS --- */}
                         {activeTab === 'reviews' && (
                             <div className={`${panelClass} p-6`}>
                                 <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Your Reviews</h3>
@@ -652,99 +627,98 @@ const passwordChecks = [
                                         <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Browse Products to Review</Link>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-nature-border/60">
-                                        {reviews.map(review => {
-                                            const isEditing = editingReviewId === review.id;
-                                            return (
-                                                <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <h4 className="text-nature-dark font-medium text-sm">{review.product_name || `Product #${review.product_id}`}</h4>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-md bg-nature-bg border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                                                {review.product_image
-                                                                    ? <img src={review.product_image} alt={review.product_name} className="w-full h-full object-cover" />
-                                                                    : <Package className="w-4 h-4 text-nature-sand" strokeWidth={1.5} />}
+                                    <div className="max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                                        <div className="divide-y divide-nature-border/60">
+                                            {reviews.map(review => {
+                                                const isEditing = editingReviewId === review.id;
+                                                return (
+                                                    <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <h4 className="text-nature-dark font-medium text-sm">{review.product_name || `Product #${review.product_id}`}</h4>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-md bg-nature-bg border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                                                    {review.product_image
+                                                                        ? <img src={review.product_image} alt={review.product_name} className="w-full h-full object-cover" />
+                                                                        : <Package className="w-4 h-4 text-nature-sand" strokeWidth={1.5} />}
+                                                                </div>
+                                                                <div>
+                                                                    <Link to={`/products/${review.product_slug}`} className="text-nature-dark font-medium text-sm hover:text-nature-olive transition-colors">
+                                                                        {review.product_name || `Product #${review.product_slug}`}
+                                                                    </Link>
+                                                                    {review.brand_name && <p className="text-nature-muted text-xs">{review.brand_name}</p>}
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                              <Link to={`/products/${review.product_slug}`} className="text-nature-dark font-medium text-sm hover:text-nature-olive transition-colors">
-    {review.product_name || `Product #${review.product_slug}`}
-</Link>
 
-                                                                {review.brand_name && <p className="text-nature-muted text-xs">{review.brand_name}</p>}
-                                                            </div>
+                                                            {!isEditing && (
+                                                                <div className="flex items-center gap-3 flex-shrink-0">
+                                                                    <div className="flex items-center gap-0.5">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand'}`} />
+                                                                        ))}
+                                                                    </div>
+                                                                    <button onClick={() => startEditReview(review)} title="Edit review" className="text-nature-muted hover:text-nature-olive transition-colors">
+                                                                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                                                    </button>
+                                                                    <button onClick={() => confirmDeleteReview(review)} title="Delete review" className="text-nature-muted hover:text-red-600 transition-colors">
+                                                                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
 
-
-                                                        {!isEditing && (
-                                                            <div className="flex items-center gap-3 flex-shrink-0">
-                                                                <div className="flex items-center gap-0.5">
-                                                                    {[...Array(5)].map((_, i) => (
-                                                                        <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand'}`} />
-                                                                    ))}
+                                                        {isEditing ? (
+                                                            <div className="bg-nature-bg/60 border border-nature-border/50 rounded-md p-4 space-y-3">
+                                                                <div>
+                                                                    <label className={labelClass}>Rating</label>
+                                                                    <div className="flex items-center gap-1 mt-1">
+                                                                        {[1, 2, 3, 4, 5].map(n => (
+                                                                            <button key={n} type="button" onClick={() => setEditRating(n)}>
+                                                                                <Star className={`w-5 h-5 transition-colors ${n <= editRating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand hover:text-amber-300'}`} />
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
-                                                                <button onClick={() => startEditReview(review)} title="Edit review" className="text-nature-muted hover:text-nature-olive transition-colors">
-                                                                    <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                                                                </button>
-                                                                <button onClick={() => confirmDeleteReview(review)} title="Delete review" className="text-nature-muted hover:text-red-600 transition-colors">
-                                                                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-                                                                </button>
+                                                                <div>
+                                                                    <label className={labelClass}>Comment</label>
+                                                                    <textarea
+                                                                        value={editComment}
+                                                                        onChange={e => setEditComment(e.target.value)}
+                                                                        rows={3}
+                                                                        className="w-full bg-white/70 border border-nature-border/70 focus:border-nature-olive rounded-md px-3 py-2 text-nature-dark text-sm outline-none transition-colors resize-none mt-1"
+                                                                        placeholder="Share your thoughts on this fragrance..."
+                                                                    />
+                                                                </div>
+                                                                {editError && <p className="text-red-600 text-xs">{editError}</p>}
+                                                                <div className="flex items-center gap-3">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleSaveReview(review.id)}
+                                                                        disabled={editSaving}
+                                                                        className="bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-50 text-white px-4 py-2 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
+                                                                    >
+                                                                        {editSaving ? 'Saving...' : 'Save Changes'}
+                                                                    </button>
+                                                                    <button type="button" onClick={cancelEditReview} className="text-nature-muted hover:text-nature-dark text-xs uppercase tracking-wide transition-colors flex items-center gap-1">
+                                                                        <X className="w-3.5 h-3.5" /> Cancel
+                                                                    </button>
+                                                                </div>
                                                             </div>
+                                                        ) : (
+                                                            <>
+                                                                {review.title && <p className="text-nature-dark font-semibold text-xs">{review.title}</p>}
+                                                                {review.comment && <p className="text-nature-muted text-xs bg-nature-bg/60 p-3 rounded-md border border-nature-border/40 italic">"{review.comment}"</p>}
+                                                                <p className="text-nature-subtle text-[11px] text-right">{new Date(review.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                            </>
                                                         )}
                                                     </div>
-
-                                                    {isEditing ? (
-                                                        <div className="bg-nature-bg/60 border border-nature-border/50 rounded-md p-4 space-y-3">
-                                                            <div>
-                                                                <label className={labelClass}>Rating</label>
-                                                                <div className="flex items-center gap-1 mt-1">
-                                                                    {[1, 2, 3, 4, 5].map(n => (
-                                                                        <button key={n} type="button" onClick={() => setEditRating(n)}>
-                                                                            <Star className={`w-5 h-5 transition-colors ${n <= editRating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand hover:text-amber-300'}`} />
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label className={labelClass}>Comment</label>
-                                                                <textarea
-                                                                    value={editComment}
-                                                                    onChange={e => setEditComment(e.target.value)}
-                                                                    rows={3}
-                                                                    className="w-full bg-white/70 border border-nature-border/70 focus:border-nature-olive rounded-md px-3 py-2 text-nature-dark text-sm outline-none transition-colors resize-none mt-1"
-                                                                    placeholder="Share your thoughts on this fragrance..."
-                                                                />
-                                                            </div>
-                                                            {editError && <p className="text-red-600 text-xs">{editError}</p>}
-                                                            <div className="flex items-center gap-3">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleSaveReview(review.id)}
-                                                                    disabled={editSaving}
-                                                                    className="bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-50 text-white px-4 py-2 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
-                                                                >
-                                                                    {editSaving ? 'Saving...' : 'Save Changes'}
-                                                                </button>
-                                                                <button type="button" onClick={cancelEditReview} className="text-nature-muted hover:text-nature-dark text-xs uppercase tracking-wide transition-colors flex items-center gap-1">
-                                                                    <X className="w-3.5 h-3.5" /> Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            {review.title && <p className="text-nature-dark font-semibold text-xs">{review.title}</p>}
-                                                            {review.comment && <p className="text-nature-muted text-xs bg-nature-bg/60 p-3 rounded-md border border-nature-border/40 italic">"{review.comment}"</p>}
-                                                            <p className="text-nature-subtle text-[11px] text-right">{new Date(review.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* --- SECURITY SETTINGS --- */}
                         {activeTab === 'security' && (
                             <div className={`${panelClass} p-6`}>
                                 <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Security Settings</h3>
@@ -756,7 +730,7 @@ const passwordChecks = [
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess(''); }}
+                                        onClick={() => { setShowPasswordForm(v => !v); setPasswordFormError(''); setPasswordSuccess(''); }}
                                         className="bg-nature-olive hover:bg-nature-olive-dark text-white px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors flex-shrink-0"
                                     >
                                         {showPasswordForm ? 'Hide Form' : 'Change Password'}
@@ -767,13 +741,13 @@ const passwordChecks = [
                                     <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
                                         <div>
                                             <label className={labelClass}>Current Password *</label>
-                                            <input required type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+                                            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                                                 placeholder="Enter current password" className={inputClass} />
                                             <FieldError errors={passwordErrors} field="current_password" />
                                         </div>
                                         <div>
                                             <label className={labelClass}>New Password *</label>
-                                            <input required type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                                            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
                                                 placeholder="Min 8 characters" className={inputClass} />
                                             <FieldError errors={passwordErrors} field="new_password" />
 
@@ -790,7 +764,7 @@ const passwordChecks = [
                                         </div>
                                         <div>
                                             <label className={labelClass}>Confirm New Password *</label>
-                                            <input required type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                                            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                                                 placeholder="Re-enter new password" className={inputClass} />
                                         </div>
 
@@ -820,8 +794,7 @@ const passwordChecks = [
                 </div>
             </div>
 
-            {/* --- ORDER DETAIL MODAL --- */}
-            {selectedOrder && (
+           {selectedOrder && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className={`${modalPanelClass} max-w-lg w-full max-h-[85vh] overflow-y-auto p-6`}>
                         <div className="flex items-start justify-between mb-5 pb-5 border-b border-nature-border/60">
@@ -850,81 +823,11 @@ const passwordChecks = [
                             })()}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-nature-bg/50 border border-nature-border/40 rounded-md p-4 mb-5">
-                            <div className="flex items-start gap-2.5">
-                                <MapPin className="w-4 h-4 text-nature-olive mt-0.5 flex-shrink-0" strokeWidth={1.5} />
-                                <div>
-                                    <p className={labelClass}>Ship To</p>
-                                    <p className="text-nature-dark text-sm">{selectedOrder.shipping_name || 'Customer'}</p>
-                                    <p className="text-nature-muted text-xs mt-0.5">{selectedOrder.address}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2.5">
-                                <Phone className="w-4 h-4 text-nature-olive mt-0.5 flex-shrink-0" strokeWidth={1.5} />
-                                <div>
-                                    <p className={labelClass}>Contact & Payment</p>
-                                    <p className="text-nature-dark text-sm">{selectedOrder.shipping_phone || 'N/A'}</p>
-                                    <p className="text-nature-muted text-xs mt-0.5 capitalize">{selectedOrder.payment_method?.replace('_', ' ')}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3 mb-5">
-                            {selectedOrder.items && selectedOrder.items.map(item => (
-                                <div key={item.id} className="flex justify-between items-start text-xs border-b border-nature-border/40 pb-3 last:border-0 last:pb-0">
-                                    <div>
-                                        <h4 className="text-nature-dark text-sm font-medium">{item.product_name}</h4>
-                                        <p className="text-nature-muted mt-0.5">
-                                            {item.brand_name} · <span className="font-medium text-nature-dark">{item.variant_size}</span> · qty {item.quantity}
-                                        </p>
-                                    </div>
-                                    <span className="text-nature-dark font-medium">{formatMMK(item.price * item.quantity)}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex justify-between items-baseline pt-3 border-t border-nature-border/60 mb-2">
-                            <span className="text-nature-dark font-medium text-xs tracking-[0.15em] uppercase">Total</span>
-                            <span className="text-nature-olive font-serif font-semibold text-xl">{formatMMK(selectedOrder.total_amount)}</span>
-                        </div>
-
-                        {['pending', 'processing'].includes(selectedOrder.status) && (
-                            <div className="pt-4 mt-4 border-t border-nature-border/60">
-                                <button
-                                    type="button"
-                                    onClick={() => confirmCancelOrder(selectedOrder)}
-                                    className="w-full flex items-center justify-center gap-1.5 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600 px-4 py-2.5 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
-                                >
-                                    <XCircle className="w-3.5 h-3.5" /> Cancel Order
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* --- SHARED CONFIRM MODAL --- */}
-            {confirmModal && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-                    <div className={`${modalPanelClass} max-w-sm w-full p-6`}>
-                        <h3 className="font-serif text-lg text-nature-dark mb-2">{confirmModal.title}</h3>
-                        <p className="text-nature-muted text-sm mb-6">{confirmModal.message}</p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setConfirmModal(null)}
-                                disabled={confirmLoading}
-                                className="flex-1 border border-nature-border text-nature-dark hover:bg-nature-bg disabled:opacity-50 px-4 py-2.5 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
-                            >
-                                Go Back
-                            </button>
-                            <button
-                                onClick={handleConfirm}
-                                disabled={confirmLoading}
-                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
-                            >
-                                {confirmLoading ? 'Please wait...' : confirmModal.confirmLabel}
-                            </button>
-                        </div>
+                        <OrderDetail
+                            order={selectedOrder}
+                            showCancelButton
+                            onCancelRequest={() => confirmCancelOrder(selectedOrder)}
+                        />
                     </div>
                 </div>
             )}

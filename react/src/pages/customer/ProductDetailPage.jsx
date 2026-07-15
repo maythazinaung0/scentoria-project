@@ -7,6 +7,7 @@ import {
 import api from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 // Same visual language as CartPage
 const panelClass = "bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]";
@@ -113,8 +114,7 @@ function NoteChip({ note }) {
 }
 
 export default function ProductDetailPage() {
-    // URL param is now the slug (e.g. "dior-sauvage"), not a numeric id —
-    // matches the /products/:slug route + backend's slug-based lookup.
+        const openConfirm = useConfirm();
     const { slug } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -241,14 +241,16 @@ export default function ProductDetailPage() {
         }
     }
 
-    async function handleDeleteOwnReview() {
-        if (!window.confirm('Delete your review?')) return;
-        try {
-            await api.delete(`/reviews/${myReview.id}`);
-            await loadReviews(product.id);
-        } catch (err) {
-            alert(err.response?.data?.message || 'Could not delete your review.');
-        }
+   function confirmDeleteOwnReview() {
+        openConfirm({
+            title: 'Delete your review?',
+            message: 'This will permanently remove your review from this product.',
+            confirmLabel: 'Delete',
+            onConfirm: async () => {
+                await api.delete(`/reviews/${myReview.id}`);
+                await loadReviews(product.id);
+            },
+        });
     }
 
     async function handleAddToCart() {
@@ -287,14 +289,14 @@ export default function ProductDetailPage() {
         );
     }
 
-const getNotesData = (type) => {
-    return (product.notes || [])
-        .filter(n => n.pivot?.type === type)
-        .map(n => ({
-            name: n.name || 'Unnamed note',
-            icon: n.icon_url || null,
-        }));
-};
+    const getNotesData = (type) => {
+        return (product.notes || [])
+            .filter(n => n.pivot?.type === type)
+            .map(n => ({
+                name: n.name || 'Unnamed note',
+                icon: n.icon_url || null,
+            }));
+    };
 
     const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
     const distribution = [5, 4, 3, 2, 1].map(star => {
@@ -319,14 +321,14 @@ const getNotesData = (type) => {
                 {/* --- HERO: image + purchase panel --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                    <div className="lg:col-span-7">
-                        <div className={`${panelClass} aspect-square flex items-center justify-center p-10 sm:p-16`}>
+                   <div className="lg:col-span-7">
+                        <div className={`${panelClass} aspect-square max-h-[560px] max-w-[540px] overflow-hidden mx-auto w-full ${!(product.image_url && !imgError) ? 'flex items-center justify-center p-10 sm:p-16' : ''}`}>
                             {product.image_url && !imgError ? (
                                 <img
                                     src={product.image_url}
                                     alt={product.name}
                                     onError={() => setImgError(true)}
-                                    className="w-full h-full object-contain drop-shadow-sm"
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
                                 <div className="flex flex-col items-center gap-3 text-nature-sand">
@@ -394,9 +396,8 @@ const getNotesData = (type) => {
                                     <button
                                         onClick={handleToggleWishlist}
                                         disabled={wishlistLoading}
-                                        className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border rounded-md transition-colors disabled:opacity-60 ${
-                                            wishlistId ? 'border-nature-olive bg-nature-olive/10 text-nature-olive' : 'border-nature-border text-nature-olive hover:bg-nature-sage/10'
-                                        }`}
+                                        className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border rounded-md transition-colors disabled:opacity-60 ${wishlistId ? 'border-nature-olive bg-nature-olive/10 text-nature-olive' : 'border-nature-border text-nature-olive hover:bg-nature-sage/10'
+                                            }`}
                                     >
                                         <Heart size={18} className={wishlistId ? 'fill-nature-olive' : ''} />
                                     </button>
@@ -410,7 +411,9 @@ const getNotesData = (type) => {
                             {/* Collapsible detail sections */}
                             <div className="mt-2">
                                 <AccordionSection title="Description" defaultOpen>
-                                    <p className="text-nature-muted text-sm leading-relaxed whitespace-pre-line break-words">{product.description}</p>
+                                    <p className="text-nature-muted text-sm leading-relaxed whitespace-pre-line break-words max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                                        {product.description}
+                                    </p>
                                 </AccordionSection>
 
                                 <AccordionSection title="Fragrance Notes">
@@ -418,11 +421,11 @@ const getNotesData = (type) => {
                                         {['top', 'heart', 'base'].map((type) => (
                                             <div key={type} className="flex items-start gap-3">
                                                 <span className="w-16 pt-1 text-[11px] font-semibold uppercase tracking-wider text-nature-muted flex-shrink-0">{type}</span>
-<div className="flex flex-wrap gap-2 flex-1">
-    {getNotesData(type).length > 0 ? getNotesData(type).map((n, i) => (
-        <NoteChip key={i} note={n} />
-    )) : <span className="text-nature-sand text-sm italic">N/A</span>}
-</div>
+                                                <div className="flex flex-wrap gap-2 flex-1">
+                                                    {getNotesData(type).length > 0 ? getNotesData(type).map((n, i) => (
+                                                        <NoteChip key={i} note={n} />
+                                                    )) : <span className="text-nature-sand text-sm italic">N/A</span>}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -551,15 +554,17 @@ const getNotesData = (type) => {
                                 ) : sortedReviews.length === 0 ? (
                                     <p className="py-10 text-center text-nature-muted text-sm">No reviews yet — be the first to share your thoughts.</p>
                                 ) : (
-                                    sortedReviews.map(review => (
-                                        <ReviewCard
-                                            key={review.id}
-                                            review={review}
-                                            isOwn={user && review.user_id === user.id}
-                                            onEdit={startEditOwnReview}
-                                            onDelete={handleDeleteOwnReview}
-                                        />
-                                    ))
+                                    <div className="max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                                        {sortedReviews.map(review => (
+                                            <ReviewCard
+                                                key={review.id}
+                                                review={review}
+                                                isOwn={user && review.user_id === user.id}
+                                                onEdit={startEditOwnReview}
+                                                onDelete={confirmDeleteOwnReview}
+                                            />
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -40,17 +40,17 @@ export default function Orders() {
 
   useEffect(() => { load(); }, []);
 
- async function handleUpdateStatus(orderId, newStatus) {
-  setUpdating(orderId);
-  try {
-    await api.patch(`/admin/orders/${orderId}`, { status: newStatus }); // put -> patch
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: newStatus } : prev);
-  } catch (e) {
-    console.error('Failed to update status:', e);
-    alert('Could not update order status. Please try again.');
-  } finally { setUpdating(null); }
-}
+  async function handleUpdateStatus(orderId, newStatus) {
+    setUpdating(orderId);
+    try {
+      await api.patch(`/admin/orders/${orderId}`, { status: newStatus });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      setSelectedOrder(prev => prev && prev.id === orderId ? { ...prev, status: newStatus } : prev);
+    } catch (e) {
+      console.error('Failed to update status:', e);
+      alert('Could not update order status. Please try again.');
+    } finally { setUpdating(null); }
+  }
 
   const filtered = useMemo(() => orders.filter(o => {
     const matchesSearch = !search
@@ -115,24 +115,22 @@ export default function Orders() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-nature-muted"><ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No orders match your filters.</p></div>
       ) : (
-        <>
-          <div className="[&>div]:rounded-b-none">
-<OrderTable
-  filtered={visible}
-  onSelectOrder={setSelectedOrder}
-  onUpdateStatus={handleUpdateStatus}
-  updatingId={updating}
-/>          </div>
-
-          <AdminPagination
-            page={clampedPage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            perPage={perPage}
-            onPerPageChange={setPerPage}
-            totalItems={filtered.length}
-          />
-        </>
+        <OrderTable
+          filtered={visible}
+          onSelectOrder={setSelectedOrder}
+          onUpdateStatus={handleUpdateStatus}
+          updatingId={updating}
+          footer={
+            <AdminPagination
+              page={clampedPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              perPage={perPage}
+              onPerPageChange={setPerPage}
+              totalItems={filtered.length}
+            />
+          }
+        />
       )}
     </div>
   );

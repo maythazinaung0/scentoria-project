@@ -45,7 +45,7 @@ export default function AdminDashboard() {
  
   const fetchData = () => {
     setIsRefreshing(true);
-    api.get('/admin/dashboard')
+    api.get('/admin')
       .then(({ data }) => {
         setOrders(data.orders);
         setProductCount(data.product_count);
@@ -251,7 +251,6 @@ export default function AdminDashboard() {
                   <thead>
                     <tr className="bg-neutral-50/40 text-left">
                       <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Customer Profile</th>
-                      <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 hidden sm:table-cell opacity-80">Reference ID</th>
                       <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 hidden md:table-cell opacity-80">Timestamp</th>
                       <th className="text-right text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Quantum</th>
                       <th className="text-right text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Status Token</th>

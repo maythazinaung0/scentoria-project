@@ -14,7 +14,7 @@ class AdminController extends Controller
     {
         $orders = Order::with('customer:id,name')
             ->latest()
-            ->get(['id', 'customer_id', 'total_amount', 'status', 'created_at'])
+            ->get(['id', 'user_id', 'total_amount', 'status', 'created_at'])
             ->map(fn ($o) => [
                 'id' => $o->id,
                 'customer_name' => $o->customer->name,

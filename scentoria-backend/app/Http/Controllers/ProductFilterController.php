@@ -25,8 +25,6 @@ class ProductFilterController extends Controller
         );
     }
 
-    // Real listing endpoint for the search modal — separate from
-    // BrandController::search(), which requires ?q= and returns [] without it.
     public function brands()
     {
         return response()->json(
@@ -37,37 +35,50 @@ class ProductFilterController extends Controller
     public function byBrand($id)
     {
         return response()->json(
-            Product::with(['brand', 'scent'])->where('brand_id', $id)->get()
+            Product::with(['brand', 'scent'])
+                ->where('status', 'active')
+                ->where('brand_id', $id)
+                ->get()
         );
     }
 
     public function byScent($id)
     {
         return response()->json(
-            Product::with(['brand', 'scent'])->where('scent_id', $id)->get()
+            Product::with(['brand', 'scent'])
+                ->where('status', 'active')
+                ->where('scent_id', $id)
+                ->get()
         );
     }
 
-public function byNote($id)
-{
-    return response()->json(
-        Product::with(['brand', 'scent'])
-            ->whereHas('notes', fn ($q) => $q->where('notes.id', $id))
-            ->get()
-    );
-}
+    public function byNote($id)
+    {
+        return response()->json(
+            Product::with(['brand', 'scent'])
+                ->where('status', 'active')
+                ->whereHas('notes', fn ($q) => $q->where('notes.id', $id))
+                ->get()
+        );
+    }
 
     public function bySeason($value)
     {
         return response()->json(
-            Product::with(['brand', 'scent'])->where('season', $value)->get()
+            Product::with(['brand', 'scent'])
+                ->where('status', 'active')
+                ->where('season', $value)
+                ->get()
         );
     }
 
     public function byGender($value)
     {
         return response()->json(
-            Product::with(['brand', 'scent'])->where('gender', $value)->get()
+            Product::with(['brand', 'scent'])
+                ->where('status', 'active')
+                ->where('gender', $value)
+                ->get()
         );
     }
 }

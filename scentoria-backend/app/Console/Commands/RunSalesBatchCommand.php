@@ -46,12 +46,39 @@ class RunSalesBatchCommand extends Command
 
         $generatedAt = Carbon::now();
 
-        $this->ingestMonthlyRevenue("{$outputDir}/monthly_revenue.dat", $generatedAt);
-        $this->ingestProductSales("{$outputDir}/product_sales.dat", $generatedAt);
+        $this->ingestDailyRevenue("{$outputDir}/daily_revenue.csv", $generatedAt);
+        $this->ingestMonthlyRevenue("{$outputDir}/monthly_revenue.csv", $generatedAt);
+        $this->ingestProductSales("{$outputDir}/product_sales.csv", $generatedAt);
 
         $this->info('Sales report tables updated.');
 
         return self::SUCCESS;
+    }
+
+    // Offsets here match the OUT-* PIC clauses in cobol/SALESBATCH.cob:
+    // day line = 8 (date) + 12 (revenue) = 20 chars.
+    private function ingestDailyRevenue(string $path, Carbon $generatedAt): void
+    {
+        if (! is_file($path)) {
+            $this->warn("Missing output file: {$path}");
+
+            return;
+        }
+
+        foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $date = trim(substr($line, 0, 8));
+            $revenue = (int) trim(substr($line, 8, 12));
+
+            DB::table('daily_sales_reports')->updateOrInsert(
+                ['date' => $date],
+                [
+                    'total_revenue' => $revenue,
+                    'generated_at' => $generatedAt,
+                    'updated_at' => $generatedAt,
+                    'created_at' => $generatedAt,
+                ]
+            );
+        }
     }
 
     // Offsets here match the OUT-* PIC clauses in cobol/SALESBATCH.cob:

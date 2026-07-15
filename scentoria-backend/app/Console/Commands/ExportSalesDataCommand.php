@@ -13,14 +13,14 @@ class ExportSalesDataCommand extends Command
 
     // Field widths — must stay in sync with the record layout
     // (01 INPUT-RECORD) in cobol/SALESBATCH.cob.
-    private const YEARMONTH_LEN = 6;
+    private const DATE_LEN = 8;
     private const PRODUCT_LEN = 30;
     private const QTY_LEN = 5;
     private const TOTAL_LEN = 10;
 
     public function handle(): int
     {
-        $path = storage_path('app/cobol/input/sales_input.dat');
+        $path = storage_path('app/cobol/input/sales_input.csv');
 
         if (! is_dir(dirname($path))) {
             mkdir(dirname($path), 0755, true);
@@ -46,11 +46,11 @@ class ExportSalesDataCommand extends Command
         $handle = fopen($path, 'w');
 
         foreach ($rows as $row) {
-            $yearMonth = Carbon::parse($row->created_at)->format('Ym');
+            $date = Carbon::parse($row->created_at)->format('Ymd');
             $lineTotal = $row->quantity * $row->price;
 
             $record =
-                str_pad($yearMonth, self::YEARMONTH_LEN, ' ', STR_PAD_RIGHT) .
+                str_pad($date, self::DATE_LEN, ' ', STR_PAD_RIGHT) .
                 str_pad(substr($row->product_name, 0, self::PRODUCT_LEN), self::PRODUCT_LEN, ' ', STR_PAD_RIGHT) .
                 str_pad((string) $row->quantity, self::QTY_LEN, '0', STR_PAD_LEFT) .
                 str_pad((string) $lineTotal, self::TOTAL_LEN, '0', STR_PAD_LEFT);

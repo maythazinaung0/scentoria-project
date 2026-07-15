@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\StoreWalletTopupRequest;
 
 class ProfileController extends Controller
 {
@@ -94,58 +95,39 @@ class ProfileController extends Controller
      * Secure Top-up Submission Logic
      * Validates required user-facing manual info and acts against screenshot duplication frauds.
      */
-    public function storeWalletTopup(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'deposit_amount'        => 'required|integer|min:1000|max:10000000',
-            'topup_channel'         => 'required|in:kbzpay,cbpay',
-            'sender_name'           => 'required|string|max:255',
-            'transaction_reference' => 'required|string|max:100',
-            'transaction_image'     => 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+      public function storeWalletTopup(StoreWalletTopupRequest $request) 
+{
+    
+    $user = $request->user();
 
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Validation error', 'errors' => $validator->errors()], 422);
-        }
-
-        $user = $request->user();
-
-        // Flood mitigation barrier (max 3 pending)
-        $pendingCount = WalletTopup::where('user_id', $user->id)->where('status', 'pending')->count();
-        if ($pendingCount >= 3) {
-            return response()->json(['message' => 'You already have 3 pending top-up requests awaiting review.'], 422);
-        }
-
-        $file = $request->file('transaction_image');
-        $hash = hash_file('sha256', $file->getRealPath());
-
-        // Block duplicate image uploads
-        if (WalletTopup::where('image_hash', $hash)->exists()) {
-            return response()->json(['message' => 'This transaction screenshot has already been submitted.'], 422);
-        }
-
-        // Block matching reference IDs on the selected channel
-        if (WalletTopup::where('topup_channel', $request->topup_channel)
-            ->where('transaction_reference', $request->transaction_reference)
-            ->exists()) {
-            return response()->json(['message' => 'This transaction reference has already been used.'], 422);
-        }
-
-        $path = $file->store('topups', 'public');
-
-        $topup = WalletTopup::create([
-            'user_id'               => $user->id,
-            'deposit_amount'        => $request->input('deposit_amount'),
-            'topup_channel'         => $request->input('topup_channel'),
-            'sender_name'           => $request->input('sender_name'),
-            'transaction_reference' => $request->input('transaction_reference'),
-            'image_hash'            => $hash,
-            'status'                => 'pending',
-            'transaction_image_url' => $request->getSchemeAndHttpHost() . '/storage/' . $path,
-        ]);
-
-        return response()->json(['message' => 'Top-up request submitted successfully.', 'data' => $topup], 201);
+    // Flood mitigation barrier (max 3 pending)
+    $pendingCount = WalletTopup::where('user_id', $user->id)->where('status', 'pending')->count();
+    if ($pendingCount >= 3) {
+        return response()->json(['message' => 'You already have 3 pending top-up requests awaiting review.'], 422);
     }
+
+    $file = $request->file('transaction_image');
+    $hash = hash_file('sha256', $file->getRealPath());
+
+    if (WalletTopup::where('image_hash', $hash)->exists()) {
+        return response()->json(['message' => 'This transaction screenshot has already been submitted.'], 422);
+    }
+
+
+    $path = $file->store('topups', 'public');
+
+    $topup = WalletTopup::create([
+        'user_id'               => $user->id,
+        'deposit_amount'        => $request->input('deposit_amount'),
+        'topup_channel'         => $request->input('topup_channel'),
+        'sender_name'           => $request->input('sender_name'),
+        'image_hash'            => $hash,
+        'status'                => 'pending',
+        'transaction_image_url' => $request->getSchemeAndHttpHost() . '/storage/' . $path,
+    ]);
+
+    return response()->json(['message' => 'Top-up request submitted successfully.', 'data' => $topup], 201);
+}
 
   public function getReviews(Request $request)
 {

@@ -20,9 +20,6 @@ class ScentController extends Controller
         return response()->json($scents);
     }
 
-    // GET /api/scents/{id} — includes active products in this scent family
-    // (with brand/variants eager-loaded so ProductCard has what it needs)
-    // plus common_notes, computed live from those products' actual notes.
     public function show($id)
     {
         $scent = Scent::with(['products' => function ($q) {
@@ -49,9 +46,6 @@ class ScentController extends Controller
             'image_url' => $validatedData['image_url'] ?? null,
         ]);
 
-        // Returned directly (not wrapped in {message, data}) so the admin
-        // frontend can drop the response straight into state — ScentModal's
-        // onSaved(data) expects `data` to BE the scent object.
         return response()->json($scent, 201);
     }
 
@@ -69,11 +63,18 @@ class ScentController extends Controller
         return response()->json($scent);
     }
 
-    public function destroy($id): JsonResponse
-    {
-        $scent = Scent::findOrFail($id);
-        $scent->delete();
+   public function destroy($id)
+{
+    $scent = Scent::findOrFail($id);
 
-        return response()->json(['message' => 'Scent deleted successfully']);
+    if ($scent->products()->exists()) {
+        $count = $scent->products()->count();
+        return response()->json([
+            'message' => "This scent is used by {$count} product" . ($count === 1 ? '' : 's') . " and cannot be deleted. Reassign or remove those products first.",
+        ], 422);
     }
+
+    $scent->delete();
+    return response()->json(['message' => 'Scent deleted successfully']);
+}
 }

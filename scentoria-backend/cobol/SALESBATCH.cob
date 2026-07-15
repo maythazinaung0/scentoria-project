@@ -1,15 +1,20 @@
+>>SOURCE FORMAT FREE
        IDENTIFICATION DIVISION.
        PROGRAM-ID. SALESBATCH.
        AUTHOR. SCENTORIA.
 
       *> -----------------------------------------------------------
-      *> Nightly sales batch job.
+      *> Sales batch job. Runs nightly on a schedule, or on demand
+      *> when an admin clicks "Run Now" on the Sales Report page.
       *>
       *> Reads one fixed-width record per completed order line item
       *> (written by Laravel's `sales:export` command) and produces
-      *> two summary files:
-      *>   1. monthly_revenue.dat - total revenue per YYYYMM
-      *>   2. product_sales.dat   - qty/revenue per product,
+      *> three summary files:
+      *>   1. daily_revenue.csv   - total revenue per YYYYMMDD
+      *>   2. monthly_revenue.csv - total revenue per YYYYMM
+      *>                            (month is derived from the day
+      *>                            key, not sent separately)
+      *>   3. product_sales.csv   - qty/revenue per product,
       *>                            sorted by quantity descending
       *>
       *> Input/output directories are passed in via environment
@@ -25,6 +30,10 @@
                ASSIGN TO WS-INPUT-PATH
                ORGANIZATION IS LINE SEQUENTIAL.
 
+           SELECT DAILY-OUTPUT
+               ASSIGN TO WS-DAILY-OUT-PATH
+               ORGANIZATION IS LINE SEQUENTIAL.
+
            SELECT MONTHLY-OUTPUT
                ASSIGN TO WS-MONTHLY-OUT-PATH
                ORGANIZATION IS LINE SEQUENTIAL.
@@ -37,13 +46,21 @@
        FILE SECTION.
 
       *> Record layout must match ExportSalesDataCommand exactly:
-      *> 6 + 30 + 5 + 10 = 51 characters per line.
+      *> 8 + 30 + 5 + 10 = 53 characters per line. The month bucket
+      *> is derived from the first 6 characters of IN-DATE rather
+      *> than being sent as a separate field.
        FD  SALES-INPUT.
        01  INPUT-RECORD.
-           05  IN-YEARMONTH        PIC X(6).
+           05  IN-DATE             PIC X(8).
            05  IN-PRODUCT          PIC X(30).
            05  IN-QUANTITY         PIC 9(5).
            05  IN-TOTAL            PIC 9(10).
+
+      *> 8 + 12 = 20 characters per line.
+       FD  DAILY-OUTPUT.
+       01  DAY-OUT-RECORD.
+           05  OUT-DATE            PIC X(8).
+           05  OUT-DAY-REVENUE     PIC 9(12).
 
       *> 6 + 12 = 18 characters per line.
        FD  MONTHLY-OUTPUT.
@@ -62,14 +79,23 @@
        01  WS-INPUT-DIR             PIC X(200).
        01  WS-OUTPUT-DIR            PIC X(200).
        01  WS-INPUT-PATH            PIC X(250).
+       01  WS-DAILY-OUT-PATH        PIC X(250).
        01  WS-MONTHLY-OUT-PATH      PIC X(250).
        01  WS-PRODUCT-OUT-PATH      PIC X(250).
 
        01  WS-EOF                   PIC X       VALUE 'N'.
            88  END-OF-FILE                      VALUE 'Y'.
 
-      *> 60 months = 5 years of nightly history before this needs
-      *> to grow. Bump OCCURS here (and re-test) if that's not enough.
+      *> 400 days ~ 13 months of daily history before this needs to
+      *> grow. Bump OCCURS here (and re-test) if that's not enough.
+       01  WS-DAY-COUNT             PIC 9(3)    VALUE 0.
+       01  WS-DAY-TABLE.
+           05  DAY-ENTRY   OCCURS 400 TIMES
+                           INDEXED BY DAY-IDX.
+               10  DAY-KEY          PIC X(8).
+               10  DAY-REVENUE      PIC 9(12).
+
+      *> 60 months = 5 years of history before this needs to grow.
        01  WS-MONTH-COUNT           PIC 9(3)    VALUE 0.
        01  WS-MONTH-TABLE.
            05  MONTH-ENTRY OCCURS 60 TIMES
@@ -92,11 +118,14 @@
        01  WS-SWAPPED               PIC X       VALUE 'N'.
            88  DID-SWAP                         VALUE 'Y'.
 
+       01  WS-TEMP-DAY-KEY          PIC X(8).
+       01  WS-TEMP-DAY-REV          PIC 9(12).
        01  WS-TEMP-MONTH-KEY        PIC X(6).
        01  WS-TEMP-MONTH-REV        PIC 9(12).
        01  WS-TEMP-PROD-NAME        PIC X(30).
        01  WS-TEMP-PROD-QTY         PIC 9(7).
        01  WS-TEMP-PROD-REV         PIC 9(12).
+       01  WS-H                     PIC 9(4).
        01  WS-I                     PIC 9(4).
        01  WS-J                     PIC 9(4).
 
@@ -116,9 +145,11 @@
 
            CLOSE SALES-INPUT
 
+           PERFORM SORT-DAYS-ASCENDING
            PERFORM SORT-MONTHS-ASCENDING
            PERFORM SORT-PRODUCTS-DESCENDING
 
+           PERFORM WRITE-DAILY-OUTPUT
            PERFORM WRITE-MONTHLY-OUTPUT
            PERFORM WRITE-PRODUCT-OUTPUT
 
@@ -129,29 +160,57 @@
            ACCEPT WS-OUTPUT-DIR FROM ENVIRONMENT "SALES_OUTPUT_DIR"
 
            STRING FUNCTION TRIM(WS-INPUT-DIR) DELIMITED BY SIZE
-                  "/sales_input.dat"          DELIMITED BY SIZE
+                  "/sales_input.csv"          DELIMITED BY SIZE
                   INTO WS-INPUT-PATH
            END-STRING
 
            STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
-                  "/monthly_revenue.dat"      DELIMITED BY SIZE
+                  "/daily_revenue.csv"        DELIMITED BY SIZE
+                  INTO WS-DAILY-OUT-PATH
+           END-STRING
+
+           STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
+                  "/monthly_revenue.csv"      DELIMITED BY SIZE
                   INTO WS-MONTHLY-OUT-PATH
            END-STRING
 
            STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
-                  "/product_sales.dat"        DELIMITED BY SIZE
+                  "/product_sales.csv"        DELIMITED BY SIZE
                   INTO WS-PRODUCT-OUT-PATH
            END-STRING.
 
        PROCESS-RECORD.
+           PERFORM ACCUMULATE-DAY
            PERFORM ACCUMULATE-MONTH
            PERFORM ACCUMULATE-PRODUCT.
 
+       ACCUMULATE-DAY.
+           MOVE 'N' TO WS-FOUND
+           PERFORM VARYING DAY-IDX FROM 1 BY 1
+                   UNTIL DAY-IDX > WS-DAY-COUNT
+               IF DAY-KEY(DAY-IDX) = IN-DATE
+                   ADD IN-TOTAL TO DAY-REVENUE(DAY-IDX)
+                   MOVE 'Y' TO WS-FOUND
+                   SET DAY-IDX TO WS-DAY-COUNT
+               END-IF
+           END-PERFORM
+
+           IF NOT ENTRY-FOUND
+               ADD 1 TO WS-DAY-COUNT
+               SET DAY-IDX TO WS-DAY-COUNT
+               MOVE IN-DATE  TO DAY-KEY(DAY-IDX)
+               MOVE IN-TOTAL TO DAY-REVENUE(DAY-IDX)
+           END-IF.
+
+      *> Month bucket is just the first 6 characters of the date
+      *> (YYYYMMDD -> YYYYMM) via COBOL reference modification —
+      *> no separate month field needs to travel through the input
+      *> file.
        ACCUMULATE-MONTH.
            MOVE 'N' TO WS-FOUND
            PERFORM VARYING MONTH-IDX FROM 1 BY 1
                    UNTIL MONTH-IDX > WS-MONTH-COUNT
-               IF MONTH-KEY(MONTH-IDX) = IN-YEARMONTH
+               IF MONTH-KEY(MONTH-IDX) = IN-DATE(1:6)
                    ADD IN-TOTAL TO MONTH-REVENUE(MONTH-IDX)
                    MOVE 'Y' TO WS-FOUND
                    SET MONTH-IDX TO WS-MONTH-COUNT
@@ -161,7 +220,7 @@
            IF NOT ENTRY-FOUND
                ADD 1 TO WS-MONTH-COUNT
                SET MONTH-IDX TO WS-MONTH-COUNT
-               MOVE IN-YEARMONTH TO MONTH-KEY(MONTH-IDX)
+               MOVE IN-DATE(1:6) TO MONTH-KEY(MONTH-IDX)
                MOVE IN-TOTAL     TO MONTH-REVENUE(MONTH-IDX)
            END-IF.
 
@@ -188,6 +247,24 @@
       *> Table sizes here are course-project scale, so a plain bubble
       *> sort keeps the logic easy to read (and easy to grade) instead
       *> of reaching for the SORT verb + external work files.
+       SORT-DAYS-ASCENDING.
+           MOVE 'Y' TO WS-SWAPPED
+           PERFORM UNTIL WS-SWAPPED = 'N'
+               MOVE 'N' TO WS-SWAPPED
+               PERFORM VARYING WS-H FROM 1 BY 1
+                       UNTIL WS-H >= WS-DAY-COUNT
+                   IF DAY-KEY(WS-H) > DAY-KEY(WS-H + 1)
+                       MOVE DAY-KEY(WS-H)         TO WS-TEMP-DAY-KEY
+                       MOVE DAY-REVENUE(WS-H)     TO WS-TEMP-DAY-REV
+                       MOVE DAY-KEY(WS-H + 1)     TO DAY-KEY(WS-H)
+                       MOVE DAY-REVENUE(WS-H + 1) TO DAY-REVENUE(WS-H)
+                       MOVE WS-TEMP-DAY-KEY       TO DAY-KEY(WS-H + 1)
+                       MOVE WS-TEMP-DAY-REV       TO DAY-REVENUE(WS-H + 1)
+                       MOVE 'Y' TO WS-SWAPPED
+                   END-IF
+               END-PERFORM
+           END-PERFORM.
+
        SORT-MONTHS-ASCENDING.
            MOVE 'Y' TO WS-SWAPPED
            PERFORM UNTIL WS-SWAPPED = 'N'
@@ -226,6 +303,16 @@
                    END-IF
                END-PERFORM
            END-PERFORM.
+
+       WRITE-DAILY-OUTPUT.
+           OPEN OUTPUT DAILY-OUTPUT
+           PERFORM VARYING DAY-IDX FROM 1 BY 1
+                   UNTIL DAY-IDX > WS-DAY-COUNT
+               MOVE DAY-KEY(DAY-IDX)     TO OUT-DATE
+               MOVE DAY-REVENUE(DAY-IDX) TO OUT-DAY-REVENUE
+               WRITE DAY-OUT-RECORD
+           END-PERFORM
+           CLOSE DAILY-OUTPUT.
 
        WRITE-MONTHLY-OUTPUT.
            OPEN OUTPUT MONTHLY-OUTPUT

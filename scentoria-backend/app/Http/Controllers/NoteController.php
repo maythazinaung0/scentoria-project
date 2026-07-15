@@ -28,8 +28,15 @@ class NoteController extends Controller
     }
 
     public function destroy(Note $note)
-    {
-        $note->delete();
-        return response()->json(null, 204);
+{
+    if ($note->products()->exists()) {
+        $count = $note->products()->count();
+        return response()->json([
+            'message' => "This note is used by {$count} product" . ($count === 1 ? '' : 's') . " and cannot be deleted. Remove it from those products first.",
+        ], 422);
     }
+
+    $note->delete();
+    return response()->json(null, 204);
+}
 }

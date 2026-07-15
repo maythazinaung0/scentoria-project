@@ -31,11 +31,12 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/scents/{scent}', [ScentController::class, 'show']);
 
-Route::get('/brands', [BrandController::class, 'search']); // unchanged, needs ?q=
+// search
+Route::get('/brands', [BrandController::class, 'search']); 
 Route::get('/brands-list', [ProductFilterController::class, 'brands']);
 Route::get('/seasons', [ProductFilterController::class, 'seasons']);
 Route::get('/genders', [ProductFilterController::class, 'genders']);
-
+Route::get('/search', [SearchController::class, 'search']);
 Route::get('/products-by-brand/{id}',     [ProductFilterController::class, 'byBrand']);
 Route::get('/products-by-scent/{id}',     [ProductFilterController::class, 'byScent']);
 Route::get('/products-by-note/{id}',      [ProductFilterController::class, 'byNote']);
@@ -118,5 +119,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/orders', [OrderController::class, 'index']);
 Route::patch('/admin/orders/{order}', [OrderController::class, 'update']);
     // sales report
-    Route::get('/admin/sales-report', [SalesReportController::class, 'index']);
-});
+Route::get('/admin/sales-report', [SalesReportController::class, 'index']);
+Route::post('/admin/sales-report/run-batch', [SalesReportController::class, 'runBatch']);});

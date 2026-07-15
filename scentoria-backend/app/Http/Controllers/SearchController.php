@@ -22,7 +22,7 @@ class SearchController extends Controller
     ];
     $val = $map[$searchQuery] ?? $searchQuery;
  
-    $products = Product::with(['brand', 'scent', 'notes.note'])
+    $products = Product::with(['brand', 'scent', 'notes'])
         ->where(function ($q) use ($query, $val) {
             $q->where('name', 'LIKE', "%{$query}%")
               ->orWhere('gender', '=', $val)

@@ -8,21 +8,32 @@ const modalPanelClass = "bg-white border border-nature-border/50 rounded-lg shad
 export function ConfirmProvider({ children }) {
     const [confirmModal, setConfirmModal] = useState(null); // { title, message, confirmLabel, onConfirm }
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [confirmError, setConfirmError] = useState('');
 
     function openConfirm({ title, message, confirmLabel = 'Confirm', onConfirm }) {
+        setConfirmError('');
         setConfirmModal({ title, message, confirmLabel, onConfirm });
+    }
+
+    function closeConfirm() {
+        setConfirmModal(null);
+        setConfirmError('');
     }
 
     async function handleConfirm() {
         if (!confirmModal) return;
         setConfirmLoading(true);
+        setConfirmError('');
         try {
             await confirmModal.onConfirm();
-            setConfirmModal(null);
+            closeConfirm();
         } catch (err) {
-            // The action's own catch (in the caller) is responsible for
-            // surfacing errors — this just keeps the modal open so the
-            // person can retry instead of it silently disappearing.
+            // Surface whatever the backend said (e.g. a 422 explaining why
+            // the delete is blocked) right in the dialog, instead of just
+            // logging it and leaving the modal with no visible feedback.
+            // Keeps the modal open so the person can read it and retry/cancel.
+            const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.';
+            setConfirmError(message);
         } finally {
             setConfirmLoading(false);
         }
@@ -35,10 +46,17 @@ export function ConfirmProvider({ children }) {
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
                     <div className={`${modalPanelClass} max-w-sm w-full p-6`}>
                         <h3 className="font-serif text-lg text-nature-dark mb-2">{confirmModal.title}</h3>
-                        <p className="text-nature-muted text-sm mb-6">{confirmModal.message}</p>
+                        <p className="text-nature-muted text-sm mb-4">{confirmModal.message}</p>
+
+                        {confirmError && (
+                            <p className="text-rose-600 text-xs bg-rose-50 border border-rose-200/60 rounded-lg px-3 py-2 mb-4">
+                                {confirmError}
+                            </p>
+                        )}
+
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setConfirmModal(null)}
+                                onClick={closeConfirm}
                                 disabled={confirmLoading}
                                 className="flex-1 border border-nature-border text-nature-dark hover:bg-nature-bg disabled:opacity-50 px-4 py-2.5 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
                             >

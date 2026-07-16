@@ -23,8 +23,9 @@ use App\Http\Controllers\ProductFilterController;
 use Illuminate\Http\Request;
 
 // Public routes (no auth needed)
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/check-email', [AuthController::class, 'checkEmail'])->middleware('throttle:20,1');
 Route::get('/scents', [ScentController::class, 'index']);
 Route::get('/notes',[NoteController::class,'index']);
 Route::get('/products', [ProductController::class, 'index']);
@@ -107,6 +108,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/admin/products/{id}', [ProductController::class, 'destroy']);
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);
     Route::get('/admin/products/{id}', [ProductController::class, 'adminShow']);
+    Route::patch('/admin/products/{id}/status', [ProductController::class, 'updateStatus']);
 
     // Brands
     Route::get('/admin/brands', [BrandController::class, 'index']);
@@ -119,5 +121,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/orders', [OrderController::class, 'index']);
 Route::patch('/admin/orders/{order}', [OrderController::class, 'update']);
     // sales report
-Route::get('/admin/sales-report', [SalesReportController::class, 'index']);
-Route::post('/admin/sales-report/run-batch', [SalesReportController::class, 'runBatch']);});g
+ Route::get('/admin/sales-report', [SalesReportController::class, 'index']);
+    Route::post('/admin/sales-report/run-batch', [SalesReportController::class, 'runBatch']);
+});

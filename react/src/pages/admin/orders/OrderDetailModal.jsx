@@ -18,7 +18,7 @@ export default function OrderDetailModal({ order, onClose, onUpdateStatus, updat
 
         <div className="flex items-center justify-between bg-nature-bg p-3 rounded-xl border border-nature-olive/20">
           <div>
-            <h3 className="font-serif text-xl font-medium">#{String(order.id).padStart(4, '0')}</h3>
+            <h3 className="font-serif text-xl font-medium">#{order.id}</h3>
             <p className="text-nature-muted text-xs mt-1">{formatFulfillment(order.created_at)}</p>
           </div>
           <span className={`text-xs px-3 py-1.5 rounded-full capitalize font-medium ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-700'}`}>

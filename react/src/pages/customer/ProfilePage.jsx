@@ -206,32 +206,35 @@ export default function ProfilePage() {
     }
 
     async function handleChangePassword(e) {
-        e.preventDefault();
-        setPasswordErrors({});
-        setPasswordFormError('');
-        setPasswordSuccess('');
+    e.preventDefault();
+    setPasswordErrors({});
+    setPasswordFormError('');
+    setPasswordSuccess('');
 
-        setPasswordLoading(true);
-        try {
-            await api.post('/user/change-password', {
-                current_password: currentPassword,
-                new_password: newPassword,
-                new_password_confirmation: confirmPassword,
-            });
+    setPasswordLoading(true);
+    try {
+        await api.post('/user/change-password', {
+            current_password: currentPassword,
+            new_password: newPassword,
+            new_password_confirmation: confirmPassword,
+        });
 
-            setPasswordSuccess('Password updated successfully!');
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-            setShowPasswordForm(false);
-        } catch (err) {
-            setPasswordErrors(getFieldErrors(err));
+        setPasswordSuccess('Password updated successfully!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPasswordForm(false);
+    } catch (err) {
+        const errors = getFieldErrors(err);
+        setPasswordErrors(errors);
+
+        if (Object.keys(errors).length === 0) {
             setPasswordFormError(getErrorMessage(err));
-        } finally {
-            setPasswordLoading(false);
         }
+    } finally {
+        setPasswordLoading(false);
     }
-
+}
     async function handleCancelOrder(orderId) {
         await api.put(`/orders/${orderId}/cancel`);
         await loadData();

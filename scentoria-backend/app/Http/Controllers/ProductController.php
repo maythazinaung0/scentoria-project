@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProductRequest;
 use App\Models\Brand;
 use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -231,4 +232,16 @@ class ProductController extends Controller
             DB::table('product_notes')->insert($rows);
         }
     }
+
+    public function updateStatus(Request $request, $id)
+{
+    $validated = $request->validate([
+        'status' => 'required|in:active,inactive',
+    ]);
+
+    $product = Product::findOrFail($id);
+    $product->update($validated);
+
+    return response()->json($product->load(['brand', 'scent', 'variants', 'notes']));
+}
 }

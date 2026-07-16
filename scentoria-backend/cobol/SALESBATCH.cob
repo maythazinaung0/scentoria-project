@@ -160,22 +160,22 @@
            ACCEPT WS-OUTPUT-DIR FROM ENVIRONMENT "SALES_OUTPUT_DIR"
 
            STRING FUNCTION TRIM(WS-INPUT-DIR) DELIMITED BY SIZE
-                  "/sales_input.csv"          DELIMITED BY SIZE
+                  "/sales_input.dat"          DELIMITED BY SIZE
                   INTO WS-INPUT-PATH
            END-STRING
 
            STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
-                  "/daily_revenue.csv"        DELIMITED BY SIZE
+                  "/daily_revenue.dat"        DELIMITED BY SIZE
                   INTO WS-DAILY-OUT-PATH
            END-STRING
 
            STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
-                  "/monthly_revenue.csv"      DELIMITED BY SIZE
+                  "/monthly_revenue.dat"      DELIMITED BY SIZE
                   INTO WS-MONTHLY-OUT-PATH
            END-STRING
 
            STRING FUNCTION TRIM(WS-OUTPUT-DIR) DELIMITED BY SIZE
-                  "/product_sales.csv"        DELIMITED BY SIZE
+                  "/product_sales.dat"        DELIMITED BY SIZE
                   INTO WS-PRODUCT-OUT-PATH
            END-STRING.
 

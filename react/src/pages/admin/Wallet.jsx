@@ -103,10 +103,7 @@ function TopupRow({ topup, onDecide, deciding }) {
                 <User className="w-3.5 h-3.5 text-nature-muted" />
                 Sender: <span className="font-medium">{topup.sender_name || '—'}</span>
               </span>
-              <span className="flex items-center gap-1.5 text-xs text-neutral-700">
-                <Hash className="w-3.5 h-3.5 text-nature-muted" />
-                Ref: <span className="font-mono font-medium">{topup.transaction_reference || '—'}</span>
-              </span>
+             
               {topup.transaction_image_url && (
                 <button
                   onClick={() => setPreviewOpen(true)}

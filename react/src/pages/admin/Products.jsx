@@ -39,7 +39,7 @@ function SortHeader({ col, sortKey, sortDir, onSort }) {
   );
 }
 
-function ProductRow({ product, openEdit, handleDelete, deleting, onSelect }) {
+function ProductRow({ product, openEdit, handleDelete, toggleStatus, deleting, togglingStatus, onSelect }) {
   const [imgError, setImgError] = useState(false);
   const status = product.status === 'inactive' ? 'inactive' : 'active';
   const showImage = product.image_url && !imgError;
@@ -77,14 +77,21 @@ function ProductRow({ product, openEdit, handleDelete, deleting, onSelect }) {
         {product.variants?.length || 0}
       </td>
       <td className="py-2.5 px-3 whitespace-nowrap">
-        <span
-          className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-medium capitalize ${
+        <button
+          onClick={(e) => toggleStatus(product, e)}
+          disabled={togglingStatus}
+          title={status === 'active' ? 'Click to deactivate' : 'Click to activate'}
+          className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-medium capitalize transition-opacity hover:opacity-75 disabled:opacity-50 disabled:cursor-wait ${
             status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'
           }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          {togglingStatus ? (
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+          ) : (
+            <span className={`w-1.5 h-1.5 rounded-full ${status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          )}
           {status}
-        </span>
+        </button>
       </td>
       <td className="py-2.5 px-3 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1">
@@ -125,12 +132,15 @@ export default function Products() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [deleting, setDeleting] = useState(null);
+  const [togglingStatusId, setTogglingStatusId] = useState(null);
 
   // Filter/search bar state
   const [search, setSearch] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
   const [filterGender, setFilterGender] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Table view state
@@ -209,20 +219,37 @@ export default function Products() {
       top_notes, heart_notes, base_notes,
       variants: (p.variants ?? []).map(v => ({ ...v, original_price: String(v.original_price), sale_price: String(v.sale_price), stock_quantity: String(v.stock_quantity) }))
     });
-    setFormError(''); setShowForm(true);
+    setFormError(''); setFieldErrors({}); setShowForm(true);
   }
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.brand_id) return setFormError('Please select a brand.');
-    if (!form.scent_id) return setFormError('Please select a scent family.');
-    if (form.variants.length === 0) return setFormError('Please add at least one product size variant.');
-    setFormError(''); setSaving(true);
+    setFormError(''); setFieldErrors({});
+
+    const clientErrors = {};
+    if (!form.brand_id) clientErrors.brand_id = ['Please select a brand.'];
+    if (!form.scent_id) clientErrors.scent_id = ['Please select a scent family.'];
+    if (form.variants.length === 0) clientErrors.variants = ['Please add at least one product size variant.'];
+
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setFormError('Please fix the errors below.');
+      return;
+    }
+
+    setSaving(true);
     try {
       if (editTarget) { await api.put(`/admin/products/${editTarget.id}`, form); }
       else { await api.post('/admin/products', form); }
       setShowForm(false); setSelectedProduct(null); await load();
-    } catch (err) { setFormError(err.response?.data?.message || err.message || 'Error saving product'); } finally { setSaving(false); }
+    } catch (err) {
+      if (err.response?.status === 422) {
+        setFieldErrors(err.response.data.errors || {});
+        setFormError(err.response.data.message || 'Please fix the errors below.');
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'Error saving product');
+      }
+    } finally { setSaving(false); }
   }
 
   function handleDelete(id, e) {
@@ -247,6 +274,37 @@ export default function Products() {
     });
   }
 
+  async function applyStatusChange(product, newStatus) {
+    setTogglingStatusId(product.id);
+    try {
+      const { data } = await api.patch(`/admin/products/${product.id}/status`, { status: newStatus });
+      setProducts(prev => prev.map(p => (p.id === product.id ? data : p)));
+      setSelectedProduct(prev => (prev?.id === product.id ? data : prev));
+    } catch (err) {
+      console.error('Failed to update product status:', err);
+    } finally {
+      setTogglingStatusId(null);
+    }
+  }
+
+  function toggleStatus(product, e) {
+    if (e) e.stopPropagation();
+    const isActive = product.status !== 'inactive';
+
+    // Deactivating hides the product storefront-wide, so confirm first.
+    // Reactivating is low-risk and applies immediately.
+    if (isActive) {
+      confirm({
+        title: 'Deactivate Product',
+        message: `Hide "${product.name}" from the storefront? Existing orders won't be affected, and you can reactivate it anytime.`,
+        confirmLabel: 'Deactivate',
+        onConfirm: () => applyStatusChange(product, 'inactive'),
+      });
+    } else {
+      applyStatusChange(product, 'active');
+    }
+  }
+
   function handleSort(key) {
     if (sortKey === key) {
       setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -260,8 +318,9 @@ export default function Products() {
     const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand?.name?.toLowerCase().includes(search.toLowerCase());
     const matchesBrand = !filterBrand || String(p.brand_id) === filterBrand;
     const matchesGender = !filterGender || p.gender === filterGender;
-    return matchesSearch && matchesBrand && matchesGender;
-  }), [products, search, filterBrand, filterGender]);
+    const matchesStatus = !filterStatus || (p.status ?? 'active') === filterStatus;
+    return matchesSearch && matchesBrand && matchesGender && matchesStatus;
+  }), [products, search, filterBrand, filterGender, filterStatus]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -285,7 +344,7 @@ export default function Products() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, filterBrand, filterGender, perPage]);
+  }, [search, filterBrand, filterGender, filterStatus, perPage]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
   const clampedPage = Math.min(page, totalPages);
@@ -302,7 +361,7 @@ export default function Products() {
           <p className="text-nature-muted text-sm mt-0.5">{products.length} fragrances in catalogue</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setFormError(''); setShowForm(true); }} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><Plus className="w-4 h-4" /> ADD PRODUCT</button>
+          <button onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setFormError(''); setFieldErrors({}); setShowForm(true); }} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><Plus className="w-4 h-4" /> ADD PRODUCT</button>
         </div>
       </div>
 
@@ -335,11 +394,24 @@ export default function Products() {
               ]}
             />
           </div>
+
+          <div className="w-40">
+            <Dropdown
+              value={filterStatus}
+              onChange={setFilterStatus}
+              placeholder="All Statuses"
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
       {showForm && (
-        <ProductModal editTarget={editTarget} form={form} update={update} handleNameChange={handleNameChange} brands={brands} scents={scents} notes={notes} addNoteId={addNoteId} removeNoteId={removeNoteId} addVariant={addVariant} removeVariant={removeVariant} updateVariant={updateVariant} error={formError} saving={saving} onSubmit={handleSave} onCancel={() => setShowForm(false)} />
+        <ProductModal editTarget={editTarget} form={form} update={update} handleNameChange={handleNameChange} brands={brands} scents={scents} notes={notes} addNoteId={addNoteId} removeNoteId={removeNoteId} addVariant={addVariant} removeVariant={removeVariant} updateVariant={updateVariant} error={formError} errors={fieldErrors} saving={saving} onSubmit={handleSave} onCancel={() => setShowForm(false)} />
       )}
 
       {selectedProduct && (
@@ -386,7 +458,9 @@ export default function Products() {
                       product={p}
                       openEdit={openEdit}
                       handleDelete={handleDelete}
+                      toggleStatus={toggleStatus}
                       deleting={deleting === p.id}
+                      togglingStatus={togglingStatusId === p.id}
                       onSelect={setSelectedProduct}
                     />
                   ))}

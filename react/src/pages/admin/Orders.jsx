@@ -6,8 +6,11 @@ import AdminPagination from '../../components/Admin/AdminPagination';
 import { STATUS_OPTIONS } from './orders/constants';
 import OrderTable from './orders/OrderTable';
 import OrderDetailModal from './orders/OrderDetailModal';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 export default function Orders() {
+  const confirm = useConfirm();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -18,6 +21,10 @@ export default function Orders() {
   const [filterStatus, setFilterStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Table sort state
+  const [sortKey, setSortKey] = useState('id');
+  const [sortDir, setSortDir] = useState('desc');
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -52,6 +59,30 @@ export default function Orders() {
     } finally { setUpdating(null); }
   }
 
+  // The only status change an admin can trigger is pending -> processing,
+  // and it's a signal to the customer that fulfillment has started — so
+  // confirm before firing it, same pattern as deactivating a product.
+  function toggleStatus(orderId, newStatus) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    confirm({
+      title: 'Start Processing',
+      message: `Mark order #${String(orderId).padStart(4, '0')} as processing? This lets the customer know fulfillment has started.`,
+      confirmLabel: 'Start Processing',
+      onConfirm: () => handleUpdateStatus(orderId, newStatus),
+    });
+  }
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
   const filtered = useMemo(() => orders.filter(o => {
     const matchesSearch = !search
       || String(o.id).includes(search)
@@ -63,18 +94,39 @@ export default function Orders() {
     return matchesSearch && matchesStatus && matchesFrom && matchesTo;
   }), [orders, search, filterStatus, dateFrom, dateTo]);
 
-  // Reset to page 1 whenever filters or page size change, so the user
-  // is never stranded on an out-of-range page.
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      let av, bv;
+      switch (sortKey) {
+        case 'id': av = a.id; bv = b.id; break;
+        case 'fulfillment': av = a.created_at ? new Date(a.created_at).getTime() : 0; bv = b.created_at ? new Date(b.created_at).getTime() : 0; break;
+        case 'items': av = a.order_items?.length ?? 0; bv = b.order_items?.length ?? 0; break;
+        case 'total': av = Number(a.total_amount) || 0; bv = Number(b.total_amount) || 0; break;
+        case 'customer': av = (a.customer_name ?? '').toLowerCase(); bv = (b.customer_name ?? '').toLowerCase(); break;
+        case 'status': av = (a.status ?? '').toLowerCase(); bv = (b.status ?? '').toLowerCase(); break;
+        default: av = ''; bv = '';
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  // Reset to page 1 whenever filters, sort, or page size change, so the
+  // user is never stranded on an out-of-range page.
   useEffect(() => {
     setPage(1);
-  }, [search, filterStatus, dateFrom, dateTo, perPage]);
+  }, [search, filterStatus, dateFrom, dateTo, sortKey, sortDir, perPage]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
   const clampedPage = Math.min(page, totalPages);
   const visible = useMemo(() => {
     const start = (clampedPage - 1) * perPage;
-    return filtered.slice(start, start + perPage);
-  }, [filtered, clampedPage, perPage]);
+    return sorted.slice(start, start + perPage);
+  }, [sorted, clampedPage, perPage]);
 
   return (
     <div className="text-nature-dark space-y-6 relative">
@@ -107,19 +159,22 @@ export default function Orders() {
       </div>
 
       {selectedOrder && (
-        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onUpdateStatus={handleUpdateStatus} updating={updating} />
+        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onUpdateStatus={toggleStatus} updating={updating} />
       )}
 
       {loading ? (
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="bg-nature-card rounded-xl h-16 animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="text-center py-20 text-nature-muted"><ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No orders match your filters.</p></div>
       ) : (
         <OrderTable
           filtered={visible}
           onSelectOrder={setSelectedOrder}
-          onUpdateStatus={handleUpdateStatus}
+          onUpdateStatus={toggleStatus}
           updatingId={updating}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
           footer={
             <AdminPagination
               page={clampedPage}
@@ -127,7 +182,7 @@ export default function Orders() {
               onPageChange={setPage}
               perPage={perPage}
               onPerPageChange={setPerPage}
-              totalItems={filtered.length}
+              totalItems={sorted.length}
             />
           }
         />

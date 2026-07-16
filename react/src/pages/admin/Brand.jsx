@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Plus, Trash2, X, Search, Pencil, Tags, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../../api';
 import AdminPagination from '../../components/Admin/AdminPagination';
+import FieldError from '../../components/FieldError';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
 const EMPTY_FORM = { name: '' };
@@ -12,7 +13,31 @@ const COLUMNS = [
   { key: 'actions', label: '', sortable: false },
 ];
 
-function BrandFormModal({ editTarget, form, setForm, error, saving, onSubmit, onCancel }) {
+function BrandFormModal({ editTarget, form, setForm, error, errors = {}, saving, onSubmit, onCancel }) {
+  // Client-side validation, run on submit before the request ever goes
+  // out — same pattern as ProductModal/ScentModal. Merged with whatever
+  // the server sends back via the `errors` prop (e.g. a duplicate-name
+  // 422), so that still surfaces correctly under the field too.
+  const [localErrors, setLocalErrors] = useState({});
+  const displayErrors = { ...localErrors, ...errors };
+
+  function validate() {
+    const errs = {};
+    if (!form.name.trim()) errs.name = ['Brand name is required.'];
+    return errs;
+  }
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const clientErrors = validate();
+    if (Object.keys(clientErrors).length > 0) {
+      setLocalErrors(clientErrors);
+      return;
+    }
+    setLocalErrors({});
+    onSubmit(e);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-neutral-900/30 backdrop-blur-sm" onClick={onCancel} />
@@ -24,17 +49,17 @@ function BrandFormModal({ editTarget, form, setForm, error, saving, onSubmit, on
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <div>
             <label className="block text-nature-muted text-xs font-semibold tracking-wider uppercase mb-1.5">Brand Name</label>
             <input
-              required
               autoFocus
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Chanel"
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
+            <FieldError errors={displayErrors} field="name" />
           </div>
 
           {error && <p className="text-rose-600 text-xs bg-rose-50 border border-rose-200/60 rounded-lg px-3 py-2">{error}</p>}
@@ -141,6 +166,7 @@ export default function Brand() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [deletingId, setDeletingId] = useState(null);
 
   // Table view state
@@ -183,6 +209,7 @@ export default function Brand() {
     setEditTarget(null);
     setForm({ ...EMPTY_FORM });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -190,13 +217,14 @@ export default function Brand() {
     setEditTarget(brand);
     setForm({ name: brand.name });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.name.trim()) return setFormError('Brand name is required.');
     setFormError('');
+    setFieldErrors({});
     setSaving(true);
     try {
       if (editTarget) await api.put(`/admin/brands/${editTarget.id}`, form);
@@ -204,7 +232,11 @@ export default function Brand() {
       setModalOpen(false);
       await load();
     } catch (err) {
-      setFormError(err.response?.data?.message || err.message || 'Error saving brand.');
+      if (err.response?.status === 422) {
+        setFieldErrors(err.response.data.errors || {});
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'Error saving brand.');
+      }
     } finally {
       setSaving(false);
     }
@@ -376,6 +408,7 @@ export default function Brand() {
           form={form}
           setForm={setForm}
           error={formError}
+          errors={fieldErrors}
           saving={saving}
           onSubmit={handleSave}
           onCancel={() => setModalOpen(false)}

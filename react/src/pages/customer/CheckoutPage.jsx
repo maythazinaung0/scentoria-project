@@ -83,7 +83,7 @@ export default function CheckoutPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!user || items.length === 0) return;
-    
+
     // If user submits while inputs are still active, lock the review mode
     if (editingInfo) {
       setEditingInfo(false);
@@ -266,7 +266,7 @@ export default function CheckoutPage() {
                         className={inputClass}
                         placeholder="Ma Aye Aye" />
                     </div>
-                    
+
                     <div>
                       <label className={`${labelClass} flex items-center gap-1`}>
                         Email <Ban className="w-2.5 h-2.5 text-red-400" />
@@ -338,6 +338,15 @@ export default function CheckoutPage() {
                           {form.payment_method === opt.value && <Check className="w-3.5 h-3.5 text-nature-olive ml-auto" strokeWidth={1.5} />}
                         </div>
                         <p className={`text-xs mt-1 ${opt.extra ? 'text-red-500' : 'text-nature-muted'}`}>{opt.desc}</p>
+                        {opt.value === 'virtual_currency' && walletBalance !== null && walletInsufficient && (
+                          <Link
+                            to="/profile"
+                            onClick={e => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-nature-olive hover:text-nature-olive-dark text-xs mt-1.5 underline underline-offset-2 transition-colors"
+                          >
+                            <Wallet className="w-3 h-3" strokeWidth={1.5} /> Top up wallet
+                          </Link>
+                        )}
                         {opt.value === 'virtual_currency' && form.payment_method === 'virtual_currency' && !walletInsufficient && walletBalance !== null && (
                           <p className="text-nature-olive text-xs mt-1.5">After payment: {formatMMK(walletBalance - total)} remaining</p>
                         )}

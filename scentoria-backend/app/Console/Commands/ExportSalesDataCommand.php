@@ -20,7 +20,7 @@ class ExportSalesDataCommand extends Command
 
     public function handle(): int
     {
-        $path = storage_path('app/cobol/input/sales_input.csv');
+        $path = storage_path('app/cobol/input/sales_input.dat');
 
         if (! is_dir(dirname($path))) {
             mkdir(dirname($path), 0755, true);

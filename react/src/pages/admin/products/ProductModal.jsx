@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Trash2, X, Package, Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 import Dropdown from '../../../components/Admin/Dropdown';
+import FieldError from '../../../components/FieldError';
 import { HIDE_SCROLLBAR } from '../../../utils/ui';
 import { AVAILABLE_SIZES } from './constants';
 import api from '../../../api';
@@ -20,7 +21,7 @@ function slugify(text) {
 // ---------------------------------------------------------------------------
 // Add/Edit Product form modal
 // ---------------------------------------------------------------------------
-export default function ProductModal({ editTarget, form, update, handleNameChange, brands, scents, notes, addNoteId, removeNoteId, addVariant, removeVariant, updateVariant, error, saving, onSubmit, onCancel }) {
+export default function ProductModal({ editTarget, form, update, handleNameChange, brands, scents, notes, addNoteId, removeNoteId, addVariant, removeVariant, updateVariant, error, errors = {}, saving, onSubmit, onCancel }) {
   const activeSizes = form.variants.map(v => v.size);
   const remainingSizes = AVAILABLE_SIZES.filter(s => !activeSizes.includes(s)); // sizes not yet added as a variant
 
@@ -30,6 +31,38 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
     : null;
 
   const showImage = Boolean(form.image_url);
+
+  // Client-side validation, run on submit before the request ever goes out —
+  // same "required field" checks the ScentModal does, just for this form's
+  // shape (brand/scent selects, the note pyramid, and variants). Merged with
+  // whatever the server sends back via the `errors` prop, so a 422 after
+  // these pass still surfaces correctly under the right field.
+  const [localErrors, setLocalErrors] = useState({});
+  const displayErrors = { ...localErrors, ...errors };
+
+  function validate() {
+    const errs = {};
+    if (!form.name?.trim()) errs.name = ['The product name field is required.'];
+    if (!form.description?.trim()) errs.description = ['The description field is required.'];
+    if (!form.brand_id) errs.brand_id = ['Please select a brand.'];
+    if (!form.scent_id) errs.scent_id = ['Please select a scent family.'];
+    if (!form.top_notes?.length) errs.top_notes = ['Add at least one top note.'];
+    if (!form.heart_notes?.length) errs.heart_notes = ['Add at least one heart note.'];
+    if (!form.base_notes?.length) errs.base_notes = ['Add at least one base note.'];
+    if (!form.variants?.length) errs.variants = ['Please add at least one product size variant.'];
+    return errs;
+  }
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const clientErrors = validate();
+    if (Object.keys(clientErrors).length > 0) {
+      setLocalErrors(clientErrors);
+      return;
+    }
+    setLocalErrors({});
+    onSubmit(e);
+  }
 
   // Image upload — same upload/URL toggle pattern as ScentModal, wired to
   // the same /admin/upload endpoint, just restyled to match this modal's
@@ -105,6 +138,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
             <p className="text-[11px] text-nature-muted italic">None yet</p>
           )}
         </div>
+        <FieldError errors={displayErrors} field={typeKey} />
       </div>
     );
   };
@@ -118,18 +152,19 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
           <button type="button" onClick={onCancel} className="text-nature-muted hover:text-nature-olive transition-colors"><X className="w-5 h-5" /></button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={handleFormSubmit} className="space-y-5">
 
           {/* Product Name */}
           <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
             <label className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Product Name *</label>
             <input
-              required
+            
               value={form.name}
               onChange={e => handleNameChange(e.target.value)}
               placeholder="e.g. Sauvage"
               className="w-full bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
             />
+            <FieldError errors={displayErrors} field="name" />
           </div>
 
           {/* Product Image — drag & drop upload, with a URL fallback for
@@ -207,6 +242,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
             )}
 
             {uploadError && <p className="text-red-600 text-xs bg-red-50 border rounded px-2.5 py-1.5">{uploadError}</p>}
+            <FieldError errors={displayErrors} field="image_url" />
           </div>
 
           {/* Slug preview — read-only, auto-generated from brand + name */}
@@ -227,6 +263,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                 placeholder="Select Brand"
                 options={brands.map(b => ({ value: b.id, label: b.name }))}
               />
+              <FieldError errors={displayErrors} field="brand_id" />
             </div>
             <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Scent Family *</span>
@@ -236,6 +273,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                 placeholder="Select Scent"
                 options={scents.map(s => ({ value: s.id, label: s.name }))}
               />
+              <FieldError errors={displayErrors} field="scent_id" />
             </div>
           </div>
 
@@ -252,6 +290,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                   { value: 'body spray', label: 'Body Spray' },
                 ]}
               />
+              <FieldError errors={displayErrors} field="type" />
             </div>
             <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Gender *</span>
@@ -264,6 +303,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                   { value: 'unisex', label: 'Unisex' },
                 ]}
               />
+              <FieldError errors={displayErrors} field="gender" />
             </div>
             <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Season</span>
@@ -277,6 +317,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                   { value: 'winter', label: 'Winter' },
                 ]}
               />
+              <FieldError errors={displayErrors} field="season" />
             </div>
           </div>
 
@@ -288,6 +329,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
               onChange={e => update('description', e.target.value)}
               className={`w-full bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-lg px-3 py-2 text-sm outline-none resize-none transition-colors ${HIDE_SCROLLBAR}`}
             />
+            <FieldError errors={displayErrors} field="description" />
           </div>
 
           {/* Scent notes pyramid: top / heart / base */}
@@ -315,6 +357,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                 />
               )}
             </div>
+            <FieldError errors={displayErrors} field="variants" />
             <div className="space-y-2">
               {form.variants.map((v, i) => {
                 const skuPreview = slugPreview ? `${slugPreview}-${slugify(v.size)}` : null;
@@ -329,15 +372,18 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <span className="text-[10px] text-nature-muted block mb-0.5">Cost</span>
-                        <input type="text" required value={v.original_price} onChange={e => updateVariant(i, 'original_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <input type="text" value={v.original_price} onChange={e => updateVariant(i, 'original_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <FieldError errors={displayErrors} field={`variants.${i}.original_price`} />
                       </div>
                       <div>
                         <span className="text-[10px] text-nature-muted block mb-0.5">Sale Price</span>
-                        <input type="text" required value={v.sale_price} onChange={e => updateVariant(i, 'sale_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <input type="text" value={v.sale_price} onChange={e => updateVariant(i, 'sale_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <FieldError errors={displayErrors} field={`variants.${i}.sale_price`} />
                       </div>
                       <div>
                         <span className="text-[10px] text-nature-muted block mb-0.5">Stock</span>
-                        <input type="number" required value={v.stock_quantity} onChange={e => updateVariant(i, 'stock_quantity', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <input type="number" value={v.stock_quantity} onChange={e => updateVariant(i, 'stock_quantity', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <FieldError errors={displayErrors} field={`variants.${i}.stock_quantity`} />
                       </div>
                     </div>
                     <div>

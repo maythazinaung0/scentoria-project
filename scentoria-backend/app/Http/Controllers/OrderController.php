@@ -36,27 +36,28 @@ class OrderController extends Controller
             ->get();
 
         $formattedOrders = $orders->map(function ($order) {
+    return [
+        'id' => (string) $order->id,
+        'customer_name' => $order->customer ? $order->customer->name : 'Unknown Customer',
+        'customer_email' => $order->customer ? $order->customer->email : null,
+        'customer_phone' => $order->customer ? $order->customer->phone_number : null,
+        'customer_address' => $order->customer ? $order->customer->address : null,
+        'payment_method' => $order->payment_method,
+        'total_amount' => (int) $order->total_amount,
+        'status' => $order->status,
+        'created_at' => $order->created_at ? Carbon::parse($order->created_at)->toIso8601String() : Carbon::now()->toIso8601String(),
+        'order_items' => $order->items ? $order->items->map(function ($item) {
             return [
-                'id' => (string) $order->id,
-                'customer_name' => $order->customer ? $order->customer->name : 'Unknown Customer',
-                'customer_email' => $order->customer ? $order->customer->email : null,
-                'customer_phone' => $order->customer ? $order->customer->phone_number : null,
-                'customer_address' => $order->customer ? $order->customer->address : null,
-                'total_amount' => (int) $order->total_amount,
-                'status' => $order->status,
-                'created_at' => $order->created_at ? Carbon::parse($order->created_at)->toIso8601String() : Carbon::now()->toIso8601String(),
-                'order_items' => $order->items ? $order->items->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'brand' => $item->variant && $item->variant->product && $item->variant->product->brand ? $item->variant->product->brand->name : 'Generic',
-                        'product_name' => $item->variant && $item->variant->product ? $item->variant->product->name : 'Product Item',
-                        'size' => $item->variant ? $item->variant->size : 'Standard',
-                        'quantity' => (int) $item->quantity,
-                        'unit_price' => (int) $item->price
-                    ];
-                }) : []
+                'id' => $item->id,
+                'brand' => $item->variant && $item->variant->product && $item->variant->product->brand ? $item->variant->product->brand->name : 'Generic',
+                'product_name' => $item->variant && $item->variant->product ? $item->variant->product->name : 'Product Item',
+                'size' => $item->variant ? $item->variant->size : 'Standard',
+                'quantity' => (int) $item->quantity,
+                'unit_price' => (int) $item->price
             ];
-        });
+        }) : []
+    ];
+});
 
         return response()->json($formattedOrders);
     }

@@ -82,13 +82,13 @@ export default function CartPage() {
     if (itemCount === 0) {
         return (
             <div className="min-h-screen bg-nature-bg pt-24 flex flex-col items-center justify-center text-center px-4">
-                <ShoppingBag className="w-10 h-10 text-nature-sand mb-6" strokeWidth={1} />
-                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-3">Your Bag</p>
-                <h2 className="font-serif text-3xl text-nature-dark mb-3">Your cart is empty</h2>
-                <p className="text-nature-muted text-sm mb-9 max-w-xs">Discover our fragrance collection and add something beautiful.</p>
+                <ShoppingBag className="w-10 h-10 text-nature-olive mb-6" strokeWidth={1} />
+                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-3">Your Cart</p>
+                <h2 className="font-serif text-3xl text-nature-olive mb-3">Your cart is empty</h2>
+                <p className="text-nature-muted text-sm mb-9 max-w-xs">Discover our fragrance collection.</p>
                 <Link
                     to="/products"
-                    className="border border-nature-dark text-nature-dark hover:bg-nature-dark hover:text-white font-medium px-10 py-3.5 transition-colors tracking-[0.2em] text-xs"
+                    className="border border-nature-olive text-nature-olive hover:bg-nature-olive hover:text-white font-medium px-10 py-3.5 transition-colors tracking-[0.2em] text-xs"
                 >
                     SHOP FRAGRANCES
                 </Link>
@@ -99,6 +99,9 @@ export default function CartPage() {
     return (
         <div className="min-h-screen bg-nature-bg text-nature-dark pt-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+                 <Link to="/products" className="inline-block mb-6 text-nature-muted hover:text-nature-olive text-xs tracking-[0.15em] uppercase transition-colors">
+                            ← Continue Shopping
+                        </Link>
                 <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-2">Your Selection</p>
                 <div className="flex items-baseline justify-between mb-8 pb-5 border-b border-nature-border/70">
                     <h1 className="font-serif text-3xl sm:text-4xl text-nature-dark tracking-tight">Shopping Cart</h1>
@@ -174,10 +177,6 @@ export default function CartPage() {
                                 );
                             })}
                         </div>
-
-                        <Link to="/products" className="inline-block mt-6 text-nature-muted hover:text-nature-olive text-xs tracking-[0.15em] uppercase transition-colors">
-                            ← Continue Shopping
-                        </Link>
                     </div>
 
                     {/* Summary Panel */}

@@ -170,13 +170,13 @@ export default function Navbar({ searchQuery, onSearchChange }) {
               <div className="hidden md:flex items-center gap-0.5">
                 <Link
                   to="/profile"
-                  className="p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110"
+                  className="p-2 text-nature-olive hover:text-nature-olive transition-all duration-300 hover:scale-110"
                 >
                   <UserCircle className="w-[18px] h-[18px]" />
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110 hover:rotate-12"
+                  className="p-2 text-nature-olive hover:text-nature-olive transition-all duration-300 hover:scale-110 hover:rotate-12"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
@@ -192,7 +192,7 @@ export default function Navbar({ searchQuery, onSearchChange }) {
 
             {/* Mobile Menu Toggle */}
             <button
-              className="md:hidden p-2 text-nature-muted hover:text-nature-olive transition-all duration-300 hover:scale-110"
+              className="md:hidden p-2 text-nature-olive hover:text-nature-olive transition-all duration-300 hover:scale-110"
               onClick={() => setMenuOpen(v => !v)}
             >
               <div className="relative w-5 h-5">
@@ -216,32 +216,7 @@ export default function Navbar({ searchQuery, onSearchChange }) {
           </div>
         </div>
 
-        {/* Search Panel - animated slide */}
-        <div
-          className={`overflow-hidden transition-all duration-500 ease-out ${
-            searchOpen ? 'max-h-16 opacity-100 pb-3' : 'max-h-0 opacity-0 pb-0'
-          }`}
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nature" />
-            <input
-              type="text"
-              placeholder="Search by brand or scent..."
-              value={searchQuery}
-              onChange={e => onSearchChange(e.target.value)}
-              className="w-full bg-nature-card/80 border border-nature-border rounded px-10 py-2.5 text-nature-dark placeholder-nature focus:outline-none focus:border-nature-olive/50 text-sm transition-all duration-300 focus:shadow-sm"
-              autoFocus={searchOpen}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-nature hover:text-nature-olive transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
+       
 
         {/* Mobile Menu - slide down with staggered items */}
         <div
@@ -284,7 +259,7 @@ export default function Navbar({ searchQuery, onSearchChange }) {
                   </Link>
                   <button
                     onClick={() => { handleSignOut(); setMenuOpen(false); }}
-                    className="px-3 py-2.5 text-left text-nature-muted text-sm tracking-wider hover:text-nature-olive hover:bg-nature-olive/5 rounded transition-all duration-300"
+                    className="px-3 py-2.5 text-left text-nature-olive text-sm tracking-wider hover:text-nature-olive hover:bg-nature-olive/5 rounded transition-all duration-300"
                   >
                     SIGN OUT
                   </button>

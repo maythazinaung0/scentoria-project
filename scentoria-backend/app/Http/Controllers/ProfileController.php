@@ -38,12 +38,14 @@ class ProfileController extends Controller
             'kbzpay' => [
                 'account_number' => '09123456789',
                 'account_name'   => 'Scentoria Admin',
-                'qr_code_url'    => asset('images/payments/kbz_qr.png')
+                'qr_code_url'    => asset('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Qr-4.svg/960px-Qr-4.svg.png
+ ')
             ],
             'cbpay' => [
                 'account_number' => '09987654321',
                 'account_name'   => 'Scentoria Admin',
-                'qr_code_url'    => asset('images/payments/cb_qr.png')
+                'qr_code_url'    => asset('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Qr-3.svg/960px-Qr-3.svg.png
+ ')
             ]
         ]);
     }

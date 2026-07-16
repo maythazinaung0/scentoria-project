@@ -26,8 +26,7 @@ class ChangePasswordRequest extends FormRequest
                 Password::min(8)
                     ->mixedCase()
                     ->numbers()
-                    ->symbols()
-                    ->uncompromised(), // rejects passwords found in known breach lists
+                    ->symbols(),
             ],
         ];
     }

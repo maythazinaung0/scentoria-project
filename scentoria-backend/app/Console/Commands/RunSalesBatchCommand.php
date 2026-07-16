@@ -46,9 +46,9 @@ class RunSalesBatchCommand extends Command
 
         $generatedAt = Carbon::now();
 
-        $this->ingestDailyRevenue("{$outputDir}/daily_revenue.csv", $generatedAt);
-        $this->ingestMonthlyRevenue("{$outputDir}/monthly_revenue.csv", $generatedAt);
-        $this->ingestProductSales("{$outputDir}/product_sales.csv", $generatedAt);
+       $this->ingestDailyRevenue("{$outputDir}/daily_revenue.dat", $generatedAt);
+$this->ingestMonthlyRevenue("{$outputDir}/monthly_revenue.dat", $generatedAt);
+$this->ingestProductSales("{$outputDir}/product_sales.dat", $generatedAt);
 
         $this->info('Sales report tables updated.');
 

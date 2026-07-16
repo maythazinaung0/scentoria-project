@@ -15,8 +15,10 @@ export default function ProductCard({ product }) {
         ? product.variants[0].sale_price
         : null;
 
-    const showImage = product.image_url && !imgError;
+    const prices = product.variants?.map(v => v.sale_price).filter(Boolean) || [];
+    const minPrice = prices.length ? Math.min(...prices) : null;
 
+    const showImage = product.image_url && !imgError;
     return (
         <div className="relative aspect-[3/4] overflow-hidden bg-nature-sand/20 group cursor-pointer">
             {showImage ? (
@@ -44,9 +46,14 @@ export default function ProductCard({ product }) {
                 <h3 className="font-serif text-lg text-nature-dark mb-1">{product.name}</h3>
                 <p className="text-xs text-nature-muted mb-3">{product.scent?.name}</p>
 
-                <p className="text-sm font-medium text-nature-dark mb-4">
-                    {salePrice ? formatMMK(salePrice) : 'Contact for price'}
-                </p>
+                <div className="mb-4">
+                    <p className="text-xs text-nature-muted mb-1">
+                        {product.variants?.map(v => v.size).join(' · ')}
+                    </p>
+                    <p className="text-sm font-medium text-nature-dark">
+                        {minPrice ? `From ${formatMMK(minPrice)}` : 'Contact for price'}
+                    </p>
+                </div>
 
                 <Link
                     to={`/products/${product.slug}`}

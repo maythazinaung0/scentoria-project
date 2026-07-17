@@ -233,9 +233,9 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between px-8 py-5 border-b border-neutral-200/60 bg-white/30">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-nature-olive" />
-                <h2 className="text-xs font-bold tracking-widest uppercase text-nature-olive">Live Activity Feed</h2>
+                <h2 className="text-xs font-bold tracking-widest uppercase text-nature-olive">Orders Feed</h2>
               </div>
-              <a href="#" className="group flex items-center gap-1 text-[11px] font-bold tracking-wider text-nature-olive transition-colors hover:text-nature-olive/70">
+              <a href="/admin/orders" className="group flex items-center gap-1 text-[11px] font-bold tracking-wider text-nature-olive transition-colors hover:text-nature-olive/70">
                 VIEW LEDGER <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
               </a>
             </div>
@@ -250,10 +250,10 @@ export default function AdminDashboard() {
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-neutral-50/40 text-left">
-                      <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Customer Profile</th>
-                      <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 hidden md:table-cell opacity-80">Timestamp</th>
-                      <th className="text-right text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Quantum</th>
-                      <th className="text-right text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Status Token</th>
+                      <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Customer Name</th>
+                      <th className="text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 hidden md:table-cell opacity-80">Order ID</th>
+                      <th className=" text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Timestamp</th>
+                      <th className="text-right text-nature-muted text-[11px] font-bold tracking-wider uppercase px-8 py-4 opacity-80">Amount</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -46,18 +46,12 @@ class BrandRequest extends FormRequest
  
         return [
             'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-                new NoFullWidthCharacters(),
-                // Soft-deleted brands keep their row (see Brand's SoftDeletes),
-                // so without whereNull('deleted_at') a deleted brand's name
-                // would be permanently unreusable.
-                Rule::unique('brands', 'name')
-                    ->ignore($brandId)
-                    ->where(fn ($query) => $query->whereNull('deleted_at')),
-            ],
+    'required',
+    'string',
+    'min:2',
+    'max:255',
+    Rule::unique('brands', 'name')->ignore($brandId),
+],
         ];
     }
  

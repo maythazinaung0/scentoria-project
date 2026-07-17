@@ -22,13 +22,13 @@ class ScentRequest extends FormRequest
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-    {
-       $scentId = $this->route('scent')?->id;
+{
+    $scentId = $this->route('scent');
 
-        return [
-            'name' => ['required', 'string', 'max:100', Rule::unique('scents', 'name')->ignore($scentId)],
-            'description' => ['required', 'string'],
-            'image_url' => ['nullable', 'url', 'max:500'],
-        ];
-    }
+    return [
+        'name' => ['required', 'string', 'max:100', Rule::unique('scents', 'name')->ignore($scentId)],
+        'description' => ['required', 'string'],
+        'image_url' => ['nullable', 'url', 'max:500'],
+    ];
+}
 }

@@ -133,7 +133,6 @@ export default function HomePage() {
             </section>
 
             {/* --- SCENT PROFILES: dynamic, no fixed slot count --- */}
-            {/* --- SCENT PROFILES: dynamic, no fixed slot count --- */}
             <section className="py-24 px-6 max-w-6xl mx-auto">
                 <div className="text-center mb-14">
                     <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">Fragrance Families</p>
@@ -200,24 +199,24 @@ export default function HomePage() {
                     <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">New Arrivals</p>
                     <h2 className="font-serif text-3xl sm:text-4xl">Featured Fragrances</h2>
                 </div>
-
+ 
                 <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide">
                     {loading ? (
                         Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="min-w-[240px] md:min-w-[280px] h-80 bg-nature-sand/20 rounded-xl animate-pulse" />
+                            <div key={i} className="min-w-[280px] max-w-[280px] h-96 bg-nature-sand/20 rounded-xl animate-pulse shrink-0" />
                         ))
                     ) : (
                         [...products]
                             .sort((a, b) => b.id - a.id)
                             .slice(0, 8)
                             .map((product) => (
-                                <div key={product.id} className="min-w-[240px] md:min-w-[280px]">
+                                <div key={product.id} className="min-w-[280px] max-w-[280px] shrink-0">
                                     <ProductCard product={product} />
                                 </div>
                             ))
                     )}
                 </div>
-
+ 
                 <div className="text-center pt-8">
                     <Link
                         to="/products"

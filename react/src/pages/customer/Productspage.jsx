@@ -6,7 +6,7 @@ import SizeBanner from '../../components/SizeBanner';
 import Pagination from '../../components/Pagination';
 import api from '../../api';
 
-const PER_PAGE_OPTIONS = [4, 8, 12, 24, 48];
+const PER_PAGE_OPTIONS = [8, 12, 24, 48];
 const SORT_OPTIONS = [
     { value: 'newest', label: 'Newest' },
     { value: 'price-asc', label: 'Price: Low to High' },

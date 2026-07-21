@@ -315,7 +315,15 @@ export default function Products() {
   }
 
   const filtered = useMemo(() => products.filter(p => {
-    const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand?.name?.toLowerCase().includes(search.toLowerCase());
+    let matchesSearch = true;
+    if (search) {
+      const q = search.toLowerCase();
+      matchesSearch =
+        p.name?.toLowerCase().includes(q) ||
+        p.brand?.name?.toLowerCase().includes(q) ||
+        p.slug?.toLowerCase().includes(q) ||
+        (p.variants ?? []).some(v => v.sku?.toLowerCase().includes(q));
+    }
     const matchesBrand = !filterBrand || String(p.brand_id) === filterBrand;
     const matchesGender = !filterGender || p.gender === filterGender;
     const matchesStatus = !filterStatus || (p.status ?? 'active') === filterStatus;
@@ -353,60 +361,134 @@ export default function Products() {
     return sorted.slice(start, start + perPage);
   }, [sorted, clampedPage, perPage]);
 
+  const hasActiveFilters = Boolean(search || filterBrand || filterGender || filterStatus);
+
   return (
-    <div className="text-nature-dark space-y-6 relative">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl">Products</h1>
-          <p className="text-nature-muted text-sm mt-0.5">{products.length} fragrances in catalogue</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setFormError(''); setFieldErrors({}); setShowForm(true); }} className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm tracking-wider transition-colors"><Plus className="w-4 h-4" /> ADD PRODUCT</button>
-        </div>
-      </div>
+    <div className="min-h-screen relative overflow-hidden selection:bg-nature-olive/10">
+      <div className="relative p-6 md:p-10 z-10">
+        <div className="text-nature-dark space-y-8 max-w-7xl mx-auto">
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="font-serif text-4xl font-normal tracking-tight text-neutral-800">Products</h1>
+              <p className="text-nature-muted text-xs font-medium tracking-wide uppercase opacity-80">
+                {products.length} {products.length === 1 ? 'fragrance' : 'fragrances'} in catalogue
+              </p>
+            </div>
+            <button
+              onClick={() => { setEditTarget(null); setForm({ ...EMPTY_FORM }); setFormError(''); setFieldErrors({}); setShowForm(true); }}
+              className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive/90 text-white text-xs font-medium tracking-wide transition-colors px-4 py-2.5 rounded-xl shadow-[0_4px_16px_-4px_rgba(74,104,56,0.5)]"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Product
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
-            <input type="text" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="bg-nature-card border border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-56" />
+            <input type="text" placeholder="Search name, slug, or SKU..." value={search} onChange={e => setSearch(e.target.value)} className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64 placeholder-nature-muted/70" />
           </div>
 
-          <div className="w-40">
-            <Dropdown
-              value={filterBrand}
-              onChange={setFilterBrand}
-              placeholder="All Brands"
-              options={[{ value: '', label: 'All Brands' }, ...brands.map(b => ({ value: b.id, label: b.name }))]}
-            />
+            <div className="w-40">
+              <Dropdown
+                value={filterBrand}
+                onChange={setFilterBrand}
+                placeholder="All Brands"
+                options={[{ value: '', label: 'All Brands' }, ...brands.map(b => ({ value: b.id, label: b.name }))]}
+              />
+            </div>
+
+            <div className="w-40">
+              <Dropdown
+                value={filterGender}
+                onChange={setFilterGender}
+                placeholder="All Genders"
+                options={[
+                  { value: '', label: 'All Genders' },
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                  { value: 'unisex', label: 'Unisex' },
+                ]}
+              />
+            </div>
+
+            <div className="w-40">
+              <Dropdown
+                value={filterStatus}
+                onChange={setFilterStatus}
+                placeholder="All Statuses"
+                options={[
+                  { value: '', label: 'All Statuses' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                ]}
+              />
+            </div>
           </div>
 
-          <div className="w-40">
-            <Dropdown
-              value={filterGender}
-              onChange={setFilterGender}
-              placeholder="All Genders"
-              options={[
-                { value: '', label: 'All Genders' },
-                { value: 'male', label: 'Male' },
-                { value: 'female', label: 'Female' },
-                { value: 'unisex', label: 'Unisex' },
-              ]}
-            />
-          </div>
+          {loading ? (
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-14 bg-white/20 animate-pulse" />
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="bg-white/70 backdrop-blur-xl border border-nature-border/80 rounded-2xl p-16 text-center">
+              <p className="text-nature-muted text-sm">
+                {hasActiveFilters ? 'No products match your filters.' : 'No products yet — add your first one.'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[720px]">
+                  <thead>
+                    <tr className="border-b border-nature-border text-[11px] uppercase tracking-wide text-nature-muted bg-white/20">
+                      {COLUMNS.map((col, i) =>
+                        i === 0 ? (
+                          <th key={col.key} onClick={() => handleSort(col.key)} className="py-2.5 pl-4 pr-3 font-medium cursor-pointer select-none group whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 ${sortKey === col.key ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
+                              {col.label}
+                              {sortKey === col.key ? (
+                                sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+                              )}
+                            </span>
+                          </th>
+                        ) : (
+                          <SortHeader key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        )
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map((p) => (
+                      <ProductRow
+                        key={p.id}
+                        product={p}
+                        openEdit={openEdit}
+                        handleDelete={handleDelete}
+                        toggleStatus={toggleStatus}
+                        deleting={deleting === p.id}
+                        togglingStatus={togglingStatusId === p.id}
+                        onSelect={setSelectedProduct}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          <div className="w-40">
-            <Dropdown
-              value={filterStatus}
-              onChange={setFilterStatus}
-              placeholder="All Statuses"
-              options={[
-                { value: '', label: 'All Statuses' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-              ]}
-            />
-          </div>
+              <AdminPagination
+                page={clampedPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                perPage={perPage}
+                onPerPageChange={setPerPage}
+                totalItems={sorted.length}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -416,68 +498,6 @@ export default function Products() {
 
       {selectedProduct && (
         <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onEdit={(p) => { setSelectedProduct(null); openEdit(p); }} deleting={deleting} />
-      )}
-
-      {loading ? (
-        <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-14 bg-white/20 animate-pulse" />
-          ))}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="text-center py-20 text-nature-muted"><Package className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No products match your filters.</p></div>
-      ) : (
-        <>
-          <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[720px]">
-                <thead>
-                  <tr className="border-b border-nature-border text-[11px] uppercase tracking-wide text-nature-muted bg-white/20">
-                    {COLUMNS.map((col, i) =>
-                      i === 0 ? (
-                        <th key={col.key} onClick={() => handleSort(col.key)} className="py-2.5 pl-4 pr-3 font-medium cursor-pointer select-none group whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 ${sortKey === col.key ? 'text-nature-olive' : 'group-hover:text-neutral-700'}`}>
-                            {col.label}
-                            {sortKey === col.key ? (
-                              sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
-                            )}
-                          </span>
-                        </th>
-                      ) : (
-                        <SortHeader key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((p) => (
-                    <ProductRow
-                      key={p.id}
-                      product={p}
-                      openEdit={openEdit}
-                      handleDelete={handleDelete}
-                      toggleStatus={toggleStatus}
-                      deleting={deleting === p.id}
-                      togglingStatus={togglingStatusId === p.id}
-                      onSelect={setSelectedProduct}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <AdminPagination
-              page={clampedPage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              perPage={perPage}
-              onPerPageChange={setPerPage}
-              totalItems={sorted.length}
-            />
-          </div>
-        </>
       )}
     </div>
   );

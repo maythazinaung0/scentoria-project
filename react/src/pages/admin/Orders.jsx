@@ -22,7 +22,7 @@ export default function Orders() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Table sort state
+  // Table sort state — newest orders first by default
   const [sortKey, setSortKey] = useState('id');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -100,7 +100,10 @@ export default function Orders() {
     arr.sort((a, b) => {
       let av, bv;
       switch (sortKey) {
-        case 'id': av = a.id; bv = b.id; break;
+        // IDs can come back from the API as strings — comparing them as
+        // strings sorts "11" before "9" lexicographically. Force numeric
+        // comparison so newest (highest id) orders sort correctly.
+        case 'id': av = Number(a.id); bv = Number(b.id); break;
         case 'fulfillment': av = a.created_at ? new Date(a.created_at).getTime() : 0; bv = b.created_at ? new Date(b.created_at).getTime() : 0; break;
         case 'items': av = a.order_items?.length ?? 0; bv = b.order_items?.length ?? 0; break;
         case 'total': av = Number(a.total_amount) || 0; bv = Number(b.total_amount) || 0; break;
@@ -128,64 +131,90 @@ export default function Orders() {
     return sorted.slice(start, start + perPage);
   }, [sorted, clampedPage, perPage]);
 
+  const hasActiveFilters = Boolean(search || filterStatus || dateFrom || dateTo);
+
   return (
-    <div className="text-nature-dark space-y-6 relative">
-      {/* Page header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl">Orders</h1>
-          <p className="text-nature-muted text-sm mt-0.5">{orders.length} orders placed</p>
-        </div>
-      </div>
+    <div className="min-h-screen relative overflow-hidden selection:bg-nature-olive/10">
+      <div className="relative p-6 md:p-10 z-10">
+        <div className="text-nature-dark space-y-8 max-w-7xl mx-auto">
 
-      {/* Search + Date filter + Status filter bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="font-serif text-4xl font-normal tracking-tight text-neutral-800">Orders</h1>
+              <p className="text-nature-muted text-xs font-medium tracking-wide uppercase opacity-80">
+                {orders.length} {orders.length === 1 ? 'order' : 'orders'} placed
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
-            <input type="text" placeholder="Search order ID or customer..." value={search} onChange={e => setSearch(e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64" />
+            <input type="text" placeholder="Search order ID or customer..." value={search} onChange={e => setSearch(e.target.value)} className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64 placeholder-nature-muted/70" />
           </div>
 
-          <div className="flex items-center gap-2 bg-nature-card border border-nature-olive/20 rounded-xl px-3 py-2">
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-transparent text-sm outline-none text-nature-dark w-[124px]" />
-            <span className="text-nature-olive text-xs">to</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-transparent text-sm outline-none text-nature-dark w-[124px]" />
+
+            <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md border border-nature-border/80 focus-within:border-nature-olive/60 rounded-xl px-4 py-2.5 transition-colors">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-transparent text-sm outline-none text-nature-dark w-[124px]"
+              />
+              <span className="text-nature-olive text-xs">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="bg-transparent text-sm outline-none text-nature-dark w-[124px]"
+              />
+            </div>
+
+            <div className="w-40">
+              <Dropdown value={filterStatus} onChange={setFilterStatus} placeholder="All Status" options={STATUS_OPTIONS} />
+            </div>
           </div>
 
-          <div className="w-40">
-            <Dropdown value={filterStatus} onChange={setFilterStatus} placeholder="All Status" options={STATUS_OPTIONS} />
-          </div>
+          {loading ? (
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-14 bg-white/20 animate-pulse" />
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="bg-white/70 backdrop-blur-xl border border-nature-border/80 rounded-2xl p-16 text-center">
+              <p className="text-nature-muted text-sm">
+                {hasActiveFilters ? 'No orders match your filters.' : 'No orders placed yet.'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+              <OrderTable
+                filtered={visible}
+                onSelectOrder={setSelectedOrder}
+                onUpdateStatus={toggleStatus}
+                updatingId={updating}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={handleSort}
+                footer={
+                  <AdminPagination
+                    page={clampedPage}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    perPage={perPage}
+                    onPerPageChange={setPerPage}
+                    totalItems={sorted.length}
+                  />
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {selectedOrder && (
         <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onUpdateStatus={toggleStatus} updating={updating} />
-      )}
-
-      {loading ? (
-        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="bg-nature-card rounded-xl h-16 animate-pulse" />)}</div>
-      ) : sorted.length === 0 ? (
-        <div className="text-center py-20 text-nature-muted"><ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>No orders match your filters.</p></div>
-      ) : (
-        <OrderTable
-          filtered={visible}
-          onSelectOrder={setSelectedOrder}
-          onUpdateStatus={toggleStatus}
-          updatingId={updating}
-          sortKey={sortKey}
-          sortDir={sortDir}
-          onSort={handleSort}
-          footer={
-            <AdminPagination
-              page={clampedPage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              perPage={perPage}
-              onPerPageChange={setPerPage}
-              totalItems={sorted.length}
-            />
-          }
-        />
       )}
     </div>
   );

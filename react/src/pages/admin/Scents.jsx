@@ -93,7 +93,7 @@ function ScentModal({ scent, onClose, onSaved }) {
               placeholder="e.g. Floral, Woody, Oriental"
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
-                        <FieldError errors={errors} field="name" />
+            <FieldError errors={errors} field="name" />
           </div>
 
           <div>
@@ -134,9 +134,8 @@ function ScentModal({ scent, onClose, onSaved }) {
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${
-                  isDragging ? 'border-nature-olive bg-nature-olive/5' : 'border-nature-border/80 hover:border-nature-olive/50'
-                }`}
+                className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${isDragging ? 'border-nature-olive bg-nature-olive/5' : 'border-nature-border/80 hover:border-nature-olive/50'
+                  }`}
               >
                 <input
                   ref={fileInputRef}
@@ -173,7 +172,7 @@ function ScentModal({ scent, onClose, onSaved }) {
                 )}
               </>
             )}
-                        <FieldError errors={errors} field="image_url" />
+            <FieldError errors={errors} field="image_url" />
           </div>
 
           {formError && <p className="text-rose-600 text-xs bg-rose-50 border border-rose-200/60 rounded-lg px-3 py-2">{formError}</p>}
@@ -376,25 +375,25 @@ export default function ScentManagement() {
     setModalOpen(false);
   }
 
- function handleDelete(id) {
-  confirm({
-    title: 'Delete Scent Family',
-    message: 'Delete this scent family? This cannot be undone.',
-    confirmLabel: 'Delete',
-    onConfirm: async () => {
-      setDeletingId(id);
-      try {
-        await api.delete(`/admin/scents/${id}`);
-        setScents((prev) => prev.filter((s) => s.id !== id));
-      } catch (err) {
-        console.error('Failed to delete scent:', err);
-        throw err; 
-      } finally {
-        setDeletingId(null);
-      }
-    },
-  });
-}
+  function handleDelete(id) {
+    confirm({
+      title: 'Delete Scent Family',
+      message: 'Delete this scent family? This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        setDeletingId(id);
+        try {
+          await api.delete(`/admin/scents/${id}`);
+          setScents((prev) => prev.filter((s) => s.id !== id));
+        } catch (err) {
+          console.error('Failed to delete scent:', err);
+          throw err;
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
+  }
 
   function toggleSort() {
     setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -450,15 +449,9 @@ export default function ScentManagement() {
           </div>
 
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-nature-muted" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search scent families..."
-              className="w-full max-w-sm bg-white/70 backdrop-blur-md border border-nature-border/80 focus:border-nature-olive/60 rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none transition-colors placeholder-nature-muted/70"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
+            <input type="text" placeholder="Search scent families..." value={search} onChange={e => setSearch(e.target.value)} className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64 placeholder-nature-muted/70" />
           </div>
-
           {loading ? (
             <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden divide-y divide-nature-border/40">
               {Array.from({ length: 6 }).map((_, i) => (

@@ -14,8 +14,8 @@
   /* Typography: Rich aromatic pine-charcoal instead of pure black */
   --color-nature-dark: #222B1D;
   --color-nature-charcoal: #3D4A37;
-  --color-nature-muted: #7A8573;
-  --color-nature-subtle: #A3AFA0;
+  --color-nature-muted: #688059;
+  --color-nature-subtle: #527a48;
  
   /* Accent Olive */
   --color-nature-olive: #556B43;
@@ -25,7 +25,7 @@
   --color-nature-olive: #4A6838;
   --color-nature-olive-dark: #3A5530;
  
-  --color-nature-border: #D5CDBD;
+  --color-nature-border: #d1c6b0;
   --color-nature-subtle: #8A9585;
  
   --color-accent: #4A6838;

@@ -23,7 +23,7 @@ export default function Dropdown({ value, onChange, options, placeholder = 'Sele
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1.5 bg-nature-bg border border-nature-border rounded-lg outline-none cursor-pointer text-left whitespace-nowrap
+        className={`flex items-center gap-1.5 border border-nature-border rounded-lg outline-none cursor-pointer text-left whitespace-nowrap
           ${fullWidth ? 'w-full justify-between px-3' : 'justify-center px-2.5'}
           ${compact ? 'py-1 text-xs' : 'py-2 text-sm'}`}
       >

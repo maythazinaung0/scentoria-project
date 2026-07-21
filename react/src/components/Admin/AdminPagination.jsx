@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 
-const PER_PAGE_OPTIONS = [8, 16, 24, 48];
+const PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 /**
  * Compact, data-dense pagination for admin tables/grids.

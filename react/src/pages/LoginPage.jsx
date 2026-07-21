@@ -110,7 +110,7 @@ export default function LoginPage() {
                   id="login-password"
                   required
                   type={showPw ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   disabled={loading}
                   value={password}
                   onChange={e => setPassword(e.target.value)}

@@ -92,10 +92,10 @@ export default function Navbar({ searchQuery, onSearchChange }) {
   return (
     <>
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
-        
-           'bg-transparent backdrop-blur-md border-nature-border/30'
-          
+      className={`fixed top-0 left-0 right-0 z-50 border-b shadow-md transition-all duration-500 backdrop-blur-xl ${
+        scrolled
+          ? 'bg-nature-bg/90 border-nature-border/50'
+          : 'bg-nature-bg/35 border-nature-border/20'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">

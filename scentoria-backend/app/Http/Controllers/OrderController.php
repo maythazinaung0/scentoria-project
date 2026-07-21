@@ -20,8 +20,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-        // Flatten address onto the order response, since address now lives
-        // on the user record rather than the orders table.
+    
         $orderData = $order->toArray();
         $orderData['address'] = $order->customer->address ?? null;
 

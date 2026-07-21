@@ -18,6 +18,11 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '');
 }
 
+// Each layer of the scent pyramid is capped at this many notes. Duplicates
+// across layers (e.g. the same note in both Heart and Base) are allowed —
+// this only limits how many notes a single layer can hold.
+const MAX_NOTES_PER_LAYER = 5;
+
 // ---------------------------------------------------------------------------
 // Add/Edit Product form modal
 // ---------------------------------------------------------------------------
@@ -42,14 +47,66 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
 
   function validate() {
     const errs = {};
-    if (!form.name?.trim()) errs.name = ['The product name field is required.'];
-    if (!form.description?.trim()) errs.description = ['The description field is required.'];
+    if (!form.name?.trim()) {
+      errs.name = ['The product name field is required.'];
+    } else if (form.name.trim().length < 2) {
+      errs.name = ['The product name must be at least 2 characters.'];
+    } else if (form.name.trim().length > 255) {
+      errs.name = ['The product name must not be greater than 255 characters.'];
+    }
+
+    if (!form.description?.trim()) {
+      errs.description = ['The description field is required.'];
+    } else if (form.description.trim().length < 10) {
+      errs.description = ['The description must be at least 10 characters.'];
+    } else if (form.description.trim().length > 1000) {
+      errs.description = ['The description must not be greater than 1000 characters.'];
+    }
     if (!form.brand_id) errs.brand_id = ['Please select a brand.'];
     if (!form.scent_id) errs.scent_id = ['Please select a scent family.'];
     if (!form.top_notes?.length) errs.top_notes = ['Add at least one top note.'];
     if (!form.heart_notes?.length) errs.heart_notes = ['Add at least one heart note.'];
     if (!form.base_notes?.length) errs.base_notes = ['Add at least one base note.'];
-    if (!form.variants?.length) errs.variants = ['Please add at least one product size variant.'];
+
+    if (!form.variants?.length) {
+      errs.variants = ['Please add at least one product size variant.'];
+    } else {
+      // Each variant needs a valid cost, sale price, and stock quantity —
+      // this is what was missing before, which is why FieldError never had
+      // anything to render even though the JSX was already wired up for it.
+      form.variants.forEach((v, i) => {
+        const cost = Number(v.original_price);
+        const sale = Number(v.sale_price);
+        const stock = Number(v.stock_quantity);
+
+        const costValid = v.original_price !== '' && v.original_price != null && !Number.isNaN(cost) && cost > 0;
+        const saleValid = v.sale_price !== '' && v.sale_price != null && !Number.isNaN(sale) && sale > 0;
+        const MAX_PRICE = 50_000_000; // sanity ceiling to catch a typo'd extra digit, not a real business limit
+        const MAX_STOCK = 10_000; // sanity ceiling to catch a typo'd extra digit, not a real warehouse limit
+
+        if (!costValid) {
+          errs[`variants.${i}.original_price`] = ['Enter a valid cost.'];
+        } else if (cost % 100 !== 0) {
+          errs[`variants.${i}.original_price`] = ['Prices need to be in steps of 100 MMK.'];
+        } else if (cost > MAX_PRICE) {
+          errs[`variants.${i}.original_price`] = ['That price is too high.'];
+        }
+        if (!saleValid) {
+          errs[`variants.${i}.sale_price`] = ['Please enter a valid price.'];
+        } else if (sale % 100 !== 0) {
+          errs[`variants.${i}.sale_price`] = ['Prices need to be in steps of 100 MMK.'];
+        } else if (sale > MAX_PRICE) {
+          errs[`variants.${i}.sale_price`] = ['That price is too high.'];
+        } else if (costValid && sale < cost) {
+          errs[`variants.${i}.sale_price`] = ['Selling price cannot be lower than cost price.'];
+        }
+        if (v.stock_quantity === '' || v.stock_quantity == null || Number.isNaN(stock) || stock < 0) {
+          errs[`variants.${i}.stock_quantity`] = ['Please enter a valid stock amount.'];
+        } else if (stock > MAX_STOCK) {
+          errs[`variants.${i}.stock_quantity`] = ['That stock amount is too high.'];
+        }
+      });
+    }
     return errs;
   }
 
@@ -64,9 +121,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
     onSubmit(e);
   }
 
-  // Image upload — same upload/URL toggle pattern as ScentModal, wired to
-  // the same /admin/upload endpoint, just restyled to match this modal's
-  // nature-olive tokens instead of ScentModal's white/glass ones.
+
   const [imageMode, setImageMode] = useState('upload'); // 'upload' | 'url'
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -106,23 +161,51 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
     if (file) uploadFile(file);
   }
 
+  // Whole-number input only (prices are stored as integers, no decimals) —
+  // strips anything typed that isn't a digit instead of just relying on
+  // <input type="number">, which still lets letters like "e" through in
+  // most browsers.
+  function handleWholeNumberChange(index, field, rawValue) {
+    updateVariant(index, field, rawValue.replace(/[^0-9]/g, ''));
+  }
+
+  // MMK's smallest real denomination is the hundred (no tens) — round to
+  // the nearest 100 once the admin leaves the field, rather than blocking
+  // keystrokes while they're still typing (which would make it impossible
+  // to type the leading digits of a number like "1000" one at a time).
+  function handlePriceBlur(index, field, rawValue) {
+    if (rawValue === '') return;
+    const rounded = Math.round(Number(rawValue) / 100) * 100;
+    updateVariant(index, field, String(rounded));
+  }
+
   // Renders one of the three note pickers (Top/Heart/Base) with add + remove chips.
   const renderNoteSelector = (label, typeKey) => {
     const takenIds = form[typeKey] ?? [];
-    const noteOptions = notes.filter(n => !takenIds.includes(n.id)).map(n => ({ value: n.id, label: n.name }));
+    // Only excludes notes already picked in *this* layer — the same note can
+    // still appear in more than one layer (real perfumes do this), it's just
+    // capped so no single layer turns into an unbounded list.
+    const noteOptions = notes
+      .filter(n => !takenIds.includes(n.id))
+      .map(n => ({ value: n.id, label: n.name }));
+    const atLimit = takenIds.length >= MAX_NOTES_PER_LAYER;
 
     return (
-      <div className="bg-nature-bg border border-nature-olive/20 rounded-lg p-2.5 space-y-1.5">
+      <div className=" border border-nature-olive/20 rounded-lg p-2.5 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-          <Dropdown
-            value=""
-            onChange={(id) => addNoteId(typeKey, id)}
-            options={noteOptions}
-            placeholder="+ Add"
-            fullWidth={false}
-            compact
-          />
+          {atLimit ? (
+            <span className="text-[10px] text-nature-muted italic">Limit reached ({MAX_NOTES_PER_LAYER})</span>
+          ) : (
+            <Dropdown
+              value=""
+              onChange={(id) => addNoteId(typeKey, id)}
+              options={noteOptions}
+              placeholder="+ Add"
+              fullWidth={false}
+              compact
+            />
+          )}
         </div>
         <div className="flex flex-wrap gap-1">
           {takenIds.map(id => {
@@ -155,10 +238,10 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
         <form onSubmit={handleFormSubmit} className="space-y-5">
 
           {/* Product Name */}
-          <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+          <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
             <label className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Product Name *</label>
             <input
-            
+              maxLength={255}
               value={form.name}
               onChange={e => handleNameChange(e.target.value)}
               placeholder="e.g. Sauvage"
@@ -169,7 +252,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
 
           {/* Product Image — drag & drop upload, with a URL fallback for
               already-hosted images. Same flow as ScentModal's image field. */}
-          <div className="bg-nature-bg border border-nature-olive/20 p-3 rounded-lg space-y-2">
+          <div className="g border border-nature-olive/20 p-3 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider">Product Image</span>
               <button
@@ -246,7 +329,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
           </div>
 
           {/* Slug preview — read-only, auto-generated from brand + name */}
-          <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+          <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
             <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-0.5">Slug (auto-generated)</span>
             <span className="font-mono text-sm text-nature-dark select-all">
               {slugPreview || <span className="text-nature-muted italic font-sans">Pick a brand and enter a name to preview</span>}
@@ -255,7 +338,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
 
           {/* Brand / Scent */}
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+            <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Brand *</span>
               <Dropdown
                 value={form.brand_id}
@@ -265,7 +348,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
               />
               <FieldError errors={displayErrors} field="brand_id" />
             </div>
-            <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+            <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Scent Family *</span>
               <Dropdown
                 value={form.scent_id}
@@ -279,7 +362,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
 
           {/* Type / Gender / Season */}
           <div className="grid grid-cols-3 gap-3 text-xs">
-            <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+            <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Type</span>
               <Dropdown
                 value={form.type}
@@ -292,7 +375,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
               />
               <FieldError errors={displayErrors} field="type" />
             </div>
-            <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+            <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Gender *</span>
               <Dropdown
                 value={form.gender}
@@ -305,7 +388,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
               />
               <FieldError errors={displayErrors} field="gender" />
             </div>
-            <div className="bg-nature-bg border border-nature-olive/20 p-2.5 rounded-lg">
+            <div className=" border border-nature-olive/20 p-2.5 rounded-lg">
               <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Season</span>
               <Dropdown
                 value={form.season}
@@ -321,10 +404,11 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
             </div>
           </div>
 
-          <div className="bg-nature-bg border border-nature-olive/20 p-3 rounded-lg">
+          <div className=" border border-nature-olive/20 p-3 rounded-lg">
             <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Description</span>
             <textarea
               rows={2}
+              maxLength={1000}
               value={form.description}
               onChange={e => update('description', e.target.value)}
               className={`w-full bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-lg px-3 py-2 text-sm outline-none resize-none transition-colors ${HIDE_SCROLLBAR}`}
@@ -362,7 +446,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
               {form.variants.map((v, i) => {
                 const skuPreview = slugPreview ? `${slugPreview}-${slugify(v.size)}` : null;
                 return (
-                  <div key={v.size} className="bg-nature-bg border border-nature-olive/15 rounded-xl p-3 space-y-2">
+                  <div key={v.size} className=" border border-nature-olive/15 rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-nature-olive font-bold text-sm">{v.size}</span>
                       <button type="button" onClick={() => removeVariant(i)} className="text-red-500 hover:text-red-700">
@@ -372,12 +456,26 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <span className="text-[10px] text-nature-muted block mb-0.5">Cost</span>
-                        <input type="text" value={v.original_price} onChange={e => updateVariant(i, 'original_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={v.original_price}
+                          onChange={e => handleWholeNumberChange(i, 'original_price', e.target.value)}
+                          onBlur={e => handlePriceBlur(i, 'original_price', e.target.value)}
+                          className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors"
+                        />
                         <FieldError errors={displayErrors} field={`variants.${i}.original_price`} />
                       </div>
                       <div>
-                        <span className="text-[10px] text-nature-muted block mb-0.5">Sale Price</span>
-                        <input type="text" value={v.sale_price} onChange={e => updateVariant(i, 'sale_price', e.target.value)} className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors" />
+                        <span className="text-[10px] text-nature-muted block mb-0.5">Selling Price</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={v.sale_price}
+                          onChange={e => handleWholeNumberChange(i, 'sale_price', e.target.value)}
+                          onBlur={e => handlePriceBlur(i, 'sale_price', e.target.value)}
+                          className="bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded px-2 py-1.5 text-xs outline-none w-full transition-colors"
+                        />
                         <FieldError errors={displayErrors} field={`variants.${i}.sale_price`} />
                       </div>
                       <div>

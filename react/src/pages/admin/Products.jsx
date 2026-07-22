@@ -7,6 +7,7 @@ import { EMPTY_FORM } from './products/constants';
 import ProductModal from './products/ProductModal';
 import ProductDetailModal from './products/ProductDetailModal';
 import { useConfirm } from '../../contexts/ConfirmContext';
+import { useNotification } from '../../contexts/NotificationContext';
 
 const COLUMNS = [
   { key: 'name', label: 'Product', sortable: true },
@@ -149,7 +150,7 @@ export default function Products() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(8);
+  const [perPage, setPerPage] = useState(5);
 
   async function load() {
     setLoading(true);
@@ -221,7 +222,7 @@ export default function Products() {
     });
     setFormError(''); setFieldErrors({}); setShowForm(true);
   }
-
+const notify = useNotification();
   async function handleSave(e) {
     e.preventDefault();
     setFormError(''); setFieldErrors({});
@@ -237,19 +238,43 @@ export default function Products() {
       return;
     }
 
-    setSaving(true);
-    try {
-      if (editTarget) { await api.put(`/admin/products/${editTarget.id}`, form); }
-      else { await api.post('/admin/products', form); }
-      setShowForm(false); setSelectedProduct(null); await load();
-    } catch (err) {
-      if (err.response?.status === 422) {
-        setFieldErrors(err.response.data.errors || {});
-        setFormError(err.response.data.message || 'Please fix the errors below.');
-      } else {
-        setFormError(err.response?.data?.message || err.message || 'Error saving product');
-      }
-    } finally { setSaving(false); }
+setSaving(true);
+try {
+  const isEdit = Boolean(editTarget);
+
+  if (isEdit) {
+    await api.put(`/admin/products/${editTarget.id}`, form);
+  } else {
+    await api.post('/admin/products', form);
+  }
+
+  setShowForm(false);
+  setSelectedProduct(null);
+  await load();
+
+  notify.success(
+    isEdit
+      ? 'Product updated successfully.'
+      : 'Product created successfully.'
+  );
+} catch (err) {
+  if (err.response?.status === 422) {
+    setFieldErrors(err.response.data.errors || {});
+    setFormError(err.response.data.message || 'Please fix the errors below.');
+  } else {
+    const message =
+      err.response?.data?.message ||
+      err.message ||
+      'Error saving product';
+
+    setFormError(message);
+
+    // Remove if your axios interceptor already shows API errors
+    notify.error(message);
+  }
+} finally {
+  setSaving(false);
+}
   }
 
   function handleDelete(id, e) {
@@ -258,19 +283,31 @@ export default function Products() {
       title: 'Delete Product',
       message: 'Permanently delete this product? This cannot be undone.',
       confirmLabel: 'Delete',
-      onConfirm: async () => {
-        setDeleting(id);
-        try {
-          await api.delete(`/admin/products/${id}`);
-          setProducts(p => p.filter(x => x.id !== id));
-          if (selectedProduct?.id === id) setSelectedProduct(null);
-        } catch (err) {
-          console.error('Error deleting product:', err);
-          throw err;
-        } finally {
-          setDeleting(null);
-        }
-      },
+     onConfirm: async () => {
+  setDeleting(id);
+  try {
+    await api.delete(`/admin/products/${id}`);
+
+    setProducts((p) => p.filter((x) => x.id !== id));
+
+    if (selectedProduct?.id === id) {
+      setSelectedProduct(null);
+    }
+
+    notify.success('Product deleted.');
+  } catch (err) {
+    console.error('Error deleting product:', err);
+
+    // Remove if your axios interceptor already shows API errors
+    notify.error(
+      err.response?.data?.message || 'Failed to delete product.'
+    );
+
+    throw err;
+  } finally {
+    setDeleting(null);
+  }
+},
     });
   }
 
@@ -324,8 +361,7 @@ export default function Products() {
         p.slug?.toLowerCase().includes(q) ||
         (p.variants ?? []).some(v => v.sku?.toLowerCase().includes(q));
     }
-    const matchesBrand = !filterBrand || String(p.brand_id) === filterBrand;
-    const matchesGender = !filterGender || p.gender === filterGender;
+const matchesBrand = !filterBrand || String(p.brand_id) === String(filterBrand);    const matchesGender = !filterGender || p.gender === filterGender;
     const matchesStatus = !filterStatus || (p.status ?? 'active') === filterStatus;
     return matchesSearch && matchesBrand && matchesGender && matchesStatus;
   }), [products, search, filterBrand, filterGender, filterStatus]);

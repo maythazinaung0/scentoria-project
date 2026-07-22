@@ -1,12 +1,12 @@
 <?php
- 
+
 namespace App\Http\Requests;
- 
+
 use App\Rules\NoFullWidthCharacters;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
- 
+
 class BrandRequest extends FormRequest
 {
     /**
@@ -16,7 +16,7 @@ class BrandRequest extends FormRequest
     {
         return true; // gated by 'auth:sanctum' + 'admin' middleware on the route
     }
- 
+
     /**
      * Trim stray whitespace before validating, so "  Chanel  " and
      * "Chanel" aren't treated as different / don't slip past min:2 checks.
@@ -27,7 +27,7 @@ class BrandRequest extends FormRequest
             $this->merge(['name' => trim($this->name)]);
         }
     }
- 
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -39,22 +39,20 @@ class BrandRequest extends FormRequest
      */
     public function rules(): array
     {
-        // BrandController's update() route is Route::put('/admin/brands/{id}', ...),
-        // so the route parameter is named "id" — ignore the brand's own row
-        // when checking uniqueness on update.
         $brandId = $this->route('id');
- 
+
         return [
             'name' => [
-    'required',
-    'string',
-    'min:2',
-    'max:255',
-    Rule::unique('brands', 'name')->ignore($brandId),
-],
+                'required',
+                'string',
+                'min:2',
+                'max:255',
+                new NoFullWidthCharacters,
+                Rule::unique('brands', 'name')->ignore($brandId),
+            ],
         ];
     }
- 
+
     /**
      * Custom messages for the defined rules.
      */
@@ -68,7 +66,7 @@ class BrandRequest extends FormRequest
             'name.unique' => 'A brand with this name already exists.',
         ];
     }
- 
+
     /**
      * Nicer field name for error messages ("Brand name" instead of "name").
      */
@@ -79,4 +77,3 @@ class BrandRequest extends FormRequest
         ];
     }
 }
- 

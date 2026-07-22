@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\NoFullWidthCharacters;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,8 +18,8 @@ class NoteRequest extends FormRequest
         $noteId = $this->route('note')?->id;
 
         return [
-            'name' => ['required', 'string', 'max:100', Rule::unique('notes', 'name')->ignore($noteId)],
-            'icon_url' => ['nullable', 'url', 'max:500'],
+            'name' => ['required', 'string', 'max:100', new NoFullWidthCharacters, Rule::unique('notes', 'name')->ignore($noteId)],
+            'icon_url' => ['nullable', 'url', 'max:255', new NoFullWidthCharacters],
         ];
     }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    UserCircle, ShoppingBag, ChevronDown,
+    UserCircle, ShoppingBag, ChevronDown, ChevronLeft, ChevronRight,
     Clock, CheckCircle, XCircle, Package, ArrowRight, Hourglass,
     Wallet, Plus, Send, Star, MessageSquare, Lock, Bookmark, MapPin, Phone,
     Trash2, Pencil, X, Copy, Check
@@ -14,7 +14,11 @@ import OrderDetail from '../../components/OrderDetail';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
 const formatMMK = (amount) =>
-    new Intl.NumberFormat('en-MM', { style: 'currency', currency: 'MMK', minimumFractionDigits: 0 }).format(amount ?? 0);
+    new Intl.NumberFormat('en-MM', {
+        style: 'currency',
+        currency: 'MMK',
+        minimumFractionDigits: 0,
+    }).format(amount ?? 0);
 
 const STATUS_STYLES = {
     pending: 'bg-nature-sage/30 text-nature-olive',
@@ -74,8 +78,63 @@ function CopyableField({ label, value }) {
     );
 }
 
+function Pagination({ currentPage, totalPages, onPageChange }) {
+    if (totalPages <= 1) return null;
+
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+
+    return (
+        <div className="flex items-center justify-center gap-1.5 pt-6 mt-4 border-t border-nature-border/50">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted hover:text-nature-olive disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
+            >
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+            </button>
+
+            <div className="flex items-center gap-1">
+                {start > 1 && (
+                    <>
+                        <button onClick={() => onPageChange(1)} className="w-8 h-8 text-xs rounded-md text-nature-muted hover:bg-nature-sage/20 transition-colors">1</button>
+                        {start > 2 && <span className="text-nature-muted text-xs px-1">…</span>}
+                    </>
+                )}
+                {pages.map(p => (
+                    <button
+                        key={p}
+                        onClick={() => onPageChange(p)}
+                        className={`w-8 h-8 text-xs rounded-md transition-colors ${p === currentPage ? 'bg-nature-olive text-white' : 'text-nature-muted hover:bg-nature-sage/20'}`}
+                    >
+                        {p}
+                    </button>
+                ))}
+                {end < totalPages && (
+                    <>
+                        {end < totalPages - 1 && <span className="text-nature-muted text-xs px-1">…</span>}
+                        <button onClick={() => onPageChange(totalPages)} className="w-8 h-8 text-xs rounded-md text-nature-muted hover:bg-nature-sage/20 transition-colors">{totalPages}</button>
+                    </>
+                )}
+            </div>
+
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted hover:text-nature-olive disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
+            >
+                Next <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    );
+}
+
 export default function ProfilePage() {
-        const openConfirm = useConfirm();
+    const openConfirm = useConfirm();
     const { user, isAdmin, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
@@ -90,7 +149,11 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
-    const [visibleCount, setVisibleCount] = useState(5);
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [wishlistPage, setWishlistPage] = useState(1);
+    const [reviewsPage, setReviewsPage] = useState(1);
+    const ITEMS_PER_PAGE = 5;
+    const WISHLIST_PER_PAGE = 6;
 
     const [paymentMethods, setPaymentMethods] = useState(null);
 
@@ -125,7 +188,11 @@ export default function ProfilePage() {
     const [editSaving, setEditSaving] = useState(false);
     const [editError, setEditError] = useState('');
 
-
+    useEffect(() => {
+        setOrdersPage(1);
+        setWishlistPage(1);
+        setReviewsPage(1);
+    }, [activeTab]);
 
     useEffect(() => {
         if (authLoading) return;
@@ -206,35 +273,35 @@ export default function ProfilePage() {
     }
 
     async function handleChangePassword(e) {
-    e.preventDefault();
-    setPasswordErrors({});
-    setPasswordFormError('');
-    setPasswordSuccess('');
+        e.preventDefault();
+        setPasswordErrors({});
+        setPasswordFormError('');
+        setPasswordSuccess('');
 
-    setPasswordLoading(true);
-    try {
-        await api.post('/user/change-password', {
-            current_password: currentPassword,
-            new_password: newPassword,
-            new_password_confirmation: confirmPassword,
-        });
+        setPasswordLoading(true);
+        try {
+            await api.post('/user/change-password', {
+                current_password: currentPassword,
+                new_password: newPassword,
+                new_password_confirmation: confirmPassword,
+            });
 
-        setPasswordSuccess('Password updated successfully!');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setShowPasswordForm(false);
-    } catch (err) {
-        const errors = getFieldErrors(err);
-        setPasswordErrors(errors);
+            setPasswordSuccess('Password updated successfully!');
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setShowPasswordForm(false);
+        } catch (err) {
+            const errors = getFieldErrors(err);
+            setPasswordErrors(errors);
 
-        if (Object.keys(errors).length === 0) {
-            setPasswordFormError(getErrorMessage(err));
+            if (Object.keys(errors).length === 0) {
+                setPasswordFormError(getErrorMessage(err));
+            }
+        } finally {
+            setPasswordLoading(false);
         }
-    } finally {
-        setPasswordLoading(false);
     }
-}
     async function handleCancelOrder(orderId) {
         await api.put(`/orders/${orderId}/cancel`);
         await loadData();
@@ -339,32 +406,50 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
 
-                    <aside className={`${panelClass} p-4 space-y-1 h-fit xl:sticky xl:top-24`}>
-                        <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-2 px-3">Account Menu</p>
-                        {sidebarItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = activeTab === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setActiveTab(item.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-nature-olive text-white'
-                                            : 'text-nature-muted hover:bg-nature-sage/20 hover:text-nature-dark'
-                                        }`}
-                                >
-                                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-nature-olive'}`} strokeWidth={1.5} />
-                                    <span className="truncate">{item.label}</span>
-                                    {item.count !== undefined && item.count > 0 && (
-                                        <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-nature-sage/30 text-nature-olive'}`}>
-                                            {item.count}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </aside>
+                    <aside className={`${panelClass} p-5 h-fit xl:sticky xl:top-24 flex flex-col`}>
+                        <div className="flex items-center gap-3 pb-5 mb-4 border-b border-nature-border/60">
+                            <div className="w-11 h-11 rounded-full bg-nature-olive/15 text-nature-olive font-serif text-lg flex items-center justify-center flex-shrink-0">
+                                {displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-nature-dark text-sm font-medium truncate">{displayName}</p>
+                                <p className="text-nature-muted text-xs truncate">{user?.email}</p>
+                            </div>
+                        </div>
 
+                        <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-2 px-1">Account Menu</p>
+                        <nav className="space-y-2">
+                            {sidebarItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = activeTab === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-4 rounded-md text-sm font-medium transition-colors ${isActive
+                                            ? 'bg-nature-olive text-white shadow-sm'
+                                            : 'text-nature-muted hover:bg-nature-sage/20 hover:text-nature-dark'
+                                            }`}
+                                    >
+                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-white' : 'text-nature-olive'}`} strokeWidth={1.5} />
+                                        <span className="truncate">{item.label}</span>
+                                        {item.count !== undefined && item.count > 0 && (
+                                            <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-nature-sage/30 text-nature-olive'}`}>
+                                                {item.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="mt-6 pt-5 border-t border-nature-border/60">
+                            <div className="bg-nature-bg/60 rounded-md px-4 py-3.5">
+                                <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-1">Wallet Balance</p>
+                                <p className="text-nature-olive font-serif text-lg">{formatMMK(walletBalance)}</p>
+                            </div>
+                        </div>
+                    </aside>
                     <main className="xl:col-span-3 min-h-[400px] space-y-6">
 
                         {activeTab === 'wallet' && (
@@ -374,7 +459,7 @@ export default function ProfilePage() {
                                 <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-nature-border/60 mb-6">
                                     <div>
                                         <p className={labelClass}>Available Balance</p>
-                                        <p className="font-serif text-4xl text-nature-olive mt-1">{formatMMK(walletBalance)}</p>
+                                        <p className="font-serif text-4xl text-nature-olive mt-1 ">{formatMMK(walletBalance)}</p>
                                         {pendingTopup > 0 && (
                                             <p className="text-nature-tan text-xs mt-2 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> +{formatMMK(pendingTopup)} pending approval
@@ -399,8 +484,8 @@ export default function ProfilePage() {
                                                     <button
                                                         key={m.value} type="button" onClick={() => setTopupMethod(m.value)}
                                                         className={`px-3 py-1.5 rounded border text-xs tracking-wide transition-colors ${topupMethod === m.value
-                                                                ? 'bg-nature-olive border-nature-olive text-white'
-                                                                : 'border-nature-border text-nature-muted hover:border-nature-olive'
+                                                            ? 'bg-nature-olive border-nature-olive text-white'
+                                                            : 'border-nature-border text-nature-muted hover:border-nature-olive'
                                                             }`}
                                                     >
                                                         {m.label}
@@ -437,8 +522,14 @@ export default function ProfilePage() {
                                                     <label className={labelClass}>Amount Sent (MMK) *</label>
                                                     <input
                                                         type="number"
-                                                        value={topupAmount} onChange={e => setTopupAmount(e.target.value)}
-                                                        placeholder="e.g. 50000" className={inputClass}
+                                                        max="10000000"
+                                                        value={topupAmount}
+                                                        onChange={e => {
+                                                            const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                                            setTopupAmount(digitsOnly);
+                                                        }}
+                                                        placeholder="e.g. 50000"
+                                                        className={inputClass}
                                                     />
                                                     <FieldError errors={topupErrors} field="deposit_amount" />
                                                 </div>
@@ -459,7 +550,7 @@ export default function ProfilePage() {
                                                 <div className="sm:col-span-2">
                                                     <label className={labelClass}>Transaction Screenshot *</label>
                                                     <input
-                                                        type="file" accept="image/*"
+                                                        type="file" accept="image/png,image/jpeg,image/jpg"
                                                         onChange={e => setTopupImage(e.target.files[0])}
                                                         className="w-full text-nature-dark text-sm mt-1.5 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-nature-sage/30 file:text-nature-olive hover:file:bg-nature-sage/50"
                                                     />
@@ -531,7 +622,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <>
                                         <div className="divide-y divide-nature-border/60">
-                                            {orders.slice(0, visibleCount).map(order => {
+                                            {orders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE).map(order => {
                                                 const StatusIcon = STATUS_ICONS[order.status] ?? Clock;
                                                 return (
                                                     <button
@@ -560,16 +651,11 @@ export default function ProfilePage() {
                                             })}
                                         </div>
 
-                                        {visibleCount < orders.length && (
-                                            <div className="pt-5 text-center">
-                                                <button
-                                                    onClick={() => setVisibleCount(c => c + 5)}
-                                                    className="text-nature-olive hover:text-nature-olive-dark text-xs font-medium tracking-wider uppercase transition-colors"
-                                                >
-                                                    Load More Orders ({orders.length - visibleCount} remaining)
-                                                </button>
-                                            </div>
-                                        )}
+                                        <Pagination
+                                            currentPage={ordersPage}
+                                            totalPages={Math.ceil(orders.length / ITEMS_PER_PAGE)}
+                                            onPageChange={setOrdersPage}
+                                        />
                                     </>
                                 )}
                             </div>
@@ -586,9 +672,9 @@ export default function ProfilePage() {
                                         <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Discover Favorites</Link>
                                     </div>
                                 ) : (
-                                    <div className="max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                                    <>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {wishlists.map(item => (
+                                            {wishlists.slice((wishlistPage - 1) * WISHLIST_PER_PAGE, wishlistPage * WISHLIST_PER_PAGE).map(item => (
                                                 <div key={item.id} className="relative flex items-center gap-4 border border-nature-border/60 rounded-md p-4 hover:border-nature-olive/40 transition-colors">
                                                     <button
                                                         type="button"
@@ -614,7 +700,13 @@ export default function ProfilePage() {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+
+                                        <Pagination
+                                            currentPage={wishlistPage}
+                                            totalPages={Math.ceil(wishlists.length / WISHLIST_PER_PAGE)}
+                                            onPageChange={setWishlistPage}
+                                        />
+                                    </>
                                 )}
                             </div>
                         )}
@@ -630,9 +722,9 @@ export default function ProfilePage() {
                                         <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Browse Products to Review</Link>
                                     </div>
                                 ) : (
-                                    <div className="max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                                    <>
                                         <div className="divide-y divide-nature-border/60">
-                                            {reviews.map(review => {
+                                            {reviews.slice((reviewsPage - 1) * ITEMS_PER_PAGE, reviewsPage * ITEMS_PER_PAGE).map(review => {
                                                 const isEditing = editingReviewId === review.id;
                                                 return (
                                                     <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
@@ -717,7 +809,13 @@ export default function ProfilePage() {
                                                 );
                                             })}
                                         </div>
-                                    </div>
+                                        <Pagination
+                                            currentPage={reviewsPage}
+                                            totalPages={Math.ceil(reviews.length / ITEMS_PER_PAGE)}
+                                            onPageChange={setReviewsPage}
+                                        />
+
+                                    </>
                                 )}
                             </div>
                         )}
@@ -797,7 +895,7 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-           {selectedOrder && (
+            {selectedOrder && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className={`${modalPanelClass} max-w-lg w-full max-h-[85vh] overflow-y-auto p-6`}>
                         <div className="flex items-start justify-between mb-5 pb-5 border-b border-nature-border/60">

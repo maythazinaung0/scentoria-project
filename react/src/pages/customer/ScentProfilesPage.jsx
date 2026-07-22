@@ -5,7 +5,7 @@ import SizeBanner from '../../components/SizeBanner';
 import Pagination from '../../components/Pagination';
 import api from '../../api';
 
-const PER_PAGE_OPTIONS = [8, 12, 16, 24];
+const PER_PAGE_OPTIONS = [8, 12, 24, 48];
 
 function ScentTile({ scent }) {
     const [imgError, setImgError] = useState(false);

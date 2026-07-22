@@ -57,6 +57,7 @@ function BrandFormModal({ editTarget, form, setForm, error, errors = {}, saving,
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Chanel"
+              maxLength={255}
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
             <FieldError errors={displayErrors} field="name" />
@@ -175,7 +176,7 @@ export default function Brand() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(8);
+  const [perPage, setPerPage] = useState(5);
 
   async function load(signal) {
     if (!hasLoadedOnce) setLoading(true);
@@ -327,7 +328,7 @@ export default function Brand() {
             </button>
           </div>
 
-           <div className="relative">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
             <input type="text" placeholder="Search brands..." value={search} onChange={e => setSearch(e.target.value)} className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64 placeholder-nature-muted/70" />
           </div>

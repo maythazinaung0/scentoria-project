@@ -22,11 +22,30 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Debounce success toasts: rapid-fire updates (e.g. clicking +/- repeatedly)
+// collapse into a single toast shown after things settle, instead of one per request.
+let successToastTimer = null;
+let pendingSuccessMessage = null;
+
+function queueSuccessToast(message) {
+  pendingSuccessMessage = message;
+  if (successToastTimer) clearTimeout(successToastTimer);
+  successToastTimer = setTimeout(() => {
+    notifyFromOutsideReact({ type: 'success', message: pendingSuccessMessage });
+    successToastTimer = null;
+    pendingSuccessMessage = null;
+  }, 600); // waits for a short quiet period before showing
+}
+
 api.interceptors.response.use(
     (response) => {
         const method = response.config.method?.toLowerCase();
-        if (['post', 'put', 'patch', 'delete'].includes(method) && response.data?.message) {
-            notifyFromOutsideReact({ type: 'success', message: response.data.message });
+        if (
+            ['post', 'put', 'patch', 'delete'].includes(method) &&
+            response.data?.message &&
+            !response.config?.skipSuccessToast
+        ) {
+            queueSuccessToast(response.data.message);
         }
         return response;
     },

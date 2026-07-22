@@ -114,7 +114,7 @@ function NoteChip({ note }) {
 }
 
 export default function ProductDetailPage() {
-        const openConfirm = useConfirm();
+    const openConfirm = useConfirm();
     const { slug } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -139,10 +139,27 @@ export default function ProductDetailPage() {
     const [addError, setAddError] = useState('');
     const [added, setAdded] = useState(false);
     const { refreshCart, openCart } = useCart();
+const [qtyError, setQtyError] = useState('');
 
+
+useEffect(() => {
+    if (!qtyError) return;
+    const timer = setTimeout(() => setQtyError(''), 2500);
+    return () => clearTimeout(timer);
+}, [qtyError]);
+
+function incrementQty() {
+    const maxStock = selectedVariant?.stock_quantity ?? Infinity;
+    if (qty + 1 > maxStock) {
+        setQtyError(`Only ${maxStock} in stock`);
+        return;
+    }
+    setQty(q => q + 1);
+}
     // Fetch the product by slug. Runs whenever the slug in the URL changes
     // (e.g. navigating from one product page straight to another).
     useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
         setProduct(null);
         api.get(`/products/${slug}`)
             .then(({ data }) => {
@@ -241,7 +258,7 @@ export default function ProductDetailPage() {
         }
     }
 
-   function confirmDeleteOwnReview() {
+    function confirmDeleteOwnReview() {
         openConfirm({
             title: 'Delete your review?',
             message: 'This will permanently remove your review from this product.',
@@ -321,7 +338,7 @@ export default function ProductDetailPage() {
                 {/* --- HERO: image + purchase panel --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                   <div className="lg:col-span-7">
+                    <div className="lg:col-span-7">
                         <div className={`${panelClass} aspect-square max-h-[560px] max-w-[540px] overflow-hidden mx-auto w-full ${!(product.image_url && !imgError) ? 'flex items-center justify-center p-10 sm:p-16' : ''}`}>
                             {product.image_url && !imgError ? (
                                 <img
@@ -379,33 +396,37 @@ export default function ProductDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center border border-nature-border/70 rounded-md bg-white/40">
-                                        <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-10 h-10 flex items-center justify-center text-nature-dark hover:bg-white/50 transition-colors"><Minus size={16} /></button>
-                                        <span className="w-10 text-center text-sm font-medium">{qty}</span>
-                                        <button onClick={() => setQty(q => Math.min(q + 1, selectedVariant?.stock_quantity || 1))} className="w-10 h-10 flex items-center justify-center text-nature-dark hover:bg-white/50 transition-colors"><Plus size={16} /></button>
-                                    </div>
-                                    <button
-                                        onClick={handleAddToCart}
-                                        disabled={adding}
-                                        className="flex-1 bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3.5 rounded-md flex items-center justify-center gap-2 tracking-[0.15em] text-xs uppercase transition-colors disabled:opacity-60"
-                                    >
-                                        {adding ? <Loader2 size={16} className="animate-spin" /> : added ? <Check size={16} /> : <ShoppingCart size={16} />}
-                                        {adding ? 'Adding...' : added ? 'Added' : 'Add to Cart'}
-                                    </button>
-                                    <button
-                                        onClick={handleToggleWishlist}
-                                        disabled={wishlistLoading}
-                                        className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border rounded-md transition-colors disabled:opacity-60 ${wishlistId ? 'border-nature-olive bg-nature-olive/10 text-nature-olive' : 'border-nature-border text-nature-olive hover:bg-nature-sage/10'
-                                            }`}
-                                    >
-                                        <Heart size={18} className={wishlistId ? 'fill-nature-olive' : ''} />
-                                    </button>
-                                </div>
+<div className="flex items-center gap-3">
+    <div className="flex items-center border border-nature-border/70 rounded-md bg-white/40">
+        <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-10 h-10 flex items-center justify-center text-nature-dark hover:bg-white/50 transition-colors"><Minus size={16} /></button>
+        <span className="w-10 text-center text-sm font-medium">{qty}</span>
+        <button onClick={incrementQty} className="w-10 h-10 flex items-center justify-center text-nature-dark hover:bg-white/50 transition-colors"><Plus size={16} /></button>
+    </div>
+    <button
+        onClick={handleAddToCart}
+        disabled={adding}
+        className="flex-1 bg-nature-olive hover:bg-nature-olive-dark text-white font-medium py-3.5 rounded-md flex items-center justify-center gap-2 tracking-[0.15em] text-xs uppercase transition-colors disabled:opacity-60"
+    >
+        {adding ? <Loader2 size={16} className="animate-spin" /> : added ? <Check size={16} /> : <ShoppingCart size={16} />}
+        {adding ? 'Adding...' : added ? 'Added' : 'Add to Cart'}
+    </button>
+    <button
+        onClick={handleToggleWishlist}
+        disabled={wishlistLoading}
+        className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border rounded-md transition-colors disabled:opacity-60 ${wishlistId ? 'border-nature-olive bg-nature-olive/10 text-nature-olive' : 'border-nature-border text-nature-olive hover:bg-nature-sage/10'
+            }`}
+    >
+        <Heart size={18} className={wishlistId ? 'fill-nature-olive' : ''} />
+    </button>
+</div>
 
-                                {addError && (
-                                    <p className="text-red-600 text-xs bg-red-50 border border-red-200/60 rounded-md px-3 py-2">{addError}</p>
-                                )}
+{qtyError && (
+    <p className="text-red-500 text-[11px] font-medium">{qtyError}</p>
+)}
+
+{addError && (
+    <p className="text-red-600 text-xs bg-red-50 border border-red-200/60 rounded-md px-3 py-2">{addError}</p>
+)}
                             </div>
 
                             {/* Collapsible detail sections */}
@@ -501,7 +522,7 @@ export default function ProductDetailPage() {
                                     <textarea
                                         className="w-full p-3 border border-nature-border/70 rounded-md bg-white/60 outline-none focus:border-nature-olive/50 transition-colors text-sm resize-none"
                                         rows="3"
-                                        placeholder="What did you think of this fragrance?"
+                                        placeholder="Why did you give this rating? Share what you liked or disliked..."
                                         value={composerComment}
                                         onChange={(e) => setComposerComment(e.target.value)}
                                     />

@@ -1,20 +1,17 @@
-import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Trophy, Clock, RefreshCw } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { TrendingUp, TrendingDown, Trophy, Clock, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import api from '../../api';
 import { formatMMK } from '../../utils/currency';
+import AdminPagination from '../../components/Admin/AdminPagination';
 
 function formatLabel(period, label) {
-  if (period === 'all') {
-    return label;
-  }
-
+  if (period === 'all') return label;
   if (period === 'day') {
     if (!label || label.length !== 8) return label;
     const date = new Date(Number(label.slice(0, 4)), Number(label.slice(4, 6)) - 1, Number(label.slice(6, 8)));
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
-
   if (!label || label.length !== 6) return label;
   const date = new Date(Number(label.slice(0, 4)), Number(label.slice(4, 6)) - 1, 1);
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -69,33 +66,54 @@ function StatCard({ label, value, sub, icon: Icon, trend }) {
 
 function CustomTooltip({ active, payload, period }) {
   if (!active || !payload?.length) return null;
-  const { label, total_revenue } = payload[0].payload;
+  const { label, total_revenue, previous_revenue, previous_label } = payload[0].payload;
   return (
-    <div className="bg-white/90 backdrop-blur-xl border border-nature-border/60 rounded-lg px-3 py-2 shadow-lg">
-      <p className="text-[10px] text-nature-muted mb-0.5">{formatLabel(period, label)}</p>
-      <p className="text-xs font-semibold text-nature-olive">{formatMMK(total_revenue)}</p>
+    <div className="bg-white/90 backdrop-blur-xl border border-nature-border/60 rounded-lg px-3 py-2 shadow-lg space-y-1">
+      <div>
+        <p className="text-[10px] text-nature-muted mb-0.5">{formatLabel(period, label)}</p>
+        <p className="text-xs font-semibold text-nature-olive">{formatMMK(total_revenue)}</p>
+      </div>
+      {previous_revenue !== undefined && previous_revenue !== null && (
+        <div className="pt-1 border-t border-nature-border/30">
+          <p className="text-[10px] text-nature-muted mb-0.5">{formatLabel(period, previous_label)} (prior)</p>
+          <p className="text-xs font-medium text-nature-muted">{formatMMK(previous_revenue)}</p>
+        </div>
+      )}
     </div>
   );
 }
 
-function RevenueTrend({ period, series }) {
+function RevenueTrend({ period, series, previousSeries }) {
   const titles = { day: 'Last 30 days', month: 'Last 12 months', all: 'Lifetime total' };
   const labelStep = Math.max(Math.ceil(series.length / 8), 1);
 
+  const combined = series.map((pt, i) => ({
+    label: pt.label,
+    total_revenue: pt.total_revenue,
+    previous_revenue: previousSeries?.[i]?.total_revenue ?? null,
+    previous_label: previousSeries?.[i]?.label ?? null,
+  }));
+
+  const showComparison = period !== 'all' && previousSeries?.length > 0;
+
   return (
     <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl p-6 shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
-      <h2 className="font-serif text-xl text-neutral-800 mb-1">Revenue Trend</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-serif text-xl text-neutral-800">Revenue Trend</h2>
+        {showComparison && (
+          <div className="flex items-center gap-3 text-[11px] text-nature-muted">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-nature-olive rounded-full" />Current</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-nature-muted/50 rounded-full" style={{ borderTop: '1px dashed' }} />Prior period</span>
+          </div>
+        )}
+      </div>
       <p className="text-nature-muted text-xs mb-6">{titles[period]}</p>
 
       {series.length === 0 ? (
         <p className="text-nature-muted text-sm text-center py-12">No revenue data yet.</p>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
-          <LineChart
-            key={period}
-            data={series}
-            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-          >
+          <LineChart key={period} data={combined} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
             <XAxis
               dataKey="label"
@@ -106,6 +124,17 @@ function RevenueTrend({ period, series }) {
             />
             <YAxis hide />
             <Tooltip content={<CustomTooltip period={period} />} />
+            {showComparison && (
+              <Line
+                type="monotone"
+                dataKey="previous_revenue"
+                stroke="#8a8a7a"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="total_revenue"
@@ -124,39 +153,161 @@ function RevenueTrend({ period, series }) {
   );
 }
 
-function TopProducts({ products }) {
-  const max = Math.max(...products.map((p) => p.quantity_sold), 1);
+const PRODUCT_COLUMNS = [
+  { key: 'rank', label: '#', sortable: true },
+  { key: 'product_name', label: 'Product', sortable: true },
+  { key: 'quantity_sold', label: 'Units', sortable: true },
+  { key: 'revenue', label: 'Revenue', sortable: true },
+  { key: 'revenue_share', label: 'Share', sortable: true },
+];
+
+function ProductSortHeader({ col, sortKey, sortDir, onSort, align = 'left' }) {
+  const active = sortKey === col.key;
+  const justify = align === 'right' ? 'justify-end' : '';
+  return (
+    <th
+      onClick={() => col.sortable && onSort(col.key)}
+      className={`py-2 px-3 text-[10px] font-semibold tracking-wider uppercase ${align === 'right' ? 'text-right' : 'text-left'} ${col.sortable ? 'cursor-pointer select-none group' : ''}`}
+    >
+      <span className={`inline-flex items-center gap-1 ${justify} ${active ? 'text-nature-olive' : 'text-nature-muted group-hover:text-neutral-700'}`}>
+        {col.label}
+        {col.sortable && (active ? (
+          sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+        ))}
+      </span>
+    </th>
+  );
+}
+
+function ProductPerformance({ products }) {
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState('rank');
+  const [sortDir, setSortDir] = useState('asc');
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  const totalUnits = products.reduce((sum, p) => sum + p.quantity_sold, 0);
+  const totalRevenue = products.reduce((sum, p) => sum + p.revenue, 0);
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'rank' ? 'asc' : 'desc'); // revenue/units feel natural starting high-to-low
+    }
+  }
+
+  const filtered = useMemo(
+    () => products.filter(p => !search || p.product_name.toLowerCase().includes(search.toLowerCase())),
+    [products, search]
+  );
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      const av = sortKey === 'product_name' ? a[sortKey].toLowerCase() : a[sortKey];
+      const bv = sortKey === 'product_name' ? b[sortKey].toLowerCase() : b[sortKey];
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  useEffect(() => { setPage(1); }, [search, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const clampedPage = Math.min(page, totalPages);
+  const visible = useMemo(() => {
+    const start = (clampedPage - 1) * perPage;
+    return sorted.slice(start, start + perPage);
+  }, [sorted, clampedPage, perPage]);
 
   return (
     <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl p-6 shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
-      <h2 className="font-serif text-xl text-neutral-800 mb-1">Best-Selling Products</h2>
-      <p className="text-nature-muted text-xs mb-6">Ranked by units sold, all-time</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+        <h2 className="font-serif text-xl text-neutral-800">Product Performance</h2>
+        <span className="text-nature-muted text-xs">{products.length} products</span>
+      </div>
+      <p className="text-nature-muted text-xs mb-4">Full breakdown across all recorded sales</p>
+
+      <div className="relative mb-4 max-w-xs">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
+        <input
+          type="text"
+          placeholder="Search product..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-xs outline-none transition-colors w-full placeholder-nature-muted/70"
+        />
+      </div>
 
       {products.length === 0 ? (
         <p className="text-nature-muted text-sm text-center py-12">No product sales yet.</p>
+      ) : sorted.length === 0 ? (
+        <p className="text-nature-muted text-sm text-center py-12">No products match "{search}".</p>
       ) : (
-        <div className="space-y-4">
-          {products.map((p) => (
-            <div key={p.rank}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-serif text-sm text-nature-olive w-5">{p.rank}</span>
-                  <span className="text-sm font-medium text-neutral-800">{p.product_name}</span>
-                </div>
-                <div className="text-right whitespace-nowrap">
-                  <span className="text-xs text-nature-muted">{p.quantity_sold} sold</span>
-                  <span className="text-xs text-nature-olive font-semibold ml-3">{formatMMK(p.revenue)}</span>
-                </div>
-              </div>
-              <div className="h-1.5 bg-nature-border/40 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-nature-olive rounded-full transition-all duration-500"
-                  style={{ width: `${(p.quantity_sold / max) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-nature-border/40">
+                  {PRODUCT_COLUMNS.map(col => (
+                    <ProductSortHeader
+                      key={col.key}
+                      col={col}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      align={col.key === 'quantity_sold' || col.key === 'revenue' || col.key === 'revenue_share' ? 'right' : 'left'}
+                    />
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((p) => (
+                  <tr key={p.rank} className="border-b border-nature-border/20 last:border-0">
+                    <td className="py-2.5 px-3 font-serif text-nature-olive">{p.rank}</td>
+                    <td className="py-2.5 px-3 font-medium text-neutral-800">{p.product_name}</td>
+                    <td className="py-2.5 px-3 text-right text-nature-muted">{p.quantity_sold}</td>
+                    <td className="py-2.5 px-3 text-right text-nature-olive font-semibold">{formatMMK(p.revenue)}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <div className="inline-flex items-center gap-2 justify-end w-full">
+                        <div className="w-16 h-1.5 bg-nature-border/40 rounded-full overflow-hidden">
+                          <div className="h-full bg-nature-olive rounded-full" style={{ width: `${p.revenue_share}%` }} />
+                        </div>
+                        <span className="text-nature-muted text-xs w-9 text-right">{p.revenue_share}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {!search && (
+                <tfoot>
+                  <tr className="border-t border-nature-border/40 font-semibold">
+                    <td className="py-2.5 px-3" colSpan={2}>Total (all {products.length})</td>
+                    <td className="py-2.5 px-3 text-right text-neutral-800">{totalUnits}</td>
+                    <td className="py-2.5 px-3 text-right text-nature-olive">{formatMMK(totalRevenue)}</td>
+                    <td className="py-2.5 px-3 text-right text-nature-muted">100%</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+
+          <AdminPagination
+            page={clampedPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            perPage={perPage}
+            onPerPageChange={setPerPage}
+            totalItems={sorted.length}
+          />
+        </>
       )}
     </div>
   );
@@ -274,8 +425,7 @@ export default function SalesReport() {
         />
       </div>
 
-      <RevenueTrend period={report.period} series={report.revenue_series} />
-      <TopProducts products={report.top_products} />
+<RevenueTrend period={report.period} series={report.revenue_series} previousSeries={report.previous_period_series} /><ProductPerformance products={report.product_performance} />
     </div>
   );
 }

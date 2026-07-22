@@ -19,23 +19,43 @@ export function NotificationProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
     const timers = useRef({});
 
-    const remove = useCallback((id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-        if (timers.current[id]) {
-            clearTimeout(timers.current[id]);
-            delete timers.current[id];
-        }
-    }, []);
+   const remove = useCallback((id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (timers.current[id]) {
+        clearTimeout(timers.current[id]);
+        delete timers.current[id];
+    }
+}, []);
 
-    // duration=0 means "stick until dismissed" — useful for errors the user should read
-    const notify = useCallback(({ type = 'info', title, message, duration = 4000 }) => {
-        const id = ++idCounter;
-        setNotifications(prev => [...prev, { id, type, title, message }]);
-        if (duration > 0) {
-            timers.current[id] = setTimeout(() => remove(id), duration);
+// duration=0 means "stick until dismissed" — useful for errors the user should read
+const notify = useCallback(({ type = 'info', title, message, duration = 4000 }) => {
+    let dedupedId = null;
+
+    setNotifications(prev => {
+        const existing = prev.find(n => n.type === type && n.message === message);
+        if (existing) {
+            dedupedId = existing.id;
+            return prev; // already showing — don't add a duplicate
         }
-        return id;
-    }, [remove]);
+        return prev;
+    });
+
+    if (dedupedId !== null) {
+        // Same toast is already visible — just restart its dismiss timer.
+        if (timers.current[dedupedId]) clearTimeout(timers.current[dedupedId]);
+        if (duration > 0) {
+            timers.current[dedupedId] = setTimeout(() => remove(dedupedId), duration);
+        }
+        return dedupedId;
+    }
+
+    const id = ++idCounter;
+    setNotifications(prev => [...prev, { id, type, title, message }]);
+    if (duration > 0) {
+        timers.current[id] = setTimeout(() => remove(id), duration);
+    }
+    return id;
+}, [remove]);
 
     const api = {
         notify,

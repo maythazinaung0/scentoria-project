@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\Auth;
 
 class CartItemController extends Controller
 {
-    public function index()
-    {
-        $cartItems = CartItem::where('user_id', Auth::id())
+public function index()
+{
+    $cartItems = CartItem::where('user_id', Auth::id())
+        ->whereHas('productVariant.product', function ($query) {
+            $query->where('status', 'active');
+        })
         ->with('productVariant.product.brand')
         ->get();
-        return response()->json($cartItems);
-    }
+    return response()->json($cartItems);
+}
 
   public function store(Request $request)
 {

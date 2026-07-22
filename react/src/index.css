@@ -1,60 +1,44 @@
 @import "tailwindcss";
- 
+
 @theme {
   /* Canvas Background: Rich, velvety warm alabaster cream */
   --color-nature-bg: #f5f1e6; 
-  /* Cards: Soft, luminescent ivory bone */
   --color-nature-card: #FFFFFF;
- 
-  /* The Signature Color: Velvet Sage */
+
   --color-nature-sage: #B4C4A8;
   --color-nature-sage-light: #EBEFE7;
   --color-nature-sage-dark: #8CA07E;
- 
-  /* Typography: Rich aromatic pine-charcoal instead of pure black */
+
   --color-nature-dark: #222B1D;
   --color-nature-charcoal: #3D4A37;
   --color-nature-muted: #688059;
   --color-nature-subtle: #527a48;
- 
-  /* Accent Olive */
+
   --color-nature-olive: #556B43;
- 
-  /* Borders: Soft earthen silt lines */
+
   --color-nature-border: #E0DACD;
   --color-nature-olive: #4A6838;
   --color-nature-olive-dark: #3A5530;
- 
+
   --color-nature-border: #d1c6b0;
   --color-nature-subtle: #8A9585;
- 
+
   --color-accent: #4A6838;
   --color-accent-hover: #3A5530;
 
   --color-bg-base: #F7F5F0;
   --color-card: #FFFFFF;
+
+  /* Custom serif font */
+  --font-serif: "Lora", Georgia, Cambria, "Times New Roman", Times, serif;
+
+  
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-/* Hide scrollbar for IE, Edge and Firefox */
-html,
-body {
-  -ms-overflow-style: none !important;
-  /* IE and Edge */
-  scrollbar-width: none !important;
-  /* Firefox */
-  overflow-y: scroll;
-  /* Ensures page can still scroll without the bar */
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

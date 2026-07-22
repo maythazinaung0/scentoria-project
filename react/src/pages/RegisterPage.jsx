@@ -147,6 +147,7 @@ export default function RegisterPage() {
                   required
                   autoFocus
                   autoComplete="name"
+                  maxlength={100}
                   disabled={loading}
                   value={name}
                   onChange={e => setName(e.target.value)}

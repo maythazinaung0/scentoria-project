@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Check, X, Loader2, ImageOff, Wallet, Clock, CheckCircle2, XCircle, User } from 'lucide-react';
 import api from '../../api';
+import AdminPagination from '../../components/Admin/AdminPagination';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'text-amber-600 bg-amber-50 border-amber-200/60', icon: Clock },
   completed: { label: 'Completed', color: 'text-emerald-700 bg-emerald-50 border-emerald-200/60', icon: CheckCircle2 },
-  // Backend enum is 'rejected', not 'cancelled' — this used to be 'cancelled'
-  // here, which meant the reject action silently failed (backend returned
-  // a 422 the UI never surfaced).
   rejected: { label: 'Rejected', color: 'text-rose-600 bg-rose-50 border-rose-200/60', icon: XCircle },
 };
 
@@ -155,6 +153,10 @@ export default function WalletTopups() {
   const [actionError, setActionError] = useState('');
   const [previewUrl, setPreviewUrl] = useState(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(5);
+
   function fetchTopups(signal) {
     if (!hasLoadedOnce) setLoading(true);
     api.get('/admin/wallet-topups', { signal })
@@ -190,8 +192,23 @@ export default function WalletTopups() {
     }
   }
 
-  const filteredTopups = topups.filter((t) => filter === 'all' || t.status === filter);
+  const filteredTopups = useMemo(
+    () => topups.filter((t) => filter === 'all' || t.status === filter),
+    [topups, filter]
+  );
   const pendingCount = topups.filter((t) => t.status === 'pending').length;
+
+  // Reset to page 1 whenever the filter or page size changes
+  useEffect(() => {
+    setPage(1);
+  }, [filter, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTopups.length / perPage));
+  const clampedPage = Math.min(page, totalPages);
+  const visibleTopups = useMemo(() => {
+    const start = (clampedPage - 1) * perPage;
+    return filteredTopups.slice(start, start + perPage);
+  }, [filteredTopups, clampedPage, perPage]);
 
   const tabs = [
     { key: 'pending', label: 'Pending', count: pendingCount },
@@ -260,16 +277,27 @@ export default function WalletTopups() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredTopups.map((topup) => (
-                <TopupRow
-                  key={topup.id}
-                  topup={topup}
-                  onDecide={handleDecide}
-                  deciding={decidingId === topup.id ? decidingStatus : null}
-                  onPreview={setPreviewUrl}
-                />
-              ))}
+            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-[0_2px_16px_-4px_rgba(44,53,39,0.08)]">
+              <div className="space-y-3 p-3">
+                {visibleTopups.map((topup) => (
+                  <TopupRow
+                    key={topup.id}
+                    topup={topup}
+                    onDecide={handleDecide}
+                    deciding={decidingId === topup.id ? decidingStatus : null}
+                    onPreview={setPreviewUrl}
+                  />
+                ))}
+              </div>
+
+              <AdminPagination
+                page={clampedPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                perPage={perPage}
+                onPerPageChange={setPerPage}
+                totalItems={filteredTopups.length}
+              />
             </div>
           )}
         </div>

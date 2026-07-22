@@ -14,61 +14,65 @@ use Illuminate\Support\Facades\DB;
 class SalesReportService
 {
     public function dayReport(): array
-    {
-        // Every day is present in the series, even ones with zero revenue —
-        // otherwise the chart only shows the handful of days that happen to
-        // have orders, and those few bars stretch to fill the whole width.
-        $existing = DB::table('daily_sales_reports')->pluck('total_revenue', 'date');
+{
+    $existing = DB::table('daily_sales_reports')->pluck('total_revenue', 'date');
 
-        $series = collect(range(29, 0))->map(function ($daysAgo) use ($existing) {
-            $date = Carbon::now()->subDays($daysAgo)->format('Ymd');
-            return [
-                'label' => $date,
-                'total_revenue' => (int) ($existing[$date] ?? 0),
-            ];
-        })->values();
+    $series = collect(range(29, 0))->map(function ($daysAgo) use ($existing) {
+        $date = Carbon::now()->subDays($daysAgo)->format('Ymd');
+        return ['label' => $date, 'total_revenue' => (int) ($existing[$date] ?? 0)];
+    })->values();
 
-        $today = Carbon::now()->format('Ymd');
-        $yesterday = Carbon::now()->subDay()->format('Ymd');
-        $currentRevenue = (int) ($existing[$today] ?? 0);
-        $previousRevenue = (int) ($existing[$yesterday] ?? 0);
+    // Same 30-day window, shifted back 30 more days, aligned by position
+    // (not date) so point i lines up with point i of the current series.
+    $previousSeries = collect(range(59, 30))->map(function ($daysAgo) use ($existing) {
+        $date = Carbon::now()->subDays($daysAgo)->format('Ymd');
+        return ['label' => $date, 'total_revenue' => (int) ($existing[$date] ?? 0)];
+    })->values();
 
-        return [
-            'period' => 'day',
-            'current_period_revenue' => $currentRevenue,
-            'growth_percent' => $this->growth($currentRevenue, $previousRevenue),
-            'revenue_series' => $series,
-            'generated_at' => DB::table('daily_sales_reports')->max('generated_at'),
-        ];
-    }
+    $today = Carbon::now()->format('Ymd');
+    $yesterday = Carbon::now()->subDay()->format('Ymd');
+    $currentRevenue = (int) ($existing[$today] ?? 0);
+    $previousRevenue = (int) ($existing[$yesterday] ?? 0);
 
-    public function monthReport(): array
-    {
-        // Same reasoning as dayReport() — always show the last 12 calendar
-        // months, zero-filled, instead of only months that had any orders.
-        $existing = DB::table('monthly_sales_reports')->pluck('total_revenue', 'year_month');
+    return [
+        'period' => 'day',
+        'current_period_revenue' => $currentRevenue,
+        'growth_percent' => $this->growth($currentRevenue, $previousRevenue),
+        'revenue_series' => $series,
+        'previous_period_series' => $previousSeries,
+        'generated_at' => DB::table('daily_sales_reports')->max('generated_at'),
+    ];
+}
 
-        $series = collect(range(11, 0))->map(function ($monthsAgo) use ($existing) {
-            $ym = Carbon::now()->subMonths($monthsAgo)->format('Ym');
-            return [
-                'label' => $ym,
-                'total_revenue' => (int) ($existing[$ym] ?? 0),
-            ];
-        })->values();
+public function monthReport(): array
+{
+    $existing = DB::table('monthly_sales_reports')->pluck('total_revenue', 'year_month');
 
-        $currentMonth = Carbon::now()->format('Ym');
-        $previousMonth = Carbon::now()->subMonth()->format('Ym');
-        $currentRevenue = (int) ($existing[$currentMonth] ?? 0);
-        $previousRevenue = (int) ($existing[$previousMonth] ?? 0);
+    $series = collect(range(11, 0))->map(function ($monthsAgo) use ($existing) {
+        $ym = Carbon::now()->subMonths($monthsAgo)->format('Ym');
+        return ['label' => $ym, 'total_revenue' => (int) ($existing[$ym] ?? 0)];
+    })->values();
 
-        return [
-            'period' => 'month',
-            'current_period_revenue' => $currentRevenue,
-            'growth_percent' => $this->growth($currentRevenue, $previousRevenue),
-            'revenue_series' => $series,
-            'generated_at' => DB::table('monthly_sales_reports')->max('generated_at'),
-        ];
-    }
+    // Prior 12-month window, aligned by position for the same reason as above.
+    $previousSeries = collect(range(23, 12))->map(function ($monthsAgo) use ($existing) {
+        $ym = Carbon::now()->subMonths($monthsAgo)->format('Ym');
+        return ['label' => $ym, 'total_revenue' => (int) ($existing[$ym] ?? 0)];
+    })->values();
+
+    $currentMonth = Carbon::now()->format('Ym');
+    $previousMonth = Carbon::now()->subMonth()->format('Ym');
+    $currentRevenue = (int) ($existing[$currentMonth] ?? 0);
+    $previousRevenue = (int) ($existing[$previousMonth] ?? 0);
+
+    return [
+        'period' => 'month',
+        'current_period_revenue' => $currentRevenue,
+        'growth_percent' => $this->growth($currentRevenue, $previousRevenue),
+        'revenue_series' => $series,
+        'previous_period_series' => $previousSeries,
+        'generated_at' => DB::table('monthly_sales_reports')->max('generated_at'),
+    ];
+}
 
     public function allTimeReport(): array
     {
@@ -112,4 +116,23 @@ class SalesReportService
             ? round((($current - $previous) / $previous) * 100, 1)
             : null;
     }
+
+    public function productPerformance(): \Illuminate\Support\Collection
+{
+    $products = DB::table('product_sales_reports')
+        ->orderBy('rank')
+        ->get(['product_name', 'quantity_sold', 'revenue', 'rank']);
+
+    $totalRevenue = $products->sum('revenue');
+
+    return $products->map(fn ($p) => [
+        'product_name' => $p->product_name,
+        'quantity_sold' => $p->quantity_sold,
+        'revenue' => $p->revenue,
+        'rank' => $p->rank,
+        'revenue_share' => $totalRevenue > 0
+            ? round(($p->revenue / $totalRevenue) * 100, 1)
+            : 0,
+    ])->values();
+}
 }

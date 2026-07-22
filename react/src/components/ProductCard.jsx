@@ -43,21 +43,21 @@ export default function ProductCard({ product }) {
             </div>
 
             <div className="absolute bottom-0 left-0 w-full p-6 bg-nature-bg translate-y-full transition-transform duration-500 group-hover:translate-y-0">
-                <h3 className="font-serif text-lg text-nature-dark mb-1">{product.name}</h3>
+                <h3 className="font-serif text-lg text-nature-olive mb-1">{product.name}</h3>
                 <p className="text-xs text-nature-muted mb-3">{product.scent?.name}</p>
 
                 <div className="mb-4">
                     <p className="text-xs text-nature-muted mb-1">
                         {product.variants?.map(v => v.size).join(' · ')}
                     </p>
-                    <p className="text-sm font-medium text-nature-dark">
+                    <p className="text-sm font-medium text-nature-olive">
                         {minPrice ? `From ${formatMMK(minPrice)}` : 'Contact for price'}
                     </p>
                 </div>
 
                 <Link
                     to={`/products/${product.slug}`}
-                    className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-nature-dark hover:text-nature-olive transition-colors border-b border-transparent hover:border-nature-olive pb-1"
+                    className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-nature-olive hover:text-nature-muted transition-colors border-b border-transparent hover:border-nature-olive pb-1"
                 >
                     Explore →
                 </Link>

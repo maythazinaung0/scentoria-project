@@ -28,7 +28,7 @@ export default function Orders() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(8);
+  const [perPage, setPerPage] = useState(5);
 
   async function load() {
     try {

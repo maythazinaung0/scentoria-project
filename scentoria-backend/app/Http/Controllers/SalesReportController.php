@@ -17,20 +17,21 @@ class SalesReportController extends Controller
     // Reads only — all the aggregation already happened in the batch job
     // (nightly, or on demand via runBatch() below).
     public function index(Request $request)
-    {
-        $period = $request->query('period', 'month');
+{
+    $period = $request->query('period', 'month');
 
-        $report = match ($period) {
-            'day' => $this->reports->dayReport(),
-            'all' => $this->reports->allTimeReport(),
-            default => $this->reports->monthReport(),
-        };
+    $report = match ($period) {
+        'day' => $this->reports->dayReport(),
+        'all' => $this->reports->allTimeReport(),
+        default => $this->reports->monthReport(),
+    };
 
-        return response()->json([
-            ...$report,
-            'top_products' => $this->reports->topProducts(),
-        ]);
-    }
+    return response()->json([
+        ...$report,
+        'top_products' => $this->reports->topProducts(),          // still used for the "Best Seller" stat card
+        'product_performance' => $this->reports->productPerformance(), // full ranked breakdown
+    ]);
+}
 
     // POST /api/admin/sales-report/run-batch
     // Runs the same pipeline the nightly schedule runs, on demand.

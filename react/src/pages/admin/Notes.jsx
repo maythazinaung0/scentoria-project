@@ -4,6 +4,8 @@ import api from '../../api';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import AdminPagination from '../../components/Admin/AdminPagination';
 import FieldError from '../../components/FieldError';
+import { useNotification } from '../../contexts/NotificationContext';
+
 
 
 function NoteModal({ note, onClose, onSaved }) {
@@ -18,11 +20,22 @@ function NoteModal({ note, onClose, onSaved }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
+  const MAX_IMAGE_SIZE_KB = 2048;
+
   async function uploadFile(file) {
-    if (!file || !file.type.startsWith('image/')) {
-      setFormError('Please choose an image file.');
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setFormError('Only PNG, JPG, or JPEG images are allowed.');
       return;
     }
+
+    if (file.size > MAX_IMAGE_SIZE_KB * 1024) {
+      setFormError(`Image must be ${MAX_IMAGE_SIZE_KB / 1024}MB or smaller.`);
+      return;
+    }
+
     setUploading(true);
     setFormError('');
     try {
@@ -90,6 +103,7 @@ function NoteModal({ note, onClose, onSaved }) {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              maxLength={100}
               placeholder="e.g. Bergamot, Oud, Vanilla"
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
@@ -122,14 +136,13 @@ function NoteModal({ note, onClose, onSaved }) {
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${
-                  isDragging ? 'border-nature-olive bg-nature-olive/5' : 'border-nature-border/80 hover:border-nature-olive/50'
-                }`}
+                className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition-colors ${isDragging ? 'border-nature-olive bg-nature-olive/5' : 'border-nature-border/80 hover:border-nature-olive/50'
+                  }`}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/jpg"
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -151,6 +164,7 @@ function NoteModal({ note, onClose, onSaved }) {
                 <input
                   value={iconUrl}
                   onChange={(e) => setIconUrl(e.target.value)}
+                  maxLength={500}
                   placeholder="https://..."
                   className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
                 />
@@ -250,7 +264,7 @@ export default function NoteManagement() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(8);
+  const [perPage, setPerPage] = useState(5);
 
   function fetchNotes() {
     setLoading(true);
@@ -274,34 +288,40 @@ export default function NoteManagement() {
     setModalOpen(true);
   }
 
-  function handleSaved(saved) {
-    setNotes((prev) => {
-      const exists = prev.some((n) => n.id === saved.id);
-      return exists ? prev.map((n) => (n.id === saved.id ? saved : n)) : [saved, ...prev];
-    });
-    setModalOpen(false);
-  }
+  const notify = useNotification();
 
-  function handleDelete(id) {
-    confirm({
-      title: 'Delete Note',
-      message: 'Delete this note? This cannot be undone.',
-      confirmLabel: 'Delete',
-      onConfirm: async () => {
-        setDeletingId(id);
-        try {
-          await api.delete(`/admin/notes/${id}`);
-          setNotes((prev) => prev.filter((n) => n.id !== id));
-        } catch (err) {
-          console.error('Failed to delete note:', err);
-          throw err;
-        } finally {
-          setDeletingId(null);
-        }
-      },
-    });
-  }
+function handleSaved(saved) {
+  const isEdit = Boolean(editingNote);
+  setNotes((prev) => {
+    const exists = prev.some((n) => n.id === saved.id);
+    return exists ? prev.map((n) => (n.id === saved.id ? saved : n)) : [saved, ...prev];
+  });
+  setModalOpen(false);
+  notify.success(isEdit ? 'Note updated successfully.' : 'Note created successfully.');
+}
 
+function handleDelete(id) {
+  confirm({
+    title: 'Delete Note',
+    message: 'Delete this note? This cannot be undone.',
+    confirmLabel: 'Delete',
+    onConfirm: async () => {
+      setDeletingId(id);
+      try {
+        await api.delete(`/admin/notes/${id}`);
+        setNotes((prev) => prev.filter((n) => n.id !== id));
+        notify.success('Note deleted.');
+      } catch (err) {
+        console.error('Failed to delete note:', err);
+        // Remove this if your axios interceptor already notifies on error responses
+        notify.error(err.response?.data?.message || 'Failed to delete note.');
+        throw err;
+      } finally {
+        setDeletingId(null);
+      }
+    },
+  });
+}
   function toggleSort() {
     setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
   }
@@ -355,7 +375,7 @@ export default function NoteManagement() {
             </button>
           </div>
 
-                    <div className="relative">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-nature-muted" />
             <input type="text" placeholder="Search Notes..." value={search} onChange={e => setSearch(e.target.value)} className="bg-white/70 border border-nature-border/50 focus:border-nature-border rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors w-64 placeholder-nature-muted/70" />
           </div>

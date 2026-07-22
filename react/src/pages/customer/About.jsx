@@ -1,16 +1,16 @@
 import { Link } from 'react-router-dom';
 import {
     Heart, Package, Award, Truck, Shield, Leaf,
-    Phone, Mail, MapPin, Clock, ChevronDown
+    Phone, Mail, MapPin, Clock, ChevronDown, ArrowRight
 } from 'lucide-react';
 import { useState } from 'react';
 import ScentoriaLogo from '../../components/ScentoriaLogo';
 import SizeBanner from '../../components/SizeBanner';
-
+ 
 // Same visual language as the rest of the site
 const panelClass = "bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]";
 const labelClass = "text-[11px] uppercase tracking-[0.25em] text-nature-olive font-medium";
-
+ 
 const faqs = [
     { q: 'Are your fragrances authentic?', a: 'Our fragrances are premium inspired alternatives — expertly crafted to closely mirror iconic designer and niche scents using high-quality fragrance oils. They are not counterfeit products but original formulations that capture the spirit of luxury perfumery.' },
     { q: 'How long do your fragrances last?', a: 'Our high-concentration oils typically last 6–10 hours on skin, sometimes longer on fabric. Regular size (full bottle) contains more oil for extended wear, while the small size is perfect for trying a new scent or carrying with you.' },
@@ -19,13 +19,17 @@ const faqs = [
     { q: 'Can I return or exchange a product?', a: 'We accept returns within 7 days if the product is unused and in original packaging. For exchanges, please contact us via Viber or Facebook before returning the item.' },
     { q: 'How do I know which scent is right for me?', a: 'Browse our Scent Profiles page — each profile explains the fragrance family, top/middle/base notes, and the mood it evokes. You can also message us on Facebook or Viber and we\'ll recommend based on your preferences.' },
 ];
-
+ 
+ 
+ 
+// ... (imports and constants remain unchanged)
+ 
 export default function AboutPage() {
     const [openFaq, setOpenFaq] = useState(null);
-
+ 
     return (
         <div className="bg-nature-bg text-nature-dark">
-
+ 
             {/* --- HERO --- */}
             <div className="max-w-5xl mx-auto px-4 text-center pt-28 pb-20">
                 <div className="flex items-center justify-center gap-3 mb-6">
@@ -36,37 +40,49 @@ export default function AboutPage() {
                     Premium inspired fragrances at honest prices — helping you discover your signature scent.
                 </p>
                 <div className="flex justify-center gap-4">
+                    {/* "Shop Now" Button: White base, Green hover */}
                     <Link
                         to="/products"
-                        className="bg-nature-olive hover:bg-nature-olive-dark text-white px-8 py-3.5 rounded-md text-xs font-medium tracking-[0.15em] uppercase transition-colors"
+                        className="inline-flex items-center gap-2 px-9 py-3.5 bg-white text-nature-dark  text-xs uppercase tracking-[0.2em] font-medium transition-all hover:bg-nature-olive hover:text-white"
                     >
-                        Shop Now
+                        Shop Now <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
+ 
+                    {/* "Explore Scents" Button: Green base, Dark Green hover */}
                     <Link
-                        to="/scent-profiles"
-                        className="border border-nature-border text-nature-dark px-8 py-3.5 rounded-md text-xs font-medium tracking-[0.15em] uppercase hover:border-nature-olive hover:text-nature-olive transition-colors"
+                        to="/scents"
+                        className="inline-flex items-center gap-2 px-9 py-3.5 bg-nature-olive text-white text-xs uppercase tracking-[0.2em] font-medium transition-all hover:bg-nature-olive-dark"
                     >
                         Explore Scents
                     </Link>
                 </div>
             </div>
-
+ 
+ 
+ 
             {/* --- OUR STORY --- */}
             <div className="max-w-5xl mx-auto px-4 mb-24">
                 <p className={`${labelClass} text-center mb-2`}>Since Day One</p>
                 <h2 className="font-serif text-3xl sm:text-4xl text-center mb-12">Our Story</h2>
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="aspect-[4/5] overflow-hidden rounded-sm">
+ 
+                {/* Using grid-cols-12 to give the text more width than the image */}
+                <div className="grid md:grid-cols-12 gap-10 items-center">
+ 
+                    {/* Image takes 5 columns */}
+                    <div className="md:col-span-5 aspect-square overflow-hidden rounded-sm">
                         <img
-                            src="https://images.pexels.com/photos/13284500/pexels-photo-13284500.jpeg"
+                            src="https://images.pexels.com/photos/932587/pexels-photo-932587.jpeg"
                             alt="Scentoria fragrance atelier"
                             className="w-full h-full object-cover"
                         />
                     </div>
-                    <div className="space-y-4 text-sm text-nature-muted leading-relaxed">
+ 
+                    {/* Text takes 7 columns */}
+                    <div className="md:col-span-7 space-y-4 text-sm text-nature-muted leading-relaxed">
                         <p>Scentoria was founded with one belief: everyone deserves to smell extraordinary. In Myanmar's fragrance market, authentic luxury scents remain out of reach for most. We set out to change that.</p>
                         <p>We carefully craft inspired fragrances that capture the character and soul of iconic designer and niche perfumes — using premium fragrance oils formulated to perform at the same level as their inspirations.</p>
                         <p>Every bottle is filled with care, and every order is personally packed by our team in Yangon. We're not a faceless warehouse — we're fragrance lovers who want to share the joy of great scent with you.</p>
+ 
                         <div className="flex gap-10 pt-5">
                             <div>
                                 <p className="font-serif text-3xl text-nature-olive">50+</p>
@@ -80,7 +96,7 @@ export default function AboutPage() {
                     </div>
                 </div>
             </div>
-
+ 
             {/* --- WHY CHOOSE SCENTORIA --- */}
             <div className="max-w-5xl mx-auto px-4 mb-24">
                 <p className={`${labelClass} text-center mb-2`}>Our Commitment</p>
@@ -103,7 +119,7 @@ export default function AboutPage() {
                     ))}
                 </div>
             </div>
-
+ 
             {/* --- FAQ --- */}
             <div className="max-w-3xl mx-auto px-4 mb-24">
                 <p className={`${labelClass} text-center mb-2`}>Good to Know</p>
@@ -128,7 +144,7 @@ export default function AboutPage() {
                     ))}
                 </div>
             </div>
-
+ 
             {/* --- GET IN TOUCH --- */}
             <div className="max-w-5xl mx-auto px-4 mb-24">
                 <p className={`${labelClass} text-center mb-2`}>We're Here to Help</p>
@@ -136,8 +152,8 @@ export default function AboutPage() {
                 <p className="text-center text-nature-muted text-sm mb-10">We're here to help you find your perfect fragrance.</p>
                 <div className="grid md:grid-cols-2 gap-5">
                     {[
-                        { icon: Phone, title: 'Phone / Viber', val: '+95 9 123 456 789' },
-                        { icon: Mail, title: 'Email', val: 'hello@scentoria.com' },
+                        { icon: Phone, title: 'Phone / Viber', val: '+95 09123456789' },
+                        { icon: Mail, title: 'Email', val: 'admin@scentoria.com' },
                         { icon: MapPin, title: 'Delivery Area', val: 'We deliver across Yangon and selected townships in Myanmar. Orders are dispatched from our Yangon warehouse.', isMulti: true },
                         { icon: Clock, title: 'Business Hours', val: 'Mon – Sat: 9:00 AM – 6:00 PM\nSunday: 10:00 AM – 4:00 PM', isMulti: true }
                     ].map((item, i) => (
@@ -156,8 +172,9 @@ export default function AboutPage() {
                     ))}
                 </div>
             </div>
-
+ 
             <SizeBanner />
-        </div>
+        </div >
     );
 }
+ 

@@ -89,21 +89,21 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
         } else if (cost % 100 !== 0) {
           errs[`variants.${i}.original_price`] = ['Prices need to be in steps of 100 MMK.'];
         } else if (cost > MAX_PRICE) {
-          errs[`variants.${i}.original_price`] = ['That price is too high.'];
+          errs[`variants.${i}.original_price`] = ['The price cannot be larger than 5,000,000 MMK.'];
         }
         if (!saleValid) {
           errs[`variants.${i}.sale_price`] = ['Please enter a valid price.'];
         } else if (sale % 100 !== 0) {
           errs[`variants.${i}.sale_price`] = ['Prices need to be in steps of 100 MMK.'];
         } else if (sale > MAX_PRICE) {
-          errs[`variants.${i}.sale_price`] = ['That price is too high.'];
+          errs[`variants.${i}.sale_price`] = ['The price cannot be larger than 5,000,000 MMK.'];
         } else if (costValid && sale < cost) {
           errs[`variants.${i}.sale_price`] = ['Selling price cannot be lower than cost price.'];
         }
         if (v.stock_quantity === '' || v.stock_quantity == null || Number.isNaN(stock) || stock < 0) {
           errs[`variants.${i}.stock_quantity`] = ['Please enter a valid stock amount.'];
         } else if (stock > MAX_STOCK) {
-          errs[`variants.${i}.stock_quantity`] = ['That stock amount is too high.'];
+          errs[`variants.${i}.stock_quantity`] = ['The stock amount cannot be higher than 10,000.'];
         }
       });
     }
@@ -281,7 +281,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/jpg"
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -310,6 +310,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
                 <input
                   value={form.image_url}
                   onChange={e => update('image_url', e.target.value)}
+                  maxLength={255}
                   placeholder="https://..."
                   className="w-full bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-lg px-3 py-2 text-xs outline-none transition-colors"
                 />
@@ -408,7 +409,7 @@ export default function ProductModal({ editTarget, form, update, handleNameChang
             <span className="text-nature-olive text-[10px] font-semibold uppercase tracking-wider block mb-1">Description</span>
             <textarea
               rows={2}
-              maxLength={1000}
+              maxLength={500}
               value={form.description}
               onChange={e => update('description', e.target.value)}
               className={`w-full bg-nature-card border border-nature-olive/20 focus:border-nature-olive/60 rounded-lg px-3 py-2 text-sm outline-none resize-none transition-colors ${HIDE_SCROLLBAR}`}

@@ -4,6 +4,7 @@ import api from '../../api';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import FieldError from '../../components/FieldError';
 import AdminPagination from '../../components/Admin/AdminPagination';
+import { useNotification } from '../../contexts/NotificationContext'; // adjust path if different
 
 function ScentModal({ scent, onClose, onSaved }) {
   const isEdit = Boolean(scent);
@@ -91,6 +92,7 @@ function ScentModal({ scent, onClose, onSaved }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Floral, Woody, Oriental"
+              maxLength={100}
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
             />
             <FieldError errors={errors} field="name" />
@@ -103,6 +105,7 @@ function ScentModal({ scent, onClose, onSaved }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the character of this scent family..."
+              maxLength={500}
               className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors resize-none"
             />
             <FieldError errors={errors} field="description" />
@@ -140,7 +143,7 @@ function ScentModal({ scent, onClose, onSaved }) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                   accept="image/png,image/jpeg,image/jpg"
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -163,6 +166,7 @@ function ScentModal({ scent, onClose, onSaved }) {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://..."
+                  maxLength={255}
                   className="w-full bg-white/70 border border-nature-border/80 focus:border-nature-olive/60 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors"
                 />
                 {imageUrl && (
@@ -330,7 +334,7 @@ export default function ScentManagement() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(8);
+  const [perPage, setPerPage] = useState(5);
 
   function fetchScents(signal) {
     if (!hasLoadedOnce) setLoading(true);
@@ -367,33 +371,40 @@ export default function ScentManagement() {
     setModalOpen(true);
   }
 
-  function handleSaved(saved) {
-    setScents((prev) => {
-      const exists = prev.some((s) => s.id === saved.id);
-      return exists ? prev.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...prev];
-    });
-    setModalOpen(false);
-  }
+  const notify = useNotification();
 
-  function handleDelete(id) {
-    confirm({
-      title: 'Delete Scent Family',
-      message: 'Delete this scent family? This cannot be undone.',
-      confirmLabel: 'Delete',
-      onConfirm: async () => {
-        setDeletingId(id);
-        try {
-          await api.delete(`/admin/scents/${id}`);
-          setScents((prev) => prev.filter((s) => s.id !== id));
-        } catch (err) {
-          console.error('Failed to delete scent:', err);
-          throw err;
-        } finally {
-          setDeletingId(null);
-        }
-      },
-    });
-  }
+function handleSaved(saved) {
+  const isEdit = Boolean(editingScent);
+  setScents((prev) => {
+    const exists = prev.some((s) => s.id === saved.id);
+    return exists ? prev.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...prev];
+  });
+  setModalOpen(false);
+  notify.success(isEdit ? 'Scent updated successfully.' : 'Scent created successfully.');
+}
+
+function handleDelete(id) {
+  confirm({
+    title: 'Delete Scent Family',
+    message: 'Delete this scent family? This cannot be undone.',
+    confirmLabel: 'Delete',
+    onConfirm: async () => {
+      setDeletingId(id);
+      try {
+        await api.delete(`/admin/scents/${id}`);
+        setScents((prev) => prev.filter((s) => s.id !== id));
+        notify.success('Scent deleted.');
+      } catch (err) {
+        console.error('Failed to delete scent:', err);
+        // Remove this if your axios interceptor already notifies on error responses
+        notify.error(err.response?.data?.message || 'Failed to delete scent.');
+        throw err;
+      } finally {
+        setDeletingId(null);
+      }
+    },
+  });
+}
 
   function toggleSort() {
     setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));

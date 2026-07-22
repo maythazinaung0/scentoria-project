@@ -264,7 +264,7 @@ export default function CheckoutPage() {
                       <label className={labelClass}>Full Name *</label>
                       <input required value={form.full_name} onChange={e => update('full_name', e.target.value)}
                         className={inputClass}
-                        placeholder="Ma Aye Aye" />
+                        placeholder="Your Name" />
                     </div>
 
                     <div>
@@ -287,13 +287,13 @@ export default function CheckoutPage() {
 
                     <div className="sm:col-span-2">
                       <label className={labelClass}>Delivery Address *</label>
-                      <textarea required rows={2} value={form.address} onChange={e => update('address', e.target.value)}
+                      <textarea required rows={1} value={form.address} onChange={e => update('address', e.target.value)}
                         className={`${inputClass} resize-none leading-snug`}
                         placeholder="No. 1, Street Name, Township, City" />
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center gap-4 border-t border-nature-border/40 pt-4">
+                  <div className=" flex items-center gap-1  pt-5">
                     <button type="button" onClick={handleSaveInfo}
                       className="bg-nature-olive hover:bg-nature-olive-dark text-white font-medium px-5 py-2 text-xs tracking-wider uppercase transition-colors rounded">
                       Save Details

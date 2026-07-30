@@ -64,7 +64,8 @@ COPY --from=cobol-build /build/sales_batch /var/www/html/cobol/bin/sales_batch
 RUN mkdir -p storage/app/cobol/input storage/app/cobol/output \
              storage/framework/{cache,sessions,views} storage/logs \
     && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod +x cobol/bin/sales_batch
+    && chmod +x cobol/bin/sales_batch \
+    && sed -i 's/^listen = .*/listen = 127.0.0.1:9000/' /etc/php/8.5/fpm/pool.d/www.conf
 
 COPY docker/nginx.conf /etc/nginx/sites-available/default
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

@@ -25,13 +25,15 @@ use Illuminate\Http\Request;
 // Public routes (no auth needed)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
-Route::post('/check-email', [AuthController::class, 'checkEmail'])->middleware('throttle:20,1');
+Route::get('/check-email', [AuthController::class, 'checkEmail'])->middleware('throttle:20,1');
 Route::get('/scents', [ScentController::class, 'index']);
 Route::get('/notes',[NoteController::class,'index']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/scents/{scent}', [ScentController::class, 'show']);
 
+// temporary
+Route::get('/debug-stateful', fn () => response()->json(config('sanctum.stateful')));
 // search
 Route::get('/brands', [BrandController::class, 'search']); 
 Route::get('/brands-list', [ProductFilterController::class, 'brands']);

@@ -14,5 +14,6 @@ php artisan view:cache
 if [ "$RUN_MIGRATIONS" = "true" ]; then
     php artisan migrate --force
 fi
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 exec supervisord -c /etc/supervisor/conf.d/supervisord.conf

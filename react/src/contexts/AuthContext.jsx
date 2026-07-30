@@ -9,11 +9,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true); // true until we know if a session already exists
 
   useEffect(() => {
-    api.get('/me', { skipErrorToast: true })
-      .then(({ data }) => setUser(data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
+  axios.get(`${import.meta.env.VITE_BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true })
+    .then(() => api.get('/me', { skipErrorToast: true }))
+    .then(({ data }) => setUser(data))
+    .catch(() => setUser(null))
+    .finally(() => setLoading(false));
+}, []);
 
   async function signIn(email, password) {
     // Sanctum requires the CSRF cookie before any stateful POST

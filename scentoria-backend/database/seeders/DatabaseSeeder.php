@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
         AdminSeeder::class,
+         BrandSeeder::class,
+            ScentSeeder::class,
+            NoteSeeder::class,
+            ProductSeeder::class,
     ]);
     }
 }

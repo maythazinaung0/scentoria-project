@@ -15,5 +15,7 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then
     php artisan migrate --force
 fi
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
+if [ "$RUN_SEED" = "true" ]; then
+    php artisan db:seed --force
+fi
 exec supervisord -c /etc/supervisor/conf.d/supervisord.conf

@@ -2,23 +2,23 @@ import axios from 'axios';
 import { notifyFromOutsideReact } from './contexts/NotificationBridge';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-   withCredentials: true, 
-    withXSRFToken: true, 
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost/api',
   headers: { 
     'Accept': 'application/json',
     'Content-Type': 'application/json'
   },
 });
 
-// Interceptor to automatically attach Token if using Bearer token strategy
+// Attach the Bearer token (Sanctum API token) to every request, if present.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
-}, (error) => Promise.reject(error));
+}, (error) => {
+  return Promise.reject(error);
+});
 
 // Debounce success toasts: rapid-fire updates (e.g. clicking +/- repeatedly)
 // collapse into a single toast shown after things settle, instead of one per request.

@@ -13,15 +13,38 @@ class ScentSeeder extends Seeder
             [
                 'name' => 'Oud',
                 'description' => 'A deep, resinous, and smoky scent family built around agarwood — rich, warm, and long-lasting.',
-                'image_url' => 'https://images.unsplash.com/photo-1541643600914-78b084683601',
             ],
             [
                 'name' => 'Fougère',
                 'description' => 'A classic aromatic family built on lavender, oakmoss, and coumarin — herbal, fresh, and slightly sweet.',
-                'image_url' => 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539',
             ],
             [
                 'name' => 'Floral',
                 'description' => 'A bouquet-driven family centered on flower notes like rose, jasmine, and lily — soft, romantic, and elegant.',
-                'image_url' => 'https://images.unsplash.com/photo-1615368144592-f7995089d5a2',
             ],
+            [
+                'name' => 'Woody',
+                'description' => 'A warm, grounding family built on notes like sandalwood, cedar, and vetiver — earthy and enduring.',
+            ],
+            [
+                'name' => 'Fresh',
+                'description' => 'A crisp, clean family drawing on citrus, green, and aquatic notes — light and invigorating.',
+            ],
+            [
+                'name' => 'Amber',
+                'description' => 'A warm, resinous, slightly sweet family built on labdanum, vanilla, and balsamic notes.',
+            ],
+            [
+                'name' => 'Musk',
+                'description' => 'A soft, skin-like family known for its subtle, sensual, and long-lasting base character.',
+            ],
+        ];
+
+        foreach ($scents as $scent) {
+            Scent::firstOrCreate(
+                ['name' => $scent['name']],
+                ['description' => $scent['description']]
+            );
+        }
+    }
+}

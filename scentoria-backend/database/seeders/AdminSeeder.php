@@ -14,12 +14,13 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@scentoria.com',
-            'password' => Hash::make('change-this-password'),
-            'role' => 'admin',
-            
-                    ]);
+        User::firstOrCreate(
+            ['email' => 'admin@scentoria.com'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('change-this-password'),
+                'role' => 'admin',
+            ]
+        );
     }
 }

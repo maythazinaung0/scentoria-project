@@ -12,47 +12,44 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+{
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        if (! auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        $request->session()->regenerate();
-        return response()->json(['user' => auth()->user()]);
+    if (! auth()->attempt($credentials)) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
-    public function logout(Request $request)
-    {
-        Auth::guard('web')->logout();
+    $user = auth()->user();
+    $token = $user->createToken('auth-token')->plainTextToken;
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+    return response()->json(['user' => $user, 'token' => $token]);
+}
 
-        return response()->json(['message' => 'Logged out successfully']);
-    }
+public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+    return response()->json(['message' => 'Logged out successfully']);
+}
 
-    public function register(RegisterRequest $request)
-    {
-        $validated = $request->validated();
+public function register(RegisterRequest $request)
+{
+    $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone_number' => $validated['phone_number'] ?? null,
-            'password' => Hash::make($validated['password']),
-            'role' => 'customer',
-        ]);
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'phone_number' => $validated['phone_number'] ?? null,
+        'password' => Hash::make($validated['password']),
+        'role' => 'customer',
+    ]);
 
-        auth()->login($user);
-        $request->session()->regenerate();
+    $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json(['user' => $user], 201);
-    }
+    return response()->json(['user' => $user, 'token' => $token], 201);
+}
 
 public function checkEmail(Request $request)
 {

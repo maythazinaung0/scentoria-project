@@ -9,41 +9,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true); // true until we know if a session already exists
 
   useEffect(() => {
-  axios.get(`${import.meta.env.VITE_BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true })
-    .then(() => api.get('/me', { skipErrorToast: true }))
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    setUser(null);
+    setLoading(false);
+    return;
+  }
+  api.get('/me', { skipErrorToast: true })
     .then(({ data }) => setUser(data))
-    .catch(() => setUser(null))
+    .catch(() => {
+      localStorage.removeItem('auth_token');
+      setUser(null);
+    })
     .finally(() => setLoading(false));
 }, []);
 
-  async function signIn(email, password) {
-    // Sanctum requires the CSRF cookie before any stateful POST
-    await axios.get(`${import.meta.env.VITE_BASE_URL}/sanctum/csrf-cookie`, {
-      withCredentials: true,
-    });
-
-    const { data } = await api.post('/login', { email, password });
-    setUser(data.user);
-    return data.user;
-  }
-
-  async function signUp({ name, email, phone_number, password, password_confirmation }) {
-  await axios.get(`${import.meta.env.VITE_BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true });
-  const { data } = await api.post('/register', { name, email, phone_number, password, password_confirmation });
+async function signIn(email, password) {
+  const { data } = await api.post('/login', { email, password });
+  localStorage.setItem('auth_token', data.token);
   setUser(data.user);
   return data.user;
 }
 
+async function signUp({ name, email, phone_number, password, password_confirmation }) {
+  const { data } = await api.post('/register', { name, email, phone_number, password, password_confirmation });
+  localStorage.setItem('auth_token', data.token);
+  setUser(data.user);
+  return data.user;
+}
 
-   async function signOut() {
-       try {
-         await api.post('/logout');
-       } catch (err) {
-         console.error('Logout request failed:', err.response?.status, err.response?.data);
-       } finally {
-         setUser(null);
-       }
-     }
+async function signOut() {
+  try {
+    await api.post('/logout');
+  } catch (err) {
+    console.error('Logout request failed:', err.response?.status, err.response?.data);
+  } finally {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+  }
+}
 
   const isAdmin = user?.role === 'admin';
 

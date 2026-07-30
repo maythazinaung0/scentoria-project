@@ -13,12 +13,12 @@ const api = axios.create({
 
 // Interceptor to automatically attach Token if using Bearer token strategy
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token'); // Or wherever you store your auth token
-   if (token && config.url?.startsWith('/admin')) {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
-});
+}, (error) => Promise.reject(error));
 
 // Debounce success toasts: rapid-fire updates (e.g. clicking +/- repeatedly)
 // collapse into a single toast shown after things settle, instead of one per request.

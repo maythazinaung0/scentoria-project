@@ -11,16 +11,15 @@ const formatMMK = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount);
  
-// Same visual language as ProductDetailPage / CartPage
-const panelClass = "bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]";
-const labelClass = "text-[11px] uppercase tracking-[0.25em] text-nature-olive font-medium";
+const panelClass = "bg-white/45 dark:bg-night-card backdrop-blur-xl border border-white/60 dark:border-night-border rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)] transition-colors duration-300";
+const labelClass = "text-[11px] uppercase tracking-[0.25em] text-nature-olive dark:text-nature-sage font-medium";
  
 function CartItemImage({ src, alt }) {
   const [imgError, setImgError] = useState(false);
   const showImage = src && !imgError;
  
   return (
-    <div className="w-16 h-16 flex-shrink-0 rounded-lg border border-nature-border/60 bg-white/50 overflow-hidden flex items-center justify-center">
+    <div className="w-16 h-16 flex-shrink-0 rounded-lg border border-nature-border/60 dark:border-night-border bg-white/50 dark:bg-night-bg overflow-hidden flex items-center justify-center transition-colors duration-300">
       {showImage ? (
         <img
           src={src}
@@ -29,7 +28,7 @@ function CartItemImage({ src, alt }) {
           className="w-full h-full object-cover"
         />
       ) : (
-        <Package className="w-6 h-6 text-nature-sand" strokeWidth={1} />
+        <Package className="w-6 h-6 text-nature-olive dark:text-nature-sage" strokeWidth={1} />
       )}
     </div>
   );
@@ -88,17 +87,17 @@ export default function CartDrawer() {
  
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-nature-bg z-50 shadow-2xl
+        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text z-50 shadow-2xl
         transform transition-transform duration-300 ease-in-out flex flex-col
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-nature-border/70">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-nature-border/70 dark:border-night-border transition-colors duration-300">
           <div>
             <p className={labelClass}>{itemCount > 0 ? `${itemCount} Item${itemCount !== 1 ? 's' : ''}` : 'Empty'}</p>
-            <h2 className="font-serif text-2xl text-nature-dark leading-tight mt-0.5">Your Cart</h2>
+            <h2 className="font-serif text-2xl text-nature-dark dark:text-night-text leading-tight mt-0.5">Your Cart</h2>
           </div>
-          <button onClick={closeCart} className="text-nature-muted hover:text-nature-olive transition-colors">
+          <button onClick={closeCart} className="text-nature-muted dark:text-night-muted hover:text-nature-olive dark:hover:text-nature-sage transition-colors">
             <X size={22} strokeWidth={1.5} />
           </button>
         </div>
@@ -107,8 +106,8 @@ export default function CartDrawer() {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3">
-              <ShoppingBag className="w-10 h-10 text-nature-sand" strokeWidth={1} />
-              <p className="text-nature-muted text-sm">Your cart is empty.</p>
+              <ShoppingBag className="w-10 h-10 text-nature-olive dark:text-nature-sage" strokeWidth={1} />
+              <p className="text-nature-muted dark:text-night-muted text-sm">Your cart is empty.</p>
             </div>
           ) : (
             items.map((item) => {
@@ -119,34 +118,34 @@ export default function CartDrawer() {
                 <div key={item.id} className={`${panelClass} flex gap-4 p-3`}>
                   <CartItemImage src={variant.product?.image_url} alt={variant.product?.name} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-nature-dark truncate">
+                    <p className="text-sm font-medium text-nature-dark dark:text-night-text truncate">
                       {variant.product?.name}
                     </p>
-                    <p className="text-nature-muted text-xs mt-0.5">
+                    <p className="text-nature-muted dark:text-night-muted text-xs mt-0.5">
                       {variant.size}
                     </p>
  
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center border border-nature-border/70 rounded-md bg-white/40">
+                      <div className="flex items-center border border-nature-border/70 dark:border-night-border rounded-md bg-white/40 dark:bg-night-bg transition-colors duration-300">
                         <button
                           onClick={() => updateQuantity(item, item.quantity - 1)}
-                          className="w-6 h-6 text-nature-dark text-sm flex items-center justify-center hover:bg-white/50 transition-colors"
+                          className="w-6 h-6 text-nature-dark dark:text-night-text text-sm flex items-center justify-center hover:bg-white/50 dark:hover:bg-night-card transition-colors"
                           aria-label="Decrease quantity"
                         >−</button>
-                        <span className="w-7 text-center text-xs font-medium text-nature-dark">{item.quantity}</span>
+                        <span className="w-7 text-center text-xs font-medium text-nature-dark dark:text-night-text">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item, item.quantity + 1)}
-                          className="w-6 h-6 text-nature-dark text-sm flex items-center justify-center hover:bg-white/50 transition-colors"
+                          className="w-6 h-6 text-nature-dark dark:text-night-text text-sm flex items-center justify-center hover:bg-white/50 dark:hover:bg-night-card transition-colors"
                           aria-label="Increase quantity"
                         >+</button>
                       </div>
-                      <p className="text-nature-olive text-sm font-semibold">
+                      <p className="text-nature-olive dark:text-nature-sage text-sm font-semibold">
                         {formatMMK(variant.sale_price * item.quantity)}
                       </p>
                     </div>
  
                     {hasError && (
-                      <p className="text-red-500 text-[11px] font-medium mt-1">{errors[item.id]}</p>
+                      <p className="text-red-500 dark:text-red-400 text-[11px] font-medium mt-1">{errors[item.id]}</p>
                     )}
                   </div>
                 </div>
@@ -158,21 +157,21 @@ export default function CartDrawer() {
         {/* Footer */}
         {items.length > 0 && (
           <div className={`${panelClass} mx-6 mb-6 p-5 space-y-4`}>
-            <div className="flex justify-between items-baseline pb-4 border-b border-nature-border/50">
+            <div className="flex justify-between items-baseline pb-4 border-b border-nature-border/50 dark:border-night-border">
               <span className={labelClass}>Subtotal</span>
-              <span className="text-nature-olive font-serif text-2xl">{formatMMK(total)}</span>
+              <span className="text-nature-olive dark:text-nature-sage font-serif text-2xl">{formatMMK(total)}</span>
             </div>
             <Link
               to="/cart"
               onClick={closeCart}
-              className="block w-full text-center bg-nature-olive hover:bg-nature-olive-dark text-white py-3 rounded-md text-xs font-medium tracking-[0.15em] uppercase transition-colors"
+              className="block w-full text-center bg-nature-olive dark:bg-nature-sage hover:bg-nature-olive-dark dark:hover:bg-nature-olive text-white dark:text-night-bg py-3 rounded-md text-xs font-medium tracking-[0.15em] uppercase transition-colors shadow-lg"
             >
               View Cart
             </Link>
             <Link
               to="/checkout"
               onClick={closeCart}
-              className="block w-full text-center border border-nature-olive text-nature-olive py-3 rounded-md text-xs font-medium tracking-[0.15em] uppercase hover:bg-nature-sage/10 transition-colors"
+              className="block w-full text-center border border-nature-olive dark:border-nature-sage text-nature-olive dark:text-nature-sage py-3 rounded-md text-xs font-medium tracking-[0.15em] uppercase hover:bg-nature-sage/10 dark:hover:bg-night-card transition-colors"
             >
               Checkout
             </Link>
@@ -182,4 +181,3 @@ export default function CartDrawer() {
     </>
   );
 }
- 

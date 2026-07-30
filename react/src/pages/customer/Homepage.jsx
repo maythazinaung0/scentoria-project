@@ -6,8 +6,8 @@ import SizeBanner from '../../components/SizeBanner';
 import api from '../../api';
 
 const HERO_IMAGES = [
-    'https://images.pexels.com/photos/15539722/pexels-photo-15539722.png',
-    'https://images.pexels.com/photos/1190829/pexels-photo-1190829.jpeg?auto=compress&cs=tinysrgb&w=1400',
+    'https://images.pexels.com/photos/3910071/pexels-photo-3910071.jpeg',
+    'https://images.pexels.com/photos/1190829/pexels-photo-1190829.jpeg?auto=compress&w=1260&h=750&dpr=2',
 ];
 
 const STATEMENT_IMAGE =
@@ -56,7 +56,7 @@ function ScrollRow({ children }) {
                 <button
                     onClick={() => scrollByAmount(-1)}
                     aria-label="Scroll left"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full bg-white shadow-[0_4px_16px_-2px_rgba(0,0,0,0.2)] flex items-center justify-center text-nature-dark hover:bg-nature-olive hover:text-white transition-colors opacity-0 group-hover/row:opacity-100"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full bg-white dark:bg-night-card shadow-[0_4px_16px_-2px_rgba(0,0,0,0.2)] flex items-center justify-center text-nature-dark dark:text-night-text hover:bg-nature-olive hover:text-white transition-colors opacity-0 group-hover/row:opacity-100"
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -73,7 +73,7 @@ function ScrollRow({ children }) {
                 <button
                     onClick={() => scrollByAmount(1)}
                     aria-label="Scroll right"
-                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full bg-white shadow-[0_4px_16px_-2px_rgba(0,0,0,0.2)] flex items-center justify-center text-nature-dark hover:bg-nature-olive hover:text-white transition-colors opacity-0 group-hover/row:opacity-100"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full bg-white dark:bg-night-card shadow-[0_4px_16px_-2px_rgba(0,0,0,0.2)] flex items-center justify-center text-nature-dark dark:text-night-text hover:bg-nature-olive hover:text-white transition-colors opacity-0 group-hover/row:opacity-100"
                 >
                     <ChevronRight className="w-4 h-4" />
                 </button>
@@ -89,7 +89,7 @@ function ScentTile({ scent }) {
     return (
         <Link
             to={`/scents/${scent.id}`}
-            className="group relative block aspect-[3/4] overflow-hidden rounded-sm bg-nature-sand/20"
+            className="group relative block aspect-[3/4] overflow-hidden rounded-sm bg-nature-sand/20 dark:bg-night-card"
         >
             {showImage ? (
                 <img
@@ -151,15 +151,12 @@ export default function HomePage() {
         load();
     }, []);
 
-    // Show a generous first screenful, but never force a layout that assumes
-    // a fixed count — the row scrolls gracefully at any total.
     const visibleScents = scents.slice(0, 12);
-
-    // Only the latest 8 products, newest first.
     const latestProducts = [...products].sort((a, b) => b.id - a.id).slice(0, 8);
 
     return (
-        <div className="bg-nature-bg text-nature-dark">
+        // 👇 အဓိက ပြင်ဆင်လိုက်သည့်နေရာ (Dark Mode Background နှင့် Text အရောင်များ ထည့်သွင်းခြင်း)
+        <div className="bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text transition-colors duration-300">
 
             {/* --- HERO: full-bleed, cinematic --- */}
             <section className="relative h-[92vh] min-h-[560px] w-full overflow-hidden">
@@ -205,18 +202,18 @@ export default function HomePage() {
             {/* --- SCENT PROFILES --- */}
             <section className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-14">
-                    <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">Fragrance Families</p>
-                    <h2 className="font-serif text-3xl sm:text-4xl">Explore Scent Profiles</h2>
+                    <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive dark:text-nature-sage mb-3">Fragrance Families</p>
+                    <h2 className="font-serif text-3xl sm:text-4xl text-nature-dark dark:text-night-text">Explore Scent Profiles</h2>
                 </div>
 
                 {loading ? (
                     <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide">
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="min-w-[280px] max-w-[280px] aspect-[3/4] rounded-sm bg-nature-sand/20 animate-pulse shrink-0" />
+                            <div key={i} className="min-w-[280px] max-w-[280px] aspect-[3/4] rounded-sm bg-nature-sand/20 dark:bg-night-card animate-pulse shrink-0" />
                         ))}
                     </div>
                 ) : visibleScents.length === 0 ? (
-                    <p className="text-nature-muted text-sm text-center py-6">
+                    <p className="text-nature-muted dark:text-night-muted text-sm text-center py-6">
                         Scent profiles are coming soon.
                     </p>
                 ) : (
@@ -233,7 +230,7 @@ export default function HomePage() {
                     <div className="text-center pt-14">
                         <Link
                             to="/scents"
-                            className="text-nature-dark text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive inline-flex items-center gap-2"
+                            className="text-nature-dark dark:text-night-text text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive dark:hover:text-nature-sage inline-flex items-center gap-2"
                         >
                             View All Scent Profiles <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
@@ -268,14 +265,14 @@ export default function HomePage() {
             {/* --- FEATURED FRAGRANCES: latest 8 products --- */}
             <section className="py-24 px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-14">
-                    <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-3">New Arrivals</p>
-                    <h2 className="font-serif text-3xl sm:text-4xl">Featured Fragrances</h2>
+                    <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive dark:text-nature-sage mb-3">New Arrivals</p>
+                    <h2 className="font-serif text-3xl sm:text-4xl text-nature-dark dark:text-night-text">Featured Fragrances</h2>
                 </div>
 
                 {loading ? (
                     <div className="flex overflow-x-auto gap-6 pb-6 scrollbar-hide">
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="min-w-[280px] max-w-[280px] h-96 bg-nature-sand/20 rounded-xl animate-pulse shrink-0" />
+                            <div key={i} className="min-w-[280px] max-w-[280px] h-96 bg-nature-sand/20 dark:bg-night-card rounded-xl animate-pulse shrink-0" />
                         ))}
                     </div>
                 ) : (
@@ -291,7 +288,7 @@ export default function HomePage() {
                 <div className="text-center pt-8">
                     <Link
                         to="/products"
-                        className="text-nature-dark text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive inline-flex items-center gap-2"
+                        className="text-nature-dark dark:text-night-text text-xs font-medium tracking-[0.2em] uppercase transition-colors hover:text-nature-olive dark:hover:text-nature-sage inline-flex items-center gap-2"
                     >
                         View All Fragrances <ArrowRight className="w-3.5 h-3.5" />
                     </Link>

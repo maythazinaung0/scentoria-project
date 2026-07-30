@@ -14,7 +14,7 @@ function ScentTile({ scent }) {
     return (
         <Link
             to={`/scents/${scent.id}`}
-            className="group relative block aspect-[3/4] overflow-hidden rounded-sm bg-nature-sand/20"
+            className="group relative block aspect-[3/4] overflow-hidden rounded-sm bg-nature-sand/20 dark:bg-night-card"
         >
             {showImage ? (
                 <img
@@ -25,7 +25,7 @@ function ScentTile({ scent }) {
                 />
             ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-8 h-8 text-nature-sand" strokeWidth={1} />
+                    <Package className="w-8 h-8 text-nature-sand dark:text-night-muted" strokeWidth={1} />
                 </div>
             )}
 
@@ -99,17 +99,17 @@ export default function ScentProfilesPage() {
     const rangeEnd = Math.min(pageStart + perPage, scents.length);
 
     return (
-        <div className="min-h-screen bg-nature-bg">
+        <div className="min-h-screen bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text transition-colors duration-300">
 
             {/* --- EDITORIAL HEADER --- */}
             <div className="pt-24 pb-14 px-6 text-center flex flex-col items-center">
-                <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-4">
+                <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive dark:text-nature-sage mb-4">
                     Knowledge & Discovery
                 </p>
-                <h1 className="font-serif text-5xl sm:text-6xl text-nature-dark mb-5">
+                <h1 className="font-serif text-5xl sm:text-6xl text-nature-dark dark:text-night-text mb-5">
                     Scent Profiles
                 </h1>
-                <p className="text-nature-muted max-w-md leading-relaxed text-sm">
+                <p className="text-nature-muted dark:text-night-muted max-w-md leading-relaxed text-sm">
                     Every fragrance belongs to a family. Understanding these families
                     helps you discover perfumes that resonate with your personal style.
                 </p>
@@ -118,20 +118,22 @@ export default function ScentProfilesPage() {
             <div className="max-w-7xl mx-auto px-6 pb-24">
 
                 {/* --- TOOLBAR --- */}
-                <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-nature-border/60 mb-12">
-                    <p className="text-nature-muted text-xs uppercase tracking-wider">
+                <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-nature-border/60 dark:border-night-border/60 mb-12">
+                    <p className="text-nature-muted dark:text-night-muted text-xs uppercase tracking-wider">
                         {scents.length} Scent Profile{scents.length !== 1 ? 's' : ''}
                     </p>
 
-                    <label className="flex items-center gap-2 text-xs text-nature-muted">
+                    <label className="flex items-center gap-2 text-xs text-nature-muted dark:text-night-muted">
                         <span className="uppercase tracking-wider">Show</span>
                         <select
                             value={perPage}
                             onChange={(e) => setPerPage(Number(e.target.value))}
-                            className="bg-transparent border border-nature-border/70 rounded-md px-2.5 py-1.5 text-nature-dark text-xs outline-none focus:border-nature-olive transition-colors"
+                            className="bg-transparent border border-nature-border/70 dark:border-night-border rounded-md px-2.5 py-1.5 text-nature-dark dark:text-night-text text-xs outline-none focus:border-nature-olive dark:focus:border-nature-sage transition-colors"
                         >
                             {PER_PAGE_OPTIONS.map(n => (
-                                <option key={n} value={n}>{n} per page</option>
+                                <option key={n} value={n} className="bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text">
+                                    {n} per page
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -140,13 +142,13 @@ export default function ScentProfilesPage() {
                 {loading ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="aspect-[3/4] rounded-sm bg-nature-sand/20 animate-pulse" />
+                            <div key={i} className="aspect-[3/4] rounded-sm bg-nature-sand/20 dark:bg-night-card animate-pulse" />
                         ))}
                     </div>
                 ) : scents.length === 0 ? (
                     <div className="text-center py-24">
-                        <p className="font-serif text-xl text-nature-dark mb-2">No scent profiles yet</p>
-                        <p className="text-nature-muted text-sm">Check back soon as our collection grows.</p>
+                        <p className="font-serif text-xl text-nature-dark dark:text-night-text mb-2">No scent profiles yet</p>
+                        <p className="text-nature-muted dark:text-night-muted text-sm">Check back soon as our collection grows.</p>
                     </div>
                 ) : (
                     <>
@@ -158,7 +160,7 @@ export default function ScentProfilesPage() {
 
                         <div className="flex flex-col items-center gap-3 mt-16">
                             <Pagination page={clampedPage} totalPages={totalPages} onChange={setPage} />
-                            <p className="text-nature-muted text-xs mt-2">
+                            <p className="text-nature-muted dark:text-night-muted text-xs mt-2">
                                 Showing {rangeStart}–{rangeEnd} of {scents.length}
                             </p>
                         </div>

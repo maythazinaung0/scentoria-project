@@ -113,7 +113,7 @@ export default function SearchModal({ isOpen, onClose, searchQuery, onSearchChan
                     </button>
                 </div>
 
-                <div className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {searchQuery.length >= 2 && (
                         <div className="grid gap-1">
                             {results.length === 0 ? (

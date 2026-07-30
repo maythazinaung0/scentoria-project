@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
+// Theme Context Import
+// Theme Context Import
+import { useTheme, ThemeProvider } from './contexts/ThemeContext';
+
 // Layout & Auth
 import CustomerLayout from './components/CustomerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
@@ -35,37 +39,39 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <Routes>
-      <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
-        <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/scents" element={<ScentProfilesPage />} />
-        <Route path="/scents/:id" element={<ScentDetailPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/orders/:id" element={<OrderConfirmPage />} />
-        <Route path="/products" element={<ProductsPage searchQuery={searchQuery} />} />
-        <Route path="/products/:slug" element={<ProductDetailPage />} />
-      </Route>
-
-      <Route path="/admin" element={<ProtectedAdminRoute />}>
-        <Route element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="wallet" element={<AdminWallet />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="scents" element={<AdminScents />} />
-          <Route path="notes" element={<AdminNotes />} />
-          <Route path="brands" element={<AdminBrands />} />
+    <ThemeProvider>
+      <Routes>
+        <Route element={<CustomerLayout searchQuery={searchQuery} onSearchChange={setSearchQuery} />}>
+          <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/scents" element={<ScentProfilesPage />} />
+          <Route path="/scents/:id" element={<ScentDetailPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/orders/:id" element={<OrderConfirmPage />} />
+          <Route path="/products" element={<ProductsPage searchQuery={searchQuery} />} />
+          <Route path="/products/:slug" element={<ProductDetailPage />} />
         </Route>
-      </Route>
 
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        <Route path="/admin" element={<ProtectedAdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="wallet" element={<AdminWallet />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="scents" element={<AdminScents />} />
+            <Route path="notes" element={<AdminNotes />} />
+            <Route path="brands" element={<AdminBrands />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </ThemeProvider>
   );
 }
 

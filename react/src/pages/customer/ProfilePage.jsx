@@ -21,10 +21,10 @@ const formatMMK = (amount) =>
     }).format(amount ?? 0);
 
 const STATUS_STYLES = {
-    pending: 'bg-nature-sage/30 text-nature-olive',
-    processing: 'bg-nature-blue/30 text-nature-blue',
-    completed: 'bg-emerald-100 text-emerald-700',
-    cancelled: 'bg-red-100 text-red-700',
+    pending: 'bg-nature-sage/30 text-nature-olive dark:bg-night-border dark:text-nature-sage',
+    processing: 'bg-nature-blue/30 text-nature-blue dark:bg-night-border dark:text-blue-400',
+    completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400',
+    cancelled: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
 };
 
 const STATUS_ICONS = {
@@ -35,10 +35,10 @@ const STATUS_ICONS = {
 };
 
 const TOPUP_STATUS_STYLES = {
-    pending: 'bg-nature-sage/30 text-nature-olive',
-    completed: 'bg-emerald-100 text-emerald-700',
-    failed: 'bg-red-100 text-red-700',
-    rejected: 'bg-red-100 text-red-700',
+    pending: 'bg-nature-sage/30 text-nature-olive dark:bg-night-border dark:text-nature-sage',
+    completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400',
+    failed: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
+    rejected: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
 };
 
 const PAYMENT_METHOD_LABELS = {
@@ -46,10 +46,10 @@ const PAYMENT_METHOD_LABELS = {
     cbpay: 'CB Pay',
 };
 
-const panelClass = "bg-white/45 backdrop-blur-xl border border-white/60 rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)]";
-const modalPanelClass = "bg-white border border-nature-border/50 rounded-lg shadow-[0_20px_60px_-15px_rgba(44,53,39,0.35)]";
-const inputClass = "w-full bg-transparent border-b border-nature-border/80 focus:border-nature-olive rounded-none px-0 py-1.5 text-nature-dark text-sm outline-none transition-colors placeholder:text-nature-muted/60";
-const labelClass = "block text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-1";
+const panelClass = "bg-white/45 dark:bg-night-card backdrop-blur-xl border border-white/60 dark:border-night-border rounded-lg shadow-[0_4px_24px_-12px_rgba(44,53,39,0.15)] dark:shadow-[0_4px_24px_-12px_rgba(0,0,0,0.5)] transition-colors duration-300";
+const modalPanelClass = "bg-white dark:bg-night-card border border-nature-border/50 dark:border-night-border rounded-lg shadow-[0_20px_60px_-15px_rgba(44,53,39,0.35)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] transition-colors duration-300";
+const inputClass = "w-full bg-transparent border-b border-nature-border/80 dark:border-night-border focus:border-nature-olive dark:focus:border-nature-sage rounded-none px-0 py-1.5 text-nature-dark dark:text-night-text text-sm outline-none transition-colors placeholder:text-nature-muted/60 dark:placeholder:text-night-muted/60";
+const labelClass = "block text-nature-muted dark:text-night-muted text-[10px] tracking-[0.2em] uppercase mb-1";
 
 function CopyableField({ label, value }) {
     const [copied, setCopied] = useState(false);
@@ -66,12 +66,12 @@ function CopyableField({ label, value }) {
     }
 
     return (
-        <div className="flex items-center justify-between gap-2 bg-white/70 border border-nature-border/50 rounded-md px-3 py-2">
+        <div className="flex items-center justify-between gap-2 bg-white/70 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-md px-3 py-2 transition-colors duration-300">
             <div className="min-w-0">
-                <p className="text-nature-muted text-[10px] tracking-[0.15em] uppercase">{label}</p>
-                <p className="text-nature-dark text-sm font-medium truncate">{value}</p>
+                <p className="text-nature-muted dark:text-night-muted text-[10px] tracking-[0.15em] uppercase">{label}</p>
+                <p className="text-nature-dark dark:text-night-text text-sm font-medium truncate">{value}</p>
             </div>
-            <button type="button" onClick={handleCopy} className="flex-shrink-0 text-nature-olive hover:text-nature-olive-dark transition-colors">
+            <button type="button" onClick={handleCopy} className="flex-shrink-0 text-nature-olive dark:text-nature-sage hover:text-nature-olive-dark dark:hover:text-nature-sage/80 transition-colors">
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" strokeWidth={1.5} />}
             </button>
         </div>
@@ -89,11 +89,11 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
     for (let i = start; i <= end; i++) pages.push(i);
 
     return (
-        <div className="flex items-center justify-center gap-1.5 pt-6 mt-4 border-t border-nature-border/50">
+        <div className="flex items-center justify-center gap-1.5 pt-6 mt-4 border-t border-nature-border/50 dark:border-night-border transition-colors duration-300">
             <button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted hover:text-nature-olive disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
+                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted dark:text-night-muted hover:text-nature-olive dark:hover:text-nature-sage disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
             >
                 <ChevronLeft className="w-3.5 h-3.5" /> Prev
             </button>
@@ -101,23 +101,23 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
             <div className="flex items-center gap-1">
                 {start > 1 && (
                     <>
-                        <button onClick={() => onPageChange(1)} className="w-8 h-8 text-xs rounded-md text-nature-muted hover:bg-nature-sage/20 transition-colors">1</button>
-                        {start > 2 && <span className="text-nature-muted text-xs px-1">…</span>}
+                        <button onClick={() => onPageChange(1)} className="w-8 h-8 text-xs rounded-md text-nature-muted dark:text-night-muted hover:bg-nature-sage/20 dark:hover:bg-night-border transition-colors">1</button>
+                        {start > 2 && <span className="text-nature-muted dark:text-night-muted text-xs px-1">…</span>}
                     </>
                 )}
                 {pages.map(p => (
                     <button
                         key={p}
                         onClick={() => onPageChange(p)}
-                        className={`w-8 h-8 text-xs rounded-md transition-colors ${p === currentPage ? 'bg-nature-olive text-white' : 'text-nature-muted hover:bg-nature-sage/20'}`}
+                        className={`w-8 h-8 text-xs rounded-md transition-colors ${p === currentPage ? 'bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg font-medium' : 'text-nature-muted dark:text-night-muted hover:bg-nature-sage/20 dark:hover:bg-night-border'}`}
                     >
                         {p}
                     </button>
                 ))}
                 {end < totalPages && (
                     <>
-                        {end < totalPages - 1 && <span className="text-nature-muted text-xs px-1">…</span>}
-                        <button onClick={() => onPageChange(totalPages)} className="w-8 h-8 text-xs rounded-md text-nature-muted hover:bg-nature-sage/20 transition-colors">{totalPages}</button>
+                        {end < totalPages - 1 && <span className="text-nature-muted dark:text-night-muted text-xs px-1">…</span>}
+                        <button onClick={() => onPageChange(totalPages)} className="w-8 h-8 text-xs rounded-md text-nature-muted dark:text-night-muted hover:bg-nature-sage/20 dark:hover:bg-night-border transition-colors">{totalPages}</button>
                     </>
                 )}
             </div>
@@ -125,7 +125,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
             <button
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted hover:text-nature-olive disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
+                className="flex items-center gap-1 px-3 py-2 text-xs uppercase tracking-wide text-nature-muted dark:text-night-muted hover:text-nature-olive dark:hover:text-nature-sage disabled:opacity-30 disabled:hover:text-nature-muted transition-colors"
             >
                 Next <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -386,38 +386,38 @@ export default function ProfilePage() {
 
     if (loading || authLoading) {
         return (
-            <div className="min-h-screen bg-nature-bg flex items-center justify-center">
-                <div className="w-6 h-6 border border-nature-olive border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen bg-nature-bg dark:bg-night-bg flex items-center justify-center transition-colors duration-300">
+                <div className="w-6 h-6 border border-nature-olive dark:border-nature-sage border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-nature-bg text-nature-dark pt-20">
+        <div className="min-h-screen bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text pt-20 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
 
-                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive font-medium mb-2">Your Account</p>
-                <div className="flex items-baseline justify-between mb-8 pb-5 border-b border-nature-border/70">
+                <p className="text-[11px] uppercase tracking-[0.35em] text-nature-olive dark:text-nature-sage font-medium mb-2">Your Account</p>
+                <div className="flex items-baseline justify-between mb-8 pb-5 border-b border-nature-border/70 dark:border-night-border transition-colors duration-300">
                     <div>
-                        <h1 className="font-serif text-3xl sm:text-4xl text-nature-dark tracking-tight">Welcome back, {displayName}</h1>
-                        <p className="text-nature-muted text-sm mt-1">{user?.email}</p>
+                        <h1 className="font-serif text-3xl sm:text-4xl text-nature-dark dark:text-night-text tracking-tight">Welcome back, {displayName}</h1>
+                        <p className="text-nature-muted dark:text-night-muted text-sm mt-1">{user?.email}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
 
                     <aside className={`${panelClass} p-5 h-fit xl:sticky xl:top-24 flex flex-col`}>
-                        <div className="flex items-center gap-3 pb-5 mb-4 border-b border-nature-border/60">
-                            <div className="w-11 h-11 rounded-full bg-nature-olive/15 text-nature-olive font-serif text-lg flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-center gap-3 pb-5 mb-4 border-b border-nature-border/60 dark:border-night-border">
+                            <div className="w-11 h-11 rounded-full bg-nature-olive/15 dark:bg-nature-sage/20 text-nature-olive dark:text-nature-sage font-serif text-lg flex items-center justify-center flex-shrink-0">
                                 {displayName.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                                <p className="text-nature-dark text-sm font-medium truncate">{displayName}</p>
-                                <p className="text-nature-muted text-xs truncate">{user?.email}</p>
+                                <p className="text-nature-dark dark:text-night-text text-sm font-medium truncate">{displayName}</p>
+                                <p className="text-nature-muted dark:text-night-muted text-xs truncate">{user?.email}</p>
                             </div>
                         </div>
 
-                        <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-2 px-1">Account Menu</p>
+                        <p className="text-nature-muted dark:text-night-muted text-[10px] tracking-[0.2em] uppercase mb-2 px-1">Account Menu</p>
                         <nav className="space-y-2">
                             {sidebarItems.map((item) => {
                                 const Icon = item.icon;
@@ -427,14 +427,14 @@ export default function ProfilePage() {
                                         key={item.id}
                                         onClick={() => setActiveTab(item.id)}
                                         className={`w-full flex items-center gap-3 px-4 py-4 rounded-md text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-nature-olive text-white shadow-sm'
-                                            : 'text-nature-muted hover:bg-nature-sage/20 hover:text-nature-dark'
+                                            ? 'bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg shadow-sm'
+                                            : 'text-nature-muted dark:text-night-muted hover:bg-nature-sage/20 dark:hover:bg-night-border hover:text-nature-dark dark:hover:text-night-text'
                                             }`}
                                     >
-                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-white' : 'text-nature-olive'}`} strokeWidth={1.5} />
+                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-white dark:text-night-bg' : 'text-nature-olive dark:text-nature-sage'}`} strokeWidth={1.5} />
                                         <span className="truncate">{item.label}</span>
                                         {item.count !== undefined && item.count > 0 && (
-                                            <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-nature-sage/30 text-nature-olive'}`}>
+                                            <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 dark:bg-night-bg/30 text-white dark:text-night-bg' : 'bg-nature-sage/30 dark:bg-night-border text-nature-olive dark:text-nature-sage'}`}>
                                                 {item.count}
                                             </span>
                                         )}
@@ -443,10 +443,10 @@ export default function ProfilePage() {
                             })}
                         </nav>
 
-                        <div className="mt-6 pt-5 border-t border-nature-border/60">
-                            <div className="bg-nature-bg/60 rounded-md px-4 py-3.5">
-                                <p className="text-nature-muted text-[10px] tracking-[0.2em] uppercase mb-1">Wallet Balance</p>
-                                <p className="text-nature-olive font-serif text-lg">{formatMMK(walletBalance)}</p>
+                        <div className="mt-6 pt-5 border-t border-nature-border/60 dark:border-night-border">
+                            <div className="bg-nature-bg/60 dark:bg-night-bg rounded-md px-4 py-3.5 transition-colors duration-300">
+                                <p className="text-nature-muted dark:text-night-muted text-[10px] tracking-[0.2em] uppercase mb-1">Wallet Balance</p>
+                                <p className="text-nature-olive dark:text-nature-sage font-serif text-lg">{formatMMK(walletBalance)}</p>
                             </div>
                         </div>
                     </aside>
@@ -454,28 +454,28 @@ export default function ProfilePage() {
 
                         {activeTab === 'wallet' && (
                             <div className={`${panelClass} p-6`}>
-                                <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Virtual Wallet</h3>
+                                <h3 className="text-nature-olive dark:text-nature-sage text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Virtual Wallet</h3>
 
-                                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-nature-border/60 mb-6">
+                                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-nature-border/60 dark:border-night-border mb-6">
                                     <div>
                                         <p className={labelClass}>Available Balance</p>
-                                        <p className="font-serif text-4xl text-nature-olive mt-1 ">{formatMMK(walletBalance)}</p>
+                                        <p className="font-serif text-4xl text-nature-olive dark:text-nature-sage mt-1">{formatMMK(walletBalance)}</p>
                                         {pendingTopup > 0 && (
-                                            <p className="text-nature-tan text-xs mt-2 flex items-center gap-1">
+                                            <p className="text-nature-tan dark:text-nature-sage/80 text-xs mt-2 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> +{formatMMK(pendingTopup)} pending approval
                                             </p>
                                         )}
                                     </div>
                                     <button
                                         onClick={() => { setShowTopupForm(v => !v); setTopupError(''); }}
-                                        className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark text-white font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors"
+                                        className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark dark:bg-nature-sage dark:hover:bg-nature-sage/80 text-white dark:text-night-bg font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors"
                                     >
                                         <Plus className="w-3.5 h-3.5" /> Request Top Up
                                     </button>
                                 </div>
 
                                 {showTopupForm && (
-                                    <div className="pb-6 mb-6 border-b border-nature-border/60 space-y-5">
+                                    <div className="pb-6 mb-6 border-b border-nature-border/60 dark:border-night-border space-y-5">
 
                                         <div>
                                             <label className={labelClass}>1. Send Money Via</label>
@@ -484,8 +484,8 @@ export default function ProfilePage() {
                                                     <button
                                                         key={m.value} type="button" onClick={() => setTopupMethod(m.value)}
                                                         className={`px-3 py-1.5 rounded border text-xs tracking-wide transition-colors ${topupMethod === m.value
-                                                            ? 'bg-nature-olive border-nature-olive text-white'
-                                                            : 'border-nature-border text-nature-muted hover:border-nature-olive'
+                                                            ? 'bg-nature-olive border-nature-olive dark:bg-nature-sage dark:border-nature-sage text-white dark:text-night-bg font-medium'
+                                                            : 'border-nature-border dark:border-night-border text-nature-muted dark:text-night-muted hover:border-nature-olive dark:hover:border-nature-sage'
                                                             }`}
                                                     >
                                                         {m.label}
@@ -494,22 +494,22 @@ export default function ProfilePage() {
                                             </div>
 
                                             {selectedPaymentInfo ? (
-                                                <div className="bg-nature-bg/60 border border-nature-border/50 rounded-md p-4 flex flex-col sm:flex-row gap-4">
+                                                <div className="bg-nature-bg/60 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-md p-4 flex flex-col sm:flex-row gap-4 transition-colors duration-300">
                                                     {selectedPaymentInfo.qr_code_url && (
                                                         <img
                                                             src={selectedPaymentInfo.qr_code_url}
                                                             alt={`${PAYMENT_METHOD_LABELS[topupMethod]} QR code`}
-                                                            className="w-32 h-32 object-contain bg-white rounded-md border border-nature-border/40 flex-shrink-0 mx-auto sm:mx-0"
+                                                            className="w-32 h-32 object-contain bg-white rounded-md border border-nature-border/40 dark:border-night-border flex-shrink-0 mx-auto sm:mx-0"
                                                         />
                                                     )}
                                                     <div className="flex-1 space-y-2">
                                                         <CopyableField label="Account Name" value={selectedPaymentInfo.account_name} />
                                                         <CopyableField label="Account Number" value={selectedPaymentInfo.account_number} />
-                                                        <p className="text-nature-muted text-[11px]">Scan the QR code or send manually to this account, then fill in the details below.</p>
+                                                        <p className="text-nature-muted dark:text-night-muted text-[11px]">Scan the QR code or send manually to this account, then fill in the details below.</p>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <p className="text-nature-muted text-xs bg-nature-bg/60 border border-nature-border/50 rounded-md p-3">
+                                                <p className="text-nature-muted dark:text-night-muted text-xs bg-nature-bg/60 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-md p-3 transition-colors duration-300">
                                                     Payment details are unavailable right now — please refresh the page.
                                                 </p>
                                             )}
@@ -552,28 +552,28 @@ export default function ProfilePage() {
                                                     <input
                                                         type="file" accept="image/png,image/jpeg,image/jpg"
                                                         onChange={e => setTopupImage(e.target.files[0])}
-                                                        className="w-full text-nature-dark text-sm mt-1.5 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-nature-sage/30 file:text-nature-olive hover:file:bg-nature-sage/50"
+                                                        className="w-full text-nature-dark dark:text-night-text text-sm mt-1.5 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-nature-sage/30 file:text-nature-olive dark:file:bg-night-border dark:file:text-nature-sage hover:file:bg-nature-sage/50 dark:hover:file:bg-night-border/80 transition-colors"
                                                     />
                                                     <FieldError errors={topupErrors} field="transaction_image" />
                                                 </div>
                                             </div>
 
-                                            {topupError && <p className="text-red-600 text-sm bg-red-50/80 border border-red-200 px-4 py-3 rounded-md">{topupError}</p>}
+                                            {topupError && <p className="text-red-600 dark:text-red-400 text-sm bg-red-50/80 dark:bg-red-950/35 border border-red-200 dark:border-red-900/40 px-4 py-3 rounded-md">{topupError}</p>}
                                             <div className="flex items-center gap-4">
                                                 <button type="submit" disabled={topupLoading}
-                                                    className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-50 text-white font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">
+                                                    className="flex items-center gap-2 bg-nature-olive hover:bg-nature-olive-dark dark:bg-nature-sage dark:hover:bg-nature-sage/80 disabled:opacity-50 text-white dark:text-night-bg font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">
                                                     <Send className="w-3.5 h-3.5" /> {topupLoading ? 'Sending...' : 'Submit for Review'}
                                                 </button>
-                                                <button type="button" onClick={() => setShowTopupForm(false)} className="text-nature-muted hover:text-nature-dark text-xs uppercase tracking-wide transition-colors">Cancel</button>
+                                                <button type="button" onClick={() => setShowTopupForm(false)} className="text-nature-muted dark:text-night-muted hover:text-nature-dark dark:hover:text-night-text text-xs uppercase tracking-wide transition-colors">Cancel</button>
                                             </div>
                                         </form>
                                     </div>
                                 )}
 
                                 {topupSuccess && (
-                                    <div className="mb-6 bg-nature-sage/20 border border-nature-sage/40 rounded-md px-4 py-3 flex items-center gap-2">
-                                        <CheckCircle className="w-4 h-4 text-nature-olive flex-shrink-0" strokeWidth={1.5} />
-                                        <p className="text-nature-olive text-sm">Top-up request sent! Admin will review it shortly.</p>
+                                    <div className="mb-6 bg-nature-sage/20 dark:bg-nature-sage/10 border border-nature-sage/40 dark:border-nature-sage/30 rounded-md px-4 py-3 flex items-center gap-2 transition-colors duration-300">
+                                        <CheckCircle className="w-4 h-4 text-nature-olive dark:text-nature-sage flex-shrink-0" strokeWidth={1.5} />
+                                        <p className="text-nature-olive dark:text-nature-sage text-sm">Top-up request sent! Admin will review it shortly.</p>
                                     </div>
                                 )}
 
@@ -582,73 +582,84 @@ export default function ProfilePage() {
                                         <p className={labelClass}>Top-Up History</p>
                                         <div className="max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                                             {topupRequests.map(req => {
-                                                const statusStyle = TOPUP_STATUS_STYLES[req.status] ?? 'bg-nature-sand/30 text-nature-muted';
+                                                const statusStyle = TOPUP_STATUS_STYLES[req.status] ?? 'bg-nature-sand/30 text-nature-muted dark:bg-night-border dark:text-night-muted';
                                                 return (
-                                                    <div key={req.id} className="flex items-center justify-between border-b border-nature-border/40 py-3 last:border-0">
+                                                    <div key={req.id} className="flex items-center justify-between border-b border-nature-border/40 dark:border-night-border py-3 last:border-0 transition-colors duration-300">
                                                         <div>
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-nature-dark text-sm font-medium">+{formatMMK(req.deposit_amount)}</p>
-                                                                <span className="text-nature-muted text-[11px] bg-nature-sage/20 px-1.5 py-0.5 rounded">
+                                                                <p className="text-nature-dark dark:text-night-text text-sm font-medium">+{formatMMK(req.deposit_amount)}</p>
+                                                                <span className="text-nature-muted dark:text-night-muted text-[11px] bg-nature-sage/20 dark:bg-night-border px-1.5 py-0.5 rounded">
                                                                     {PAYMENT_METHOD_LABELS[req.topup_channel] ?? req.topup_channel}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-nature-muted text-xs mt-0.5">{new Date(req.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                                            {req.transaction_reference && (
-                                                                <p className="text-nature-subtle text-[11px] font-mono mt-0.5">Ref: {req.transaction_reference}</p>
-                                                            )}
+                                                            <p className="text-nature-muted dark:text-night-muted text-xs mt-0.5">
+                                                                {new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </p>
                                                         </div>
-                                                        <span className={`text-xs px-2.5 py-1 rounded-full capitalize ${statusStyle}`}>{req.status}</span>
+                                                        <span className={`text-[11px] px-2.5 py-1 rounded-full capitalize font-medium ${statusStyle}`}>
+                                                            {req.status}
+                                                        </span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-nature-muted text-sm text-center py-6">No top-up request history found.</p>
+                                    <p className="text-nature-muted dark:text-night-muted text-xs text-center py-6">No top-up requests yet.</p>
                                 )}
                             </div>
                         )}
 
                         {activeTab === 'orders' && (
                             <div className={`${panelClass} p-6`}>
-                                <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Order History</h3>
+                                <h3 className="text-nature-olive dark:text-nature-sage text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Order History</h3>
 
-                                {orders.length === 0 ? (
-                                    <div className="text-center py-16">
-                                        <Package className="w-10 h-10 text-nature-sand mx-auto mb-4" strokeWidth={1} />
-                                        <p className="text-nature-muted text-sm mb-5">You haven't placed any orders yet.</p>
-                                        <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Browse Fragrances</Link>
+                                {selectedOrder ? (
+                                    <div>
+                                        <button
+                                            onClick={() => setSelectedOrder(null)}
+                                            className="inline-flex items-center gap-1.5 text-xs text-nature-olive dark:text-nature-sage hover:underline mb-4 font-medium"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" /> Back to all orders
+                                        </button>
+                                        <OrderDetail order={selectedOrder} onCancel={confirmCancelOrder} />
                                     </div>
-                                ) : (
-                                    <>
-                                        <div className="divide-y divide-nature-border/60">
-                                            {orders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE).map(order => {
-                                                const StatusIcon = STATUS_ICONS[order.status] ?? Clock;
-                                                return (
-                                                    <button
-                                                        key={order.id}
-                                                        onClick={() => setSelectedOrder(order)}
-                                                        className="w-full flex items-center justify-between py-4 text-left hover:bg-nature-bg/40 transition-colors -mx-2 px-2 rounded-md"
-                                                    >
-                                                        <div>
-                                                            <p className="text-nature-dark text-sm font-medium">
-                                                                Order #<span className="font-mono text-nature-muted text-xs">{order.id}</span>
-                                                            </p>
-                                                            <p className="text-nature-muted text-xs mt-0.5">
-                                                                {new Date(order.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                            </p>
+                                ) : orders.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <div className="space-y-3">
+                                            {orders
+                                                .slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE)
+                                                .map(order => {
+                                                    const statusStyle = STATUS_STYLES[order.status] ?? 'bg-nature-sand/30 text-nature-muted dark:bg-night-border dark:text-night-muted';
+                                                    const StatusIcon = STATUS_ICONS[order.status] ?? Clock;
+
+                                                    return (
+                                                        <div
+                                                            key={order.id}
+                                                            onClick={() => setSelectedOrder(order)}
+                                                            className="bg-white/70 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-nature-olive dark:hover:border-nature-sage cursor-pointer transition-colors"
+                                                        >
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <p className="text-nature-dark dark:text-night-text font-medium text-sm">Order #{order.id}</p>
+                                                                    <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full capitalize font-medium ${statusStyle}`}>
+                                                                        <StatusIcon className="w-3 h-3" />
+                                                                        {order.status}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-nature-muted dark:text-night-muted text-xs">
+                                                                    {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {order.items?.length || 0} items
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center justify-between sm:justify-end gap-4">
+                                                                <p className="text-nature-olive dark:text-nature-sage font-serif text-base">{formatMMK(order.total_amount)}</p>
+                                                                <span className="text-nature-muted dark:text-night-muted hover:text-nature-dark dark:hover:text-night-text transition-colors">
+                                                                    <ArrowRight className="w-4 h-4" />
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-nature-olive font-semibold text-sm">{formatMMK(order.total_amount)}</span>
-                                                            <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full ${STATUS_STYLES[order.status]}`}>
-                                                                <StatusIcon className="w-3 h-3" />
-                                                                <span className="capitalize hidden sm:inline">{order.status}</span>
-                                                            </span>
-                                                            <ChevronDown className="w-4 h-4 text-nature-muted -rotate-90" />
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
+                                                    );
+                                                })}
                                         </div>
 
                                         <Pagination
@@ -656,49 +667,60 @@ export default function ProfilePage() {
                                             totalPages={Math.ceil(orders.length / ITEMS_PER_PAGE)}
                                             onPageChange={setOrdersPage}
                                         />
-                                    </>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <Package className="w-10 h-10 text-nature-muted/40 dark:text-night-muted mx-auto mb-3" strokeWidth={1.5} />
+                                        <p className="text-nature-dark dark:text-night-text font-serif text-lg mb-1">No orders yet</p>
+                                        <p className="text-nature-muted dark:text-night-muted text-xs mb-5">Explore our collection and find your signature scent.</p>
+                                        <Link to="/shop" className="inline-block bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase hover:bg-nature-olive-dark dark:hover:bg-nature-sage/80 transition-colors">
+                                            Browse Shop
+                                        </Link>
+                                    </div>
                                 )}
                             </div>
                         )}
 
                         {activeTab === 'wishlist' && (
                             <div className={`${panelClass} p-6`}>
-                                <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Your Wishlist</h3>
+                                <h3 className="text-nature-olive dark:text-nature-sage text-[11px] tracking-[0.25em] uppercase font-medium mb-5">My Wishlist</h3>
 
-                                {wishlists.length === 0 ? (
-                                    <div className="text-center py-16">
-                                        <Bookmark className="w-10 h-10 text-nature-sand mx-auto mb-4" strokeWidth={1} />
-                                        <p className="text-nature-muted text-sm mb-5">Your wishlist is currently empty.</p>
-                                        <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Discover Favorites</Link>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {wishlists.slice((wishlistPage - 1) * WISHLIST_PER_PAGE, wishlistPage * WISHLIST_PER_PAGE).map(item => (
-                                                <div key={item.id} className="relative flex items-center gap-4 border border-nature-border/60 rounded-md p-4 hover:border-nature-olive/40 transition-colors">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => confirmRemoveWishlist(item)}
-                                                        title="Remove from wishlist"
-                                                        className="absolute top-2.5 right-2.5 text-nature-muted hover:text-red-600 transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                                                    </button>
-
-                                                    <div className="w-16 h-16 bg-nature-bg rounded-md border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                                        {item.product_image
-                                                            ? <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
-                                                            : <Package className="w-6 h-6 text-nature-sand" strokeWidth={1.5} />}
+                                {wishlists.length > 0 ? (
+                                    <div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {wishlists
+                                                .slice((wishlistPage - 1) * WISHLIST_PER_PAGE, wishlistPage * WISHLIST_PER_PAGE)
+                                                .map(item => (
+                                                    <div key={item.id} className="bg-white/70 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-lg p-4 flex flex-col justify-between transition-colors duration-300">
+                                                        <div>
+                                                            <Link to={`/products/${item.product_id}`} className="block group mb-3">
+                                                                {item.product_image && (
+                                                                    <div className="w-full h-36 bg-nature-bg dark:bg-night-card rounded-md overflow-hidden mb-3">
+                                                                        <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                    </div>
+                                                                )}
+                                                                <h4 className="font-serif text-nature-dark dark:text-night-text text-sm group-hover:text-nature-olive dark:group-hover:text-nature-sage transition-colors line-clamp-1">{item.product_name}</h4>
+                                                            </Link>
+                                                            <p className="text-nature-olive dark:text-nature-sage font-serif text-sm mb-4">{formatMMK(item.product_price)}</p>
+                                                        </div>
+                                                        <div className="flex items-center justify-between pt-3 border-t border-nature-border/40 dark:border-night-border">
+                                                            <Link
+                                                                to={`/products/${item.product_id}`}
+                                                                className="text-xs uppercase tracking-wider text-nature-olive dark:text-nature-sage hover:underline font-medium"
+                                                            >
+                                                                View
+                                                            </Link>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => confirmRemoveWishlist(item)}
+                                                                className="text-nature-muted dark:text-night-muted hover:text-red-600 dark:hover:text-red-400 transition-colors p-1"
+                                                                title="Remove"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 min-w-0 pr-6">
-                                                        <h4 className="text-nature-dark font-medium text-sm truncate">{item.product_name}</h4>
-                                                        <p className="text-nature-muted text-xs capitalize mt-0.5">{item.product_type || 'Perfume'}</p>
-                                                        <Link to={`/products/${item.product_slug}`} className="inline-flex items-center gap-1 text-nature-olive hover:text-nature-olive-dark text-xs font-medium mt-2 transition-colors">
-                                                            View Product <ArrowRight className="w-3 h-3" />
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                ))}
                                         </div>
 
                                         <Pagination
@@ -706,232 +728,241 @@ export default function ProfilePage() {
                                             totalPages={Math.ceil(wishlists.length / WISHLIST_PER_PAGE)}
                                             onPageChange={setWishlistPage}
                                         />
-                                    </>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <Bookmark className="w-10 h-10 text-nature-muted/40 dark:text-night-muted mx-auto mb-3" strokeWidth={1.5} />
+                                        <p className="text-nature-dark dark:text-night-text font-serif text-lg mb-1">Your wishlist is empty</p>
+                                        <p className="text-nature-muted dark:text-night-muted text-xs mb-5">Save items you love to find them easily later.</p>
+                                        <Link to="/shop" className="inline-block bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase hover:bg-nature-olive-dark dark:hover:bg-nature-sage/80 transition-colors">
+                                            Explore Shop
+                                        </Link>
+                                    </div>
                                 )}
                             </div>
                         )}
 
                         {activeTab === 'reviews' && (
                             <div className={`${panelClass} p-6`}>
-                                <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Your Reviews</h3>
+                                <h3 className="text-nature-olive dark:text-nature-sage text-[11px] tracking-[0.25em] uppercase font-medium mb-5">My Reviews</h3>
 
-                                {reviews.length === 0 ? (
-                                    <div className="text-center py-16">
-                                        <MessageSquare className="w-10 h-10 text-nature-sand mx-auto mb-4" strokeWidth={1} />
-                                        <p className="text-nature-muted text-sm mb-5">You haven't left any reviews yet.</p>
-                                        <Link to="/products" className="inline-flex items-center bg-nature-olive hover:bg-nature-olive-dark text-white px-6 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">Browse Products to Review</Link>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="divide-y divide-nature-border/60">
-                                            {reviews.slice((reviewsPage - 1) * ITEMS_PER_PAGE, reviewsPage * ITEMS_PER_PAGE).map(review => {
-                                                const isEditing = editingReviewId === review.id;
-                                                return (
-                                                    <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <h4 className="text-nature-dark font-medium text-sm">{review.product_name || `Product #${review.product_id}`}</h4>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-md bg-nature-bg border border-nature-border/60 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                                                    {review.product_image
-                                                                        ? <img src={review.product_image} alt={review.product_name} className="w-full h-full object-cover" />
-                                                                        : <Package className="w-4 h-4 text-nature-sand" strokeWidth={1.5} />}
-                                                                </div>
-                                                                <div>
-                                                                    <Link to={`/products/${review.product_slug}`} className="text-nature-dark font-medium text-sm hover:text-nature-olive transition-colors">
-                                                                        {review.product_name || `Product #${review.product_slug}`}
-                                                                    </Link>
-                                                                    {review.brand_name && <p className="text-nature-muted text-xs">{review.brand_name}</p>}
-                                                                </div>
+                                {reviews.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <div className="space-y-4">
+                                            {reviews
+                                                .slice((reviewsPage - 1) * ITEMS_PER_PAGE, reviewsPage * ITEMS_PER_PAGE)
+                                                .map(review => {
+                                                    const isEditing = editingReviewId === review.id;
+                                                    return (
+                                                        <div key={review.id} className="bg-white/70 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-lg p-4 transition-colors duration-300">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <Link to={`/products/${review.product_id}`} className="font-serif text-nature-dark dark:text-night-text text-sm hover:text-nature-olive dark:hover:text-nature-sage transition-colors">
+                                                                    {review.product_name || `Product #${review.product_id}`}
+                                                                </Link>
+                                                                <span className="text-nature-muted dark:text-night-muted text-xs">
+                                                                    {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                </span>
                                                             </div>
 
-                                                            {!isEditing && (
-                                                                <div className="flex items-center gap-3 flex-shrink-0">
-                                                                    <div className="flex items-center gap-0.5">
-                                                                        {[...Array(5)].map((_, i) => (
-                                                                            <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand'}`} />
+                                                            {isEditing ? (
+                                                                <div className="space-y-3 mt-3 pt-3 border-t border-nature-border/40 dark:border-night-border">
+                                                                    <div>
+                                                                        <label className={labelClass}>Rating</label>
+                                                                        <div className="flex items-center gap-1 mt-1">
+                                                                            {[1, 2, 3, 4, 5].map(star => (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    key={star}
+                                                                                    onClick={() => setEditRating(star)}
+                                                                                    className="p-0.5 text-nature-muted dark:text-night-muted hover:text-amber-500 transition-colors"
+                                                                                >
+                                                                                    <Star className={`w-5 h-5 ${star <= editRating ? 'text-amber-500 fill-amber-500' : ''}`} />
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className={labelClass}>Comment</label>
+                                                                        <textarea
+                                                                            value={editComment}
+                                                                            onChange={e => setEditComment(e.target.value)}
+                                                                            rows={3}
+                                                                            maxLength={1000}
+                                                                            className="w-full bg-transparent border border-nature-border/80 dark:border-night-border focus:border-nature-olive dark:focus:border-nature-sage rounded-md p-2.5 text-nature-dark dark:text-night-text text-sm outline-none transition-colors"
+                                                                        />
+                                                                    </div>
+                                                                    {editError && <p className="text-red-600 dark:text-red-400 text-xs">{editError}</p>}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={editSaving}
+                                                                            onClick={() => handleSaveReview(review.id)}
+                                                                            className="bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg font-medium px-4 py-1.5 rounded text-xs tracking-wider uppercase hover:bg-nature-olive-dark dark:hover:bg-nature-sage/80 disabled:opacity-50 transition-colors"
+                                                                        >
+                                                                            {editSaving ? 'Saving...' : 'Save'}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={cancelEditReview}
+                                                                            className="text-nature-muted dark:text-night-muted hover:text-nature-dark dark:hover:text-night-text text-xs uppercase tracking-wide transition-colors px-2 py-1.5"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div>
+                                                                    <div className="flex items-center gap-1 mb-2">
+                                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                                            <Star
+                                                                                key={star}
+                                                                                className={`w-3.5 h-3.5 ${star <= review.rating ? 'text-amber-500 fill-amber-500' : 'text-nature-border dark:text-night-border'}`}
+                                                                            />
                                                                         ))}
                                                                     </div>
-                                                                    <button onClick={() => startEditReview(review)} title="Edit review" className="text-nature-muted hover:text-nature-olive transition-colors">
-                                                                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                                                                    </button>
-                                                                    <button onClick={() => confirmDeleteReview(review)} title="Delete review" className="text-nature-muted hover:text-red-600 transition-colors">
-                                                                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-                                                                    </button>
+                                                                    {review.comment && (
+                                                                        <p className="text-nature-muted dark:text-night-muted text-sm mb-3">{review.comment}</p>
+                                                                    )}
+                                                                    <div className="flex items-center gap-4 pt-2 border-t border-nature-border/40 dark:border-night-border">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => startEditReview(review)}
+                                                                            className="flex items-center gap-1 text-xs uppercase tracking-wider text-nature-olive dark:text-nature-sage hover:underline font-medium"
+                                                                        >
+                                                                            <Pencil className="w-3.5 h-3.5" /> Edit
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => confirmDeleteReview(review)}
+                                                                            className="flex items-center gap-1 text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:underline font-medium"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
-
-                                                        {isEditing ? (
-                                                            <div className="bg-nature-bg/60 border border-nature-border/50 rounded-md p-4 space-y-3">
-                                                                <div>
-                                                                    <label className={labelClass}>Rating</label>
-                                                                    <div className="flex items-center gap-1 mt-1">
-                                                                        {[1, 2, 3, 4, 5].map(n => (
-                                                                            <button key={n} type="button" onClick={() => setEditRating(n)}>
-                                                                                <Star className={`w-5 h-5 transition-colors ${n <= editRating ? 'text-amber-500 fill-amber-500' : 'text-nature-sand hover:text-amber-300'}`} />
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                                <div>
-                                                                    <label className={labelClass}>Comment</label>
-                                                                    <textarea
-                                                                        value={editComment}
-                                                                        onChange={e => setEditComment(e.target.value)}
-                                                                        rows={3}
-                                                                        className="w-full bg-white/70 border border-nature-border/70 focus:border-nature-olive rounded-md px-3 py-2 text-nature-dark text-sm outline-none transition-colors resize-none mt-1"
-                                                                        placeholder="Share your thoughts on this fragrance..."
-                                                                    />
-                                                                </div>
-                                                                {editError && <p className="text-red-600 text-xs">{editError}</p>}
-                                                                <div className="flex items-center gap-3">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleSaveReview(review.id)}
-                                                                        disabled={editSaving}
-                                                                        className="bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-50 text-white px-4 py-2 rounded-md text-xs font-medium tracking-wide uppercase transition-colors"
-                                                                    >
-                                                                        {editSaving ? 'Saving...' : 'Save Changes'}
-                                                                    </button>
-                                                                    <button type="button" onClick={cancelEditReview} className="text-nature-muted hover:text-nature-dark text-xs uppercase tracking-wide transition-colors flex items-center gap-1">
-                                                                        <X className="w-3.5 h-3.5" /> Cancel
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {review.title && <p className="text-nature-dark font-semibold text-xs">{review.title}</p>}
-                                                                {review.comment && <p className="text-nature-muted text-xs bg-nature-bg/60 p-3 rounded-md border border-nature-border/40 italic">"{review.comment}"</p>}
-                                                                <p className="text-nature-subtle text-[11px] text-right">{new Date(review.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
                                         </div>
+
                                         <Pagination
                                             currentPage={reviewsPage}
                                             totalPages={Math.ceil(reviews.length / ITEMS_PER_PAGE)}
                                             onPageChange={setReviewsPage}
                                         />
-
-                                    </>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <MessageSquare className="w-10 h-10 text-nature-muted/40 dark:text-night-muted mx-auto mb-3" strokeWidth={1.5} />
+                                        <p className="text-nature-dark dark:text-night-text font-serif text-lg mb-1">No reviews yet</p>
+                                        <p className="text-nature-muted dark:text-night-muted text-xs mb-5">Share your thoughts on products you've purchased.</p>
+                                    </div>
                                 )}
                             </div>
                         )}
 
                         {activeTab === 'security' && (
                             <div className={`${panelClass} p-6`}>
-                                <h3 className="text-nature-olive text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Security Settings</h3>
+                                <h3 className="text-nature-olive dark:text-nature-sage text-[11px] tracking-[0.25em] uppercase font-medium mb-5">Security Settings</h3>
 
-                                <div className="flex items-center justify-between gap-4 pb-5 border-b border-nature-border/60 mb-5">
-                                    <div>
-                                        <p className="text-nature-dark text-sm font-medium">Account Password</p>
-                                        <p className="text-nature-muted text-xs mt-0.5">Update your password regularly to keep your account secure.</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setShowPasswordForm(v => !v); setPasswordFormError(''); setPasswordSuccess(''); }}
-                                        className="bg-nature-olive hover:bg-nature-olive-dark text-white px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors flex-shrink-0"
-                                    >
-                                        {showPasswordForm ? 'Hide Form' : 'Change Password'}
-                                    </button>
-                                </div>
-
-                                {showPasswordForm && (
-                                    <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
-                                        <div>
-                                            <label className={labelClass}>Current Password *</label>
-                                            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
-                                                placeholder="Enter current password" className={inputClass} />
-                                            <FieldError errors={passwordErrors} field="current_password" />
-                                        </div>
-                                        <div>
-                                            <label className={labelClass}>New Password *</label>
-                                            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                                                placeholder="Min 8 characters" className={inputClass} />
-                                            <FieldError errors={passwordErrors} field="new_password" />
-
-                                            {newPassword.length > 0 && (
-                                                <ul className="mt-2 space-y-1">
-                                                    {passwordChecks.map(check => (
-                                                        <li key={check.label} className={`text-[11px] flex items-center gap-1.5 ${check.pass ? 'text-nature-olive' : 'text-nature-muted'}`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${check.pass ? 'bg-nature-olive' : 'bg-nature-sand'}`} />
-                                                            {check.label}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className={labelClass}>Confirm New Password *</label>
-                                            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                                                placeholder="Re-enter new password" className={inputClass} />
+                                <div className="space-y-6">
+                                    <div className="bg-white/70 dark:bg-night-bg border border-nature-border/50 dark:border-night-border rounded-lg p-5 transition-colors duration-300">
+                                        <div className="flex items-center justify-between flex-wrap gap-4">
+                                            <div>
+                                                <h4 className="text-nature-dark dark:text-night-text font-medium text-sm mb-1">Password</h4>
+                                                <p className="text-nature-muted dark:text-night-muted text-xs">Update your password regularly to keep your account secure.</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setShowPasswordForm(v => !v); setPasswordSuccess(''); setPasswordFormError(''); }}
+                                                className="bg-nature-sage/30 dark:bg-night-border text-nature-olive dark:text-nature-sage font-medium px-4 py-2 rounded-md text-xs tracking-wider uppercase hover:bg-nature-sage/50 dark:hover:bg-night-border/80 transition-colors"
+                                            >
+                                                {showPasswordForm ? 'Cancel' : 'Change Password'}
+                                            </button>
                                         </div>
 
-                                        {passwordFormError && (
-                                            <p className="text-red-600 text-sm bg-red-50/80 border border-red-200 px-4 py-3 rounded-md">{passwordFormError}</p>
+                                        {passwordSuccess && (
+                                            <div className="mt-4 bg-nature-sage/20 dark:bg-nature-sage/10 border border-nature-sage/40 dark:border-nature-sage/30 rounded-md px-4 py-3 flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4 text-nature-olive dark:text-nature-sage flex-shrink-0" strokeWidth={1.5} />
+                                                <p className="text-nature-olive dark:text-nature-sage text-sm">{passwordSuccess}</p>
+                                            </div>
                                         )}
 
-                                        <div className="flex items-center gap-4 pt-2">
-                                            <button type="submit" disabled={passwordLoading}
-                                                className="bg-nature-olive hover:bg-nature-olive-dark disabled:opacity-50 text-white font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase transition-colors">
-                                                {passwordLoading ? 'Updating...' : 'Save Password'}
-                                            </button>
-                                            <button type="button" onClick={() => setShowPasswordForm(false)} className="text-nature-muted hover:text-nature-dark text-xs uppercase tracking-wide transition-colors">Cancel</button>
-                                        </div>
-                                    </form>
-                                )}
+                                        {showPasswordForm && (
+                                            <form onSubmit={handleChangePassword} className="mt-5 pt-5 border-t border-nature-border/40 dark:border-night-border space-y-4" noValidate>
+                                                <div>
+                                                    <label className={labelClass}>Current Password *</label>
+                                                    <input
+                                                        type="password"
+                                                        value={currentPassword}
+                                                        onChange={e => setCurrentPassword(e.target.value)}
+                                                        className={inputClass}
+                                                    />
+                                                    <FieldError errors={passwordErrors} field="current_password" />
+                                                </div>
 
-                                {passwordSuccess && (
-                                    <div className="mt-5 bg-nature-sage/20 border border-nature-sage/40 rounded-md px-4 py-3 flex items-center gap-2 max-w-md">
-                                        <CheckCircle className="w-4 h-4 text-nature-olive flex-shrink-0" strokeWidth={1.5} />
-                                        <p className="text-nature-olive text-sm">{passwordSuccess}</p>
+                                                <div>
+                                                    <label className={labelClass}>New Password *</label>
+                                                    <input
+                                                        type="password"
+                                                        value={newPassword}
+                                                        onChange={e => setNewPassword(e.target.value)}
+                                                        className={inputClass}
+                                                    />
+                                                    <div className="mt-2 space-y-1">
+                                                        {passwordChecks.map((check, i) => (
+                                                            <p key={i} className={`text-[11px] flex items-center gap-1.5 ${check.pass ? 'text-nature-olive dark:text-nature-sage font-medium' : 'text-nature-muted dark:text-night-muted'}`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${check.pass ? 'bg-nature-olive dark:bg-nature-sage' : 'bg-nature-border dark:bg-night-border'}`} />
+                                                                {check.label}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                    <FieldError errors={passwordErrors} field="new_password" />
+                                                </div>
+
+                                                <div>
+                                                    <label className={labelClass}>Confirm New Password *</label>
+                                                    <input
+                                                        type="password"
+                                                        value={confirmPassword}
+                                                        onChange={e => setConfirmPassword(e.target.value)}
+                                                        className={inputClass}
+                                                    />
+                                                </div>
+
+                                                {passwordFormError && (
+                                                    <p className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-950/35 border border-red-200 dark:border-red-900/40 px-4 py-3 rounded-md">{passwordFormError}</p>
+                                                )}
+
+                                                <div className="flex items-center gap-3 pt-2">
+                                                    <button
+                                                        type="submit"
+                                                        disabled={passwordLoading}
+                                                        className="bg-nature-olive dark:bg-nature-sage text-white dark:text-night-bg font-medium px-5 py-2.5 rounded-md text-xs tracking-wider uppercase hover:bg-nature-olive-dark dark:hover:bg-nature-sage/80 disabled:opacity-50 transition-colors"
+                                                    >
+                                                        {passwordLoading ? 'Updating...' : 'Update Password'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPasswordForm(false)}
+                                                        className="text-nature-muted dark:text-night-muted hover:text-nature-dark dark:hover:text-night-text text-xs uppercase tracking-wide transition-colors px-2 py-2.5"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
+
                     </main>
+
                 </div>
+
             </div>
-
-            {selectedOrder && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className={`${modalPanelClass} max-w-lg w-full max-h-[85vh] overflow-y-auto p-6`}>
-                        <div className="flex items-start justify-between mb-5 pb-5 border-b border-nature-border/60">
-                            <div>
-                                <h3 className="font-serif text-xl text-nature-dark">
-                                    Order #<span className="font-mono text-nature-muted text-base">{selectedOrder.id}</span>
-                                </h3>
-                                <p className="text-nature-muted text-xs mt-1">
-                                    {new Date(selectedOrder.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                </p>
-                            </div>
-                            <button onClick={() => setSelectedOrder(null)} className="text-nature-muted hover:text-nature-dark transition-colors">
-                                <X className="w-5 h-5" strokeWidth={1.5} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 mb-5">
-                            {(() => {
-                                const StatusIcon = STATUS_ICONS[selectedOrder.status] ?? Clock;
-                                return (
-                                    <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full ${STATUS_STYLES[selectedOrder.status]}`}>
-                                        <StatusIcon className="w-3.5 h-3.5" />
-                                        <span className="capitalize">{selectedOrder.status}</span>
-                                    </span>
-                                );
-                            })()}
-                        </div>
-
-                        <OrderDetail
-                            order={selectedOrder}
-                            showCancelButton
-                            onCancelRequest={() => confirmCancelOrder(selectedOrder)}
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

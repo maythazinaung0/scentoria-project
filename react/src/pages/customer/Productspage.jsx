@@ -19,7 +19,6 @@ function getVariantPrice(product) {
         : 0;
 }
 
-
 export default function ProductsPage() {
     const { searchQuery } = useOutletContext();
     const [products, setProducts] = useState([]);
@@ -74,8 +73,6 @@ export default function ProductsPage() {
         return sorted;
     }, [safeProducts, searchQuery, sortBy]);
 
-    // Reset to page 1 whenever the result set or page size changes,
-    // so the user is never stranded on an out-of-range page.
     useEffect(() => {
         setPage(1);
     }, [searchQuery, perPage, sortBy]);
@@ -89,13 +86,13 @@ export default function ProductsPage() {
     const rangeEnd = Math.min(pageStart + perPage, filtered.length);
 
     return (
-        <div className="min-h-screen bg-nature-bg text-nature-dark pt-24">
+        <div className="min-h-screen bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text pt-24 transition-colors duration-300">
 
             {/* --- EDITORIAL HEADER --- */}
             <div className="max-w-4xl mx-auto px-6 pt-10 pb-16 text-center">
-                <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive mb-4">Our Collection</p>
+                <p className="text-[11px] tracking-[0.35em] uppercase text-nature-olive dark:text-nature-sage mb-4">Our Collection</p>
                 <h1 className="font-serif text-5xl sm:text-6xl leading-tight">All Fragrances</h1>
-                <p className="text-nature-muted text-sm mt-5 max-w-lg mx-auto leading-relaxed">
+                <p className="text-nature-muted dark:text-night-muted text-sm mt-5 max-w-lg mx-auto leading-relaxed">
                     A curated house of scent — from bright, citrus openings to warm,
                     lingering bases. Explore the full collection below.
                 </p>
@@ -104,38 +101,42 @@ export default function ProductsPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
 
                 {/* --- TOOLBAR: result count, sort, per-page --- */}
-                <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-nature-border/60 mb-12">
-                    <p className="text-nature-muted text-xs uppercase tracking-wider">
+                <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-nature-border/60 dark:border-night-border/60 mb-12">
+                    <p className="text-nature-muted dark:text-night-muted text-xs uppercase tracking-wider">
                         {searchQuery ? (
-                            <>Results for <span className="text-nature-dark font-medium">"{searchQuery}"</span> · {filtered.length} found</>
+                            <>Results for <span className="text-nature-dark dark:text-night-text font-medium">"{searchQuery}"</span> · {filtered.length} found</>
                         ) : (
                             <>{filtered.length} Fragrance{filtered.length !== 1 ? 's' : ''}</>
                         )}
                     </p>
 
                     <div className="flex items-center gap-6">
-                        <label className="flex items-center gap-2 text-xs text-nature-muted">
+                        <label className="flex items-center gap-2 text-xs text-nature-muted dark:text-night-muted">
                             <span className="uppercase tracking-wider">Sort</span>
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="bg-transparent border border-nature-border/70 rounded-md px-2.5 py-1.5 text-nature-dark text-xs outline-none focus:border-nature-olive transition-colors"
+                                className="bg-transparent border border-nature-border/70 dark:border-night-border rounded-md px-2.5 py-1.5 text-nature-dark dark:text-night-text text-xs outline-none focus:border-nature-olive dark:focus:border-nature-sage transition-colors"
                             >
                                 {SORT_OPTIONS.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    <option key={opt.value} value={opt.value} className="bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text">
+                                        {opt.label}
+                                    </option>
                                 ))}
                             </select>
                         </label>
 
-                        <label className="flex items-center gap-2 text-xs text-nature-muted">
+                        <label className="flex items-center gap-2 text-xs text-nature-muted dark:text-night-muted">
                             <span className="uppercase tracking-wider">Show</span>
                             <select
                                 value={perPage}
                                 onChange={(e) => setPerPage(Number(e.target.value))}
-                                className="bg-transparent border border-nature-border/70 rounded-md px-2.5 py-1.5 text-nature-dark text-xs outline-none focus:border-nature-olive transition-colors"
+                                className="bg-transparent border border-nature-border/70 dark:border-night-border rounded-md px-2.5 py-1.5 text-nature-dark dark:text-night-text text-xs outline-none focus:border-nature-olive dark:focus:border-nature-sage transition-colors"
                             >
                                 {PER_PAGE_OPTIONS.map(n => (
-                                    <option key={n} value={n}>{n} per page</option>
+                                    <option key={n} value={n} className="bg-nature-bg dark:bg-night-bg text-nature-dark dark:text-night-text">
+                                        {n} per page
+                                    </option>
                                 ))}
                             </select>
                         </label>
@@ -146,13 +147,13 @@ export default function ProductsPage() {
                 {loading ? (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="aspect-[3/4] bg-nature-sand/20 rounded-sm animate-pulse" />
+                            <div key={i} className="aspect-[3/4] bg-nature-sand/20 dark:bg-night-card rounded-sm animate-pulse" />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-24">
-                        <p className="font-serif text-xl text-nature-dark mb-2">No fragrances found</p>
-                        <p className="text-nature-muted text-sm">
+                        <p className="font-serif text-xl text-nature-dark dark:text-night-text mb-2">No fragrances found</p>
+                        <p className="text-nature-muted dark:text-night-muted text-sm">
                             Try a different search term, or browse the full collection.
                         </p>
                     </div>
@@ -166,7 +167,7 @@ export default function ProductsPage() {
 
                         <div className="flex flex-col items-center gap-3 mt-16">
                             <Pagination page={clampedPage} totalPages={totalPages} onChange={setPage} />
-                            <p className="text-nature-muted text-xs mt-2">
+                            <p className="text-nature-muted dark:text-night-muted text-xs mt-2">
                                 Showing {rangeStart}–{rangeEnd} of {filtered.length}
                             </p>
                         </div>

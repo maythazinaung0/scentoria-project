@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnucobol3 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 COPY cobol/SALESBATCH.cob .
-RUN cobc -x -o sales_batch SALESBATCH.cob
+RUN cobc -x -free -o sales_batch SALESBATCH.cob
 
 # ---- Stage 2: install PHP dependencies --------------------------------------
 FROM composer:2 AS composer-build

@@ -9,6 +9,7 @@ import { getPasswordChecks, isPasswordPolicyMet } from '../utils/PasswordPolicy'
 import { isValidEmailFormat, isValidName } from '../utils/vaildators';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import api from '../api';
+import axios from 'axios';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -42,29 +43,27 @@ export default function RegisterPage() {
   const emailFormatValid = isValidEmailFormat(email);
   const debouncedEmail = useDebouncedValue(email, 500);
 
-  // Once the email looks well-formed, ask the backend whether it's already
-  // registered. Debounced so we're not hitting the API every keystroke, and
-  // any in-flight request is aborted if the user keeps typing.
-  useEffect(() => {
-    if (!isValidEmailFormat(debouncedEmail)) {
-      setEmailStatus('idle');
-      return;
-    }
+useEffect(() => {
+  if (!isValidEmailFormat(debouncedEmail)) {
+    setEmailStatus('idle');
+    return;
+  }
 
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  if (abortRef.current) abortRef.current.abort();
+  const controller = new AbortController();
+  abortRef.current = controller;
 
-    setEmailStatus('checking');
-    api.post('/check-email', { email: debouncedEmail.trim() }, { signal: controller.signal })
-      .then(res => setEmailStatus(res.data?.exists ? 'taken' : 'available'))
-      .catch(err => {
-        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-        setEmailStatus('error');
-      });
+  setEmailStatus('checking');
 
-    return () => controller.abort();
-  }, [debouncedEmail]);
+  api.get('/check-email', { params: { email: debouncedEmail.trim() }, signal: controller.signal })
+    .then(res => setEmailStatus(res.data?.exists ? 'taken' : 'available'))
+    .catch(err => {
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+      setEmailStatus('error');
+    });
+
+  return () => controller.abort();
+}, [debouncedEmail]);
 
   const emailOk = emailFormatValid && emailStatus === 'available';
   const canSubmit = nameValid && emailOk && policyMet && passwordsMatch;

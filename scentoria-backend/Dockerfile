@@ -27,7 +27,7 @@ RUN npm run build
 # ---- Stage 4: production runtime --------------------------------------------
 FROM ubuntu:24.04
 
-ARG PHP_VERSION=8.3
+ARG PHP_VERSION=8.5
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=UTC \
     LANG=C.UTF-8
